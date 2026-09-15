@@ -79,6 +79,11 @@ models:
     context_size: 8192
   embed:
     model: hf.co/gpustack/bge-m3-gguf:Q8_0
+    context_size: 8192
+    # Embedding inputs are capped at 512 tokens per call by llama.cpp's physical batch
+    # (n_ubatch). Model Runner passes --batch-size through but not --ubatch-size, and
+    # llama.cpp clamps n_batch down to n_ubatch for embeddings, so the limit cannot be
+    # raised here. The ingest pipeline keeps every input under it (see ADR 0005).
 
 volumes:
   pgdata: {}

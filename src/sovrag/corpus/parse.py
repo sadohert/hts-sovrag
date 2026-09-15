@@ -8,9 +8,11 @@ level >= n. Tables become one pipe-separated line per row; lists become "- item"
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass
 
-from bs4 import BeautifulSoup, NavigableString, Tag
+from bs4 import BeautifulSoup, Tag
+from bs4.element import NavigableString
 
 DROP_TAGS = ("script", "style", "noscript", "nav", "header", "footer", "aside", "form", "iframe")
 DROP_CLASSES = ("pagedetails", "wb-share", "wb-fnote", "mfp-hide", "pagetag", "wb-inv")
@@ -68,7 +70,7 @@ def _strip(root: Tag) -> None:
         tag.decompose()
 
 
-def _walk(root: Tag):
+def _walk(root: Tag) -> Iterator[Tag]:
     """Yield headings and leaf blocks in document order, never descending into a yielded block."""
     for child in root.children:
         if isinstance(child, NavigableString) or not isinstance(child, Tag):

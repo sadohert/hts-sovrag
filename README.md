@@ -2,7 +2,7 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: scaffold. Nothing here is usable yet.
+Status: corpus indexed, vector retrieval with citations from the CLI. No generation, no entitlement filtering yet.
 
 ## What it will do
 
@@ -19,9 +19,13 @@ Every document in the corpus is public, published under the Open Government Lice
 ## Run it
 
 ```
-docker compose up -d
-uv run sovrag ingest --manifest data/manifest.yaml
-uv run sovrag query "What are National Defence's core responsibilities?" --principal analyst_dnd
+docker desktop enable model-runner --tcp=12434   # once; Docker Desktop
+docker compose up -d postgres
+uv sync
+uv run sovrag ingest                              # fetch, parse, chunk, embed, index (~2 min)
+uv run sovrag query "What did the Auditor General find about ArriveCAN?" --principal analyst_dnd
 ```
 
-More once it exists. See `docs/` for design notes.
+`ingest` pulls the two models declared in `compose.yaml` on first use. Pages are cached under `data/raw/`; re-running is idempotent.
+
+See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.
