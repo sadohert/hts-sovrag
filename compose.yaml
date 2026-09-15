@@ -1,0 +1,85 @@
+# sovrag: the whole stack. `docker compose up -d` is the runbook.
+# Profiles: (default) postgres + app on Docker Model Runner; vllm = GPU serving comparison; mcp = MCP server.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: sovrag
+      POSTGRES_PASSWORD: sovrag
+      POSTGRES_DB: sovrag
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sovrag -d sovrag"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://sovrag:sovrag@postgres:5432/sovrag
+      EMBED_DIM: "1024"
+      AUDIT_LOG_PATH: /app/audit/audit.jsonl
+    volumes:
+      - audit:/app/audit
+    models:
+      llm:
+        endpoint_var: LLM_BASE_URL
+        model_var: LLM_MODEL
+      embed:
+        endpoint_var: EMBED_BASE_URL
+        model_var: EMBED_MODEL
+
+  vllm:
+    profiles: [vllm]
+    image: vllm/vllm-openai:latest
+    command: ["--model", "${VLLM_MODEL:-Qwen/Qwen2.5-7B-Instruct}", "--dtype", "bfloat16"]
+    ports:
+      - "8001:8000"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+
+  mcp:
+    profiles: [mcp]
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://sovrag:sovrag@postgres:5432/sovrag
+      PRINCIPAL: ${PRINCIPAL:-analyst_dnd}
+      AUDIT_LOG_PATH: /app/audit/audit.jsonl
+    volumes:
+      - audit:/app/audit
+    models:
+      llm:
+        endpoint_var: LLM_BASE_URL
+        model_var: LLM_MODEL
+      embed:
+        endpoint_var: EMBED_BASE_URL
+        model_var: EMBED_MODEL
+
+models:
+  llm:
+    model: ai/qwen2.5:7B-Q4_K_M
+    context_size: 8192
+  embed:
+    model: hf.co/gpustack/bge-m3-gguf:Q8_0
+
+volumes:
+  pgdata: {}
+  audit: {}

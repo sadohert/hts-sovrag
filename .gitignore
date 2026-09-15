@@ -1,0 +1,21 @@
+# python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+dist/
+*.egg-info/
+
+# env
+.env
+.env.*
+!.env.example
+
+# corpus (fetched, not committed)
+data/raw/
+
+# local scratch
+.DS_Store
+*.log
