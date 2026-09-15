@@ -19,6 +19,7 @@ dependencies = [
   "lxml>=5.2",
   "typer>=0.12",
   "tiktoken>=0.7",
+  "curl-cffi>=0.16.3",
 ]
 
 [project.optional-dependencies]
