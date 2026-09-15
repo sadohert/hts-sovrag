@@ -1,0 +1,233 @@
+# sovrag corpus manifest
+# All documents are public, published under the Open Government Licence - Canada.
+# classification is assigned synthetically by rule from doc_type at ingest time (see README); it is not in this file.
+# Generated 2026-09-15. Notes:
+#   - CSE (Communications Security Establishment): no Departmental Plan or Departmental Results Report could be located
+#     for any year. CSE is not listed on either TBS index (DP or DRR), cse-cst.gc.ca has no DP/DRR pages (its Reports page
+#     lists only annual reports, ATIP, DSDS, internal audit, etc.; every guessed URL returned 404), publications.gc.ca has
+#     no CSE DP/DRR record, and the Wayback CDX index shows no such path ever existed on cse-cst.gc.ca. All 4 CSE
+#     documents are therefore omitted.
+#   - Public Safety Canada publishes its DPs/DRRs on publicsafety.gc.ca (not www.canada.ca); those are the only English
+#     HTML versions and are used here. Each is a complete single-page report.
+#   - The Standard on Security Screening (tbs-sct id=28115) was archived 2025-01-06 and replaced by the Directive on
+#     Security Screening (id=32805); the current Directive is listed instead of the archived Standard.
+#   - Verification: publicsafety.gc.ca, tbs-sct.canada.ca and oag-bvg.gc.ca URLs were curl-verified (HTTP 200 + title).
+#     www.canada.ca refused every curl/Python request from this machine (Akamai: HTTP/2 INTERNAL_ERROR, HTTP/1.1 hangs),
+#     so www.canada.ca URLs were verified by fetching each page and checking its <title> through a browser-origin fetch;
+#     404s were observed and excluded during that process. Re-run a curl sweep from another network before ingest.
+#   - tbs-sct.canada.ca/pol/ pages return "Request Rejected" (HTTP 200) to a bare "Mozilla/5.0" UA; use a full
+#     browser User-Agent string when fetching them.
+documents:
+  - id: dnd-dp-2024-25
+    title: "National Defence 2024-25 Departmental Plan"
+    department: DND
+    doc_type: DP
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25.html
+    pages:
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/from-the-minister.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results/operations.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results/ready-forces.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results/defence-team.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results/future-force-design.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results/procurement-of-capabilities.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results/bases-it-infrastructure.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/planned-results/internal-services.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/spending-human-resources.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/corporate-information.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/appendix-definitions.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2024-25/supporting-document.html
+  - id: dnd-dp-2025-26
+    title: "National Defence 2025-26 Departmental Plan"
+    department: DND
+    doc_type: DP
+    fiscal_year: "2025-26"
+    lang: en
+    source_url: https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-plans/departmental-plan-2025-26.html
+  - id: dnd-drr-2023-24
+    title: "National Defence 2023-24 Departmental Results Report"
+    department: DND
+    doc_type: DRR
+    fiscal_year: "2023-24"
+    lang: en
+    source_url: https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index.html
+    pages:
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/glance.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/from-minister.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp/operations.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp/ready-forces.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp/defence-team.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp/future-force-design.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp/procurement-capabilities.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp/sustainable-bases-it-infra.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/results-core-resp/internal-services.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/spending-hr.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/corp-info.html
+      - https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2023-24-index/definitions.html
+  - id: dnd-drr-2024-25
+    title: "National Defence 2024-25 Departmental Results Report"
+    department: DND
+    doc_type: DRR
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/department-national-defence/corporate/reports-publications/departmental-results-report/2024-25-index.html
+  - id: oag-arrivecan-2024
+    title: "Office of the Auditor General of Canada, Report 1 - ArriveCAN (2024)"
+    department: GC_WIDE
+    doc_type: OAG
+    fiscal_year: "2024"
+    lang: en
+    source_url: https://www.canada.ca/en/auditor-general/our-work/audit-reports/parl-oag-202402-01-e.html
+  - id: oag-professional-services-contracts-2024
+    title: "Office of the Auditor General of Canada, Report 5 - Professional Services Contracts (2024)"
+    department: GC_WIDE
+    doc_type: OAG
+    fiscal_year: "2024"
+    lang: en
+    source_url: https://www.canada.ca/en/auditor-general/our-work/audit-reports/parl-oag-202406-05-e.html
+  - id: oag-future-fighter-jet-2025
+    title: "Office of the Auditor General of Canada, Report 2 - Delivering Canada's Future Fighter Jet Capability (2025)"
+    department: GC_WIDE
+    doc_type: OAG
+    fiscal_year: "2025"
+    lang: en
+    source_url: https://www.canada.ca/en/auditor-general/our-work/audit-reports/report-2-delivering-canadas-future-fighter-jet-capability.html
+  - id: policy-government-security
+    title: "Policy on Government Security"
+    department: GC_WIDE
+    doc_type: POLICY
+    lang: en
+    source_url: https://www.tbs-sct.canada.ca/pol/doc-eng.aspx?id=16578
+  - id: directive-security-management
+    title: "Directive on Security Management"
+    department: GC_WIDE
+    doc_type: POLICY
+    lang: en
+    source_url: https://www.tbs-sct.canada.ca/pol/doc-eng.aspx?id=32611
+  - id: directive-identity-management
+    title: "Directive on Identity Management"
+    department: GC_WIDE
+    doc_type: POLICY
+    lang: en
+    source_url: https://www.tbs-sct.canada.ca/pol/doc-eng.aspx?id=16577
+  - id: directive-security-screening
+    title: "Directive on Security Screening"
+    department: GC_WIDE
+    doc_type: POLICY
+    lang: en
+    source_url: https://www.tbs-sct.canada.ca/pol/doc-eng.aspx?id=32805
+  - id: ps-dp-2024-25
+    title: "Public Safety Canada 2024-25 Departmental Plan"
+    department: PS
+    doc_type: DP
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.publicsafety.gc.ca/cnt/rsrcs/pblctns/dprtmntl-pln-2024-25/index-en.aspx
+  - id: ps-dp-2025-26
+    title: "Public Safety Canada 2025-26 Departmental Plan"
+    department: PS
+    doc_type: DP
+    fiscal_year: "2025-26"
+    lang: en
+    source_url: https://www.publicsafety.gc.ca/cnt/rsrcs/pblctns/dprtmntl-pln-2025-26/index-en.aspx
+  - id: ps-drr-2023-24
+    title: "Public Safety Canada 2023-24 Departmental Results Report"
+    department: PS
+    doc_type: DRR
+    fiscal_year: "2023-24"
+    lang: en
+    source_url: https://www.publicsafety.gc.ca/cnt/rsrcs/pblctns/dprtmntl-rslts-rprt-2023-24/index-en.aspx
+  - id: ps-drr-2024-25
+    title: "Public Safety Canada 2024-25 Departmental Results Report"
+    department: PS
+    doc_type: DRR
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.publicsafety.gc.ca/cnt/rsrcs/pblctns/dprtmntl-rslts-rprt-2024-25/index-en.aspx
+  - id: pspc-dp-2024-25
+    title: "Public Services and Procurement Canada 2024-25 Departmental Plan"
+    department: PSPC
+    doc_type: DP
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/public-services-procurement/corporate/transparency/departmental-plan/2024-2025-plan.html
+  - id: pspc-dp-2025-26
+    title: "Public Services and Procurement Canada 2025-26 Departmental Plan"
+    department: PSPC
+    doc_type: DP
+    fiscal_year: "2025-26"
+    lang: en
+    source_url: https://www.canada.ca/en/public-services-procurement/corporate/transparency/departmental-plan/2025-2026.html
+  - id: pspc-drr-2023-24
+    title: "Public Services and Procurement Canada 2023-24 Departmental Results Report"
+    department: PSPC
+    doc_type: DRR
+    fiscal_year: "2023-24"
+    lang: en
+    source_url: https://www.canada.ca/en/public-services-procurement/corporate/transparency/departmental-results-report/2023-24.html
+  - id: pspc-drr-2024-25
+    title: "Public Services and Procurement Canada 2024-25 Departmental Results Report"
+    department: PSPC
+    doc_type: DRR
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/public-services-procurement/corporate/transparency/departmental-results-report/2024-25.html
+  - id: ssc-dp-2024-25
+    title: "Shared Services Canada 2024-25 Departmental Plan"
+    department: SSC
+    doc_type: DP
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/shared-services/corporate/about-us/transparency/departmental-plan/2024-25/2024-25-departmental-plan.html
+  - id: ssc-dp-2025-26
+    title: "Shared Services Canada 2025-26 Departmental Plan"
+    department: SSC
+    doc_type: DP
+    fiscal_year: "2025-26"
+    lang: en
+    source_url: https://www.canada.ca/en/shared-services/corporate/about-us/transparency/departmental-plan/2025-26/2025-26-departmental-plan.html
+  - id: ssc-drr-2023-24
+    title: "Shared Services Canada 2023-24 Departmental Results Report"
+    department: SSC
+    doc_type: DRR
+    fiscal_year: "2023-24"
+    lang: en
+    source_url: https://www.canada.ca/en/shared-services/corporate/about-us/transparency/departmental-results-reports/2023-24/departmental-results-report-2023-24.html
+  - id: ssc-drr-2024-25
+    title: "Shared Services Canada 2024-25 Departmental Results Report"
+    department: SSC
+    doc_type: DRR
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/shared-services/corporate/about-us/transparency/departmental-results-reports/2024-25/departmental-results-report-2024-25.html
+  - id: tbs-dp-2024-25
+    title: "Treasury Board of Canada Secretariat 2024-25 Departmental Plan"
+    department: TBS
+    doc_type: DP
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/treasury-board-secretariat/corporate/reports/treasury-board-canada-secretariat-2024-25-departmental-plan-at-glance/treasury-board-canada-secretariat-2024-25-departmental-plan.html
+  - id: tbs-dp-2025-26
+    title: "Treasury Board of Canada Secretariat 2025-26 Departmental Plan"
+    department: TBS
+    doc_type: DP
+    fiscal_year: "2025-26"
+    lang: en
+    source_url: https://www.canada.ca/en/treasury-board-secretariat/corporate/reports/treasury-board-canada-secretariat-2025-26-departmental-plan-at-glance/treasury-board-canada-secretariat-2025-26-departmental-plan.html
+  - id: tbs-drr-2023-24
+    title: "Treasury Board of Canada Secretariat 2023-24 Departmental Results Report"
+    department: TBS
+    doc_type: DRR
+    fiscal_year: "2023-24"
+    lang: en
+    source_url: https://www.canada.ca/en/treasury-board-secretariat/corporate/reports/treasury-board-canada-secretariat-2023-24-departmental-results-report-at-glance/treasury-board-canada-secretariat-2023-24-departmental-results-report.html
+  - id: tbs-drr-2024-25
+    title: "Treasury Board of Canada Secretariat 2024-25 Departmental Results Report"
+    department: TBS
+    doc_type: DRR
+    fiscal_year: "2024-25"
+    lang: en
+    source_url: https://www.canada.ca/en/treasury-board-secretariat/corporate/reports/treasury-board-canada-secretariat-2024-25-departmental-results-report.html
