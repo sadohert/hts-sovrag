@@ -3,6 +3,10 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
+    # Lockfile-only and fixture-only changes have nothing to review.
+    paths-ignore:
+      - "uv.lock"
+      - "tests/fixtures/**"
 
 jobs:
   claude-review:
