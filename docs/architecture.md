@@ -20,7 +20,7 @@ flowchart LR
     QE --> RT[retrieve/hybrid.py<br/>vector, keyword, RRF]
     RT --> S
     S --> RT
-    RT --> G[generate/llm.py<br/>grounded answer, citations]
+    RT --> G[generate/answer.py<br/>grounded answer, [n] citations, refusal]
     G --> A["answer + citations[] + applied_filter"]
   end
 
@@ -34,7 +34,7 @@ flowchart LR
   G -.-> LLM
 ```
 
-Status: the corpus pipeline and all three retrieval modes exist. Generation, entitlement filtering and the HTTP API follow.
+Status: the corpus pipeline, all three retrieval modes, and grounded generation with citations and refusal exist. Entitlement filtering and the HTTP API follow.
 
 ## Data model
 
@@ -90,9 +90,14 @@ The vector for each chunk is computed over the document title, the heading path 
 
 `vector` orders chunks by cosine distance over the HNSW index. `keyword` parses the question with `websearch_to_tsquery` and ranks full-text matches with `ts_rank_cd`; a question of stop words only returns nothing. Because every term must match, sentence-length questions often return nothing from keyword mode; on a ten-question set four did. Hybrid then falls back to the vector ranking. `hybrid` takes the top `max(4k, 20)` from each and fuses by reciprocal rank fusion (k = 60), so a chunk near the top of either list rises and one near the top of both rises furthest. Ties resolve by chunk id; see ADR 0007. All three return the same `Hit` with citations. See ADR 0007.
 
+## Generation
+
+`generate/answer.py` is the single entry point for answering. It retrieves with the chosen mode, builds a prompt that lists the chunks as numbered sources, and makes one chat completion call at temperature 0 with the model's thinking mode off. The model must cite with `[n]` or reply with a sentinel; code validates the markers, builds a `Citation` for each, and turns the sentinel into a fixed refusal. An answer with no citations is retried once with a firmer instruction, then refused. Every call appends one line to the JSONL audit log. See ADR 0008.
+
 ## Decisions
 
 - ADR 0003: synthetic classification labels, assigned per document.
 - ADR 0005: Docker Model Runner serves both the generator and the embedding model.
 - ADR 0006: generator upgraded to Qwen 3.5 9B; embedding model held at BGE-M3 until the retrieval eval exists.
 - ADR 0007: keyword ranking is Postgres `ts_rank_cd`, not BM25; hybrid fuses vector and keyword rankings by reciprocal rank fusion.
+- ADR 0008: grounded answers with a refusal sentinel, code-validated citations, and a retry-then-refuse rule for uncited replies.
