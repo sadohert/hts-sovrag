@@ -160,14 +160,19 @@ is not created; the service builds the single `Dockerfile` and overrides the com
 
 - Image `mattermost/mattermost-enterprise-edition`, pinned at implementation time to the
   newest release. With no licence it runs as Mattermost Entry, which unlocks the features
-  this design needs (user attributes, access control, multiple bots, remote MCP servers)
-  with limits that matter for recording: 250 agent queries per month, 10,000 messages of
-  history.
-- Database: the existing Postgres container with a second database named `mattermost`,
-  if the pinned Mattermost release supports Postgres 18. Otherwise a separate Postgres
-  service under the same profile. The check and its outcome go in ADR 0010.
-- Agents plugin, pinned to the newest release (v2.7.0 at the time of writing, minimum
-  server 11.9.0). One service of type "OpenAI Compatible" pointed at Docker Model Runner
+  this design needs (user attributes, access control, multiple bots, remote MCP servers).
+  Entry caps viewable history at 10,000 messages, and documents a limit of 250 agent
+  queries per month that "will take effect in a future release"; see ADR 0011. Mattermost
+  publishes amd64 images only, so the service sets `platform: linux/amd64` and runs under
+  emulation on Apple silicon.
+- Database: the existing Postgres container, with a database and a role both named
+  `mattermost`; the role has no rights on the `sovrag` database. Mattermost 11.11.0 was
+  booted against the pinned Postgres 18 image and its migrations ran cleanly (ADR 0011).
+  A one-shot service under the same profile creates the role and database if they are
+  missing, because Postgres init scripts only run on an empty volume.
+- Agents plugin, pinned to v2.7.0 (minimum server 11.9.0). The 11.11.0 image bundles
+  v2.6.1, which predates the MCP service-account headers, so the seed script uploads the
+  v2.7.0 release asset. One service of type "OpenAI Compatible" pointed at Docker Model Runner
   through the Docker internal hostname, "Use Responses API" off because Model Runner serves
   chat completions with streaming. One bot, `channelAccessLevel: None` (direct messages
   only), `disableTools: false`, custom instructions telling it to relay the `answer`
@@ -225,7 +230,7 @@ The CLI is unchanged in shape: `--principal <id>` resolves through `principals.y
 - Zero entitled hits: `answer` refuses with the fixed sentence and no citations; `search`
   returns an empty list. Neither reveals that forbidden documents exist.
 - Generation module absent: `answer` returns the "not available" refusal above.
-- Residual risk, recorded in ADR 0009: the plugin's LLM wraps the tool result in its own
+- Residual risk, recorded in ADR 0010: the plugin's LLM wraps the tool result in its own
   words and could soften a refusal. Mitigated by the bot instructions and by the audit
   log showing the tool's raw output.
 
@@ -256,16 +261,16 @@ Each lands with its pull request. Database tests use the existing `db` fixture.
 
 ## Documentation
 
-- ADR 0008: principal binding. Rewrites the CLAUDE.md invariant to: "A principal is bound
+- ADR 0009: principal binding. Rewrites the CLAUDE.md invariant to: "A principal is bound
   by the server, from configuration or from an authenticated transport the server
   verifies. Identity never comes from message text, tool arguments, or any value an agent
   or model can set, because whoever names the principal chooses the entitlement." Records
   the two MCP modes, the bearer plus user-ID pattern, the 401 cases and the
   least-privileged cases. Updates `.claude/rules/retrieval.md` to match.
-- ADR 0009: Mattermost user attributes as the entitlement source. What was verified about
+- ADR 0010: Mattermost user attributes as the entitlement source. What was verified about
   admin-managed attributes and the `EnableUserManagedAttributes` flag, the request-time
   field check, no cache, the attribute snapshot in the audit log, the residual relay risk.
-- ADR 0010: Mattermost in Compose. Entry edition and its limits, image and plugin pins,
+- ADR 0011: Mattermost in Compose. Entry edition and its limits, image and plugin pins,
   the Postgres 18 decision, Model Runner as the plugin's provider, and that no Docker
   organisation-level governance is claimed.
 - `docs/architecture.md`: the MCP server and the principal resolver in the query path.
@@ -307,7 +312,7 @@ ordinary input; the MCP `answer` tool turns it into a tool error, not a refusal.
 
 1. `principal-model`: this spec and its plan, `sovrag.auth`, `principals.yaml`, manifest
    import, the Dockerfile copy of `principals.yaml`, tests.
-2. `mattermost-integration`: ADRs 0008 to 0010, CLAUDE.md and retrieval rule text.
+2. `mattermost-integration`: ADRs 0009 to 0011, CLAUDE.md and retrieval rule text.
 3. `entitlement-filter`: `filters.py`, `principal` on the three search functions, the two
    `SET LOCAL`s, leak tests, CLI resolution of `--principal`; if generation has merged,
    the two marked call sites in `generate/answer.py` pass the principal through.
