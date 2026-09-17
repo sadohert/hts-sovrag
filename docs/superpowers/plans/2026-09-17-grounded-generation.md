@@ -874,7 +874,7 @@ git commit -m "Add the generator client with thinking off and temperature zero"
 
 **Files:**
 - Create: `src/sovrag/generate/answer.py`
-- Modify: `src/sovrag/generate/__init__.py` (re-export `Answer`, `Citation`, `answer`)
+- Modify: `src/sovrag/generate/__init__.py` (re-export `Answer`, `Citation`, `MAX_K`; not `answer`, which would shadow the submodule)
 - Test: `tests/test_answer.py`
 
 **Interfaces:**
@@ -1188,10 +1188,12 @@ def answer(
 ```python
 """Generation: grounded answers with citations and refusal."""
 
-from sovrag.generate.answer import MAX_K, Answer, Citation, answer
+from sovrag.generate.answer import MAX_K, Answer, Citation
 from sovrag.generate.llm import GenerationError, Generator
 
-__all__ = ["MAX_K", "Answer", "Citation", "GenerationError", "Generator", "answer"]
+# The answer() function is not re-exported here: a package attribute named `answer` would
+# shadow the `sovrag.generate.answer` submodule. Import it from the module.
+__all__ = ["MAX_K", "Answer", "Citation", "GenerationError", "Generator"]
 ```
 
 - [ ] **Step 4: Run the tests to verify they pass**
@@ -1216,7 +1218,7 @@ git commit -m "Add answer(): grounded generation with citations, refusal and aud
 - Test: `tests/test_cli.py` (append)
 
 **Interfaces:**
-- Consumes: `answer`, `Answer`, `Citation`, `MAX_K`, `GenerationError` from `sovrag.generate`; `resolve_principal` from `sovrag.auth`.
+- Consumes: `answer` from `sovrag.generate.answer`; `Answer`, `Citation`, `MAX_K`, `GenerationError` from `sovrag.generate`; `resolve_principal` from `sovrag.auth`.
 - Produces: `sovrag ask QUESTION --principal ID [--mode vector|keyword|hybrid] [--k 1..10] [--json] [--request-id ID]`.
 
 - [ ] **Step 1: Write the failing tests**
@@ -1317,7 +1319,8 @@ In `src/sovrag/cli.py` add imports:
 
 ```python
 from sovrag.auth import resolve_principal
-from sovrag.generate import MAX_K, GenerationError, answer
+from sovrag.generate import MAX_K, GenerationError
+from sovrag.generate.answer import answer
 ```
 
 Change the module docstring's first line to `"""sovrag CLI: ingest | query | ask | serve."""`. After the `query` command add:
