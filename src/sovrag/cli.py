@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
@@ -15,12 +16,18 @@ from sovrag.corpus.ingest import ingest_document
 from sovrag.corpus.manifest import load_manifest
 from sovrag.index.embed import Embedder
 from sovrag.index.store import connect
-from sovrag.retrieve.hybrid import search_vector
+from sovrag.retrieve.hybrid import search_hybrid, search_keyword, search_vector
 
 app = typer.Typer(
     help="Permissions-aware RAG over Canadian federal public documents.",
     no_args_is_help=True,
 )
+
+
+class Mode(StrEnum):
+    vector = "vector"
+    keyword = "keyword"
+    hybrid = "hybrid"
 
 
 @app.command()
@@ -56,30 +63,33 @@ def ingest(
 def query(
     question: str,
     principal: Annotated[str, typer.Option(help="Principal id from principals.yaml")],
-    mode: Annotated[str, typer.Option(help="vector | bm25 | hybrid")] = "vector",
-    k: Annotated[int, typer.Option()] = 5,
+    mode: Annotated[Mode, typer.Option(help="vector | keyword | hybrid")] = Mode.vector,
+    k: Annotated[int, typer.Option(min=1)] = 5,
     json_out: Annotated[bool, typer.Option("--json", help="Emit JSON instead of text")] = False,
 ) -> None:
     """Retrieve the top-k chunks for a question, as a principal. Generation is not wired in yet."""
-    if mode != "vector":
-        raise typer.BadParameter("only --mode vector is implemented yet")
     settings = get_settings()
-    embedder = Embedder.from_settings(settings)
-    query_vec = embedder.embed([question])[0]
     with connect(settings.database_url) as conn:
-        hits = search_vector(conn, query_vec, k=k)
+        if mode is Mode.keyword:
+            hits = search_keyword(conn, question, k=k)
+        else:
+            query_vec = Embedder.from_settings(settings).embed([question])[0]
+            if mode is Mode.vector:
+                hits = search_vector(conn, query_vec, k=k)
+            else:
+                hits = search_hybrid(conn, question, query_vec, k=k)
 
     if json_out:
         payload = {
             "question": question,
             "principal": principal,
-            "mode": mode,
+            "mode": mode.value,
             "hits": [asdict(h) for h in hits],
         }
         typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
         return
 
-    typer.echo(f"question: {question}\nprincipal: {principal}  mode: {mode}  k: {k}\n")
+    typer.echo(f"question: {question}\nprincipal: {principal}  mode: {mode.value}  k: {k}\n")
     for i, h in enumerate(hits, start=1):
         typer.echo(f"[{i}] {h.doc_id} chunk {h.chunk_id}  score={h.score:.3f}")
         typer.echo(f"    {h.heading_path}")

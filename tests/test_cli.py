@@ -106,3 +106,68 @@ def test_query_json_output_is_machine_readable(env: Path) -> None:
     assert payload["mode"] == "vector"
     hit = payload["hits"][0]
     assert {"doc_id", "chunk_id", "heading_path", "source_url", "score", "text"} <= set(hit)
+
+
+def _ingest(env: Path) -> None:
+    result = runner.invoke(
+        cli.app,
+        ["ingest", "--manifest", str(env / "manifest.yaml"), "--raw-dir", str(env / "raw")],
+    )
+    assert result.exit_code == 0, result.output
+
+
+def test_keyword_mode_never_builds_the_embedder(env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    import json
+
+    _ingest(env)
+
+    def boom(cls: type, settings: object) -> None:
+        raise AssertionError("embedder constructed in keyword mode")
+
+    monkeypatch.setattr(cli.Embedder, "from_settings", classmethod(boom))
+    result = runner.invoke(
+        cli.app,
+        [
+            "query",
+            "identity management",
+            "--principal",
+            "analyst_dnd",
+            "--mode",
+            "keyword",
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["mode"] == "keyword"
+    assert payload["hits"][0]["doc_id"] == "directive-identity-management"
+    assert all(h["score"] > 0 for h in payload["hits"])
+
+
+def test_hybrid_mode_returns_fused_hits(env: Path) -> None:
+    import json
+
+    _ingest(env)
+    result = runner.invoke(
+        cli.app,
+        [
+            "query",
+            "authorities for identity management",
+            "--principal",
+            "analyst_dnd",
+            "--mode",
+            "hybrid",
+            "--json",
+        ],
+    )
+    assert result.exit_code == 0, result.output
+    payload = json.loads(result.output)
+    assert payload["mode"] == "hybrid"
+    assert len(payload["hits"]) == 5
+    assert payload["hits"][0]["doc_id"] == "directive-identity-management"
+
+
+def test_unknown_mode_is_rejected() -> None:
+    result = runner.invoke(cli.app, ["query", "x", "--principal", "analyst_dnd", "--mode", "bm25"])
+    assert result.exit_code != 0
+    assert "bm25" in result.output

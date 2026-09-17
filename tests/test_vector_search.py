@@ -65,3 +65,12 @@ def test_hit_carries_full_citation(db: psycopg.Connection) -> None:
 def test_k_larger_than_corpus_returns_everything(db: psycopg.Connection) -> None:
     _seed(db)
     assert len(search_vector(db, _unit(0), k=50)) == 3
+
+
+def test_k_above_hnsw_default_ef_search_still_returns_k(db: psycopg.Connection) -> None:
+    upsert_document(db, _meta("c"))
+    chunks = [Chunk(i, f"C > {i}", f"c{i}") for i in range(60)]
+    embeddings = [_unit(i % DIM) for i in range(60)]
+    replace_chunks(db, "c", chunks, embeddings)
+    hits = search_vector(db, _unit(0), k=50)
+    assert len(hits) == 50
