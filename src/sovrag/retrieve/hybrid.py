@@ -9,10 +9,12 @@ these queries as a WHERE clause, never in Python.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import psycopg
 from pgvector import Vector
+
+from sovrag.retrieve.fusion import rrf
 
 
 @dataclass(frozen=True)
@@ -59,3 +61,18 @@ def search_keyword(conn: psycopg.Connection, query: str, *, k: int) -> list[Hit]
     )
     rows = conn.execute(sql, {"q": query, "k": k}).fetchall()
     return [Hit(*row) for row in rows]
+
+
+CANDIDATE_MIN = 20
+
+
+def search_hybrid(
+    conn: psycopg.Connection, query: str, query_embedding: Sequence[float], *, k: int
+) -> list[Hit]:
+    """Fuse vector and keyword rankings by position; the score reported is the fusion score."""
+    window = max(4 * k, CANDIDATE_MIN)
+    by_vector = search_vector(conn, query_embedding, k=window)
+    by_keyword = search_keyword(conn, query, k=window)
+    candidates = {h.chunk_id: h for h in [*by_vector, *by_keyword]}
+    fused = rrf([[h.chunk_id for h in by_vector], [h.chunk_id for h in by_keyword]])
+    return [replace(candidates[chunk_id], score=score) for chunk_id, score in fused[:k]]
