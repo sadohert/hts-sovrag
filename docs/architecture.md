@@ -80,7 +80,7 @@ The vector for each chunk is computed over the document title, the heading path 
 
 ## Retrieval modes
 
-`vector` orders chunks by cosine distance over the HNSW index. `keyword` parses the question with `websearch_to_tsquery` and ranks full-text matches with `ts_rank_cd`; a question of stop words only returns nothing. `hybrid` takes the top `max(4k, 20)` from each and fuses by reciprocal rank fusion (k = 60), so a chunk near the top of either list rises and one near the top of both rises furthest. All three return the same `Hit` with citations. See ADR 0007.
+`vector` orders chunks by cosine distance over the HNSW index. `keyword` parses the question with `websearch_to_tsquery` and ranks full-text matches with `ts_rank_cd`; a question of stop words only returns nothing. Because every term must match, sentence-length questions often return nothing from keyword mode; on a ten-question set four did. Hybrid then falls back to the vector ranking. `hybrid` takes the top `max(4k, 20)` from each and fuses by reciprocal rank fusion (k = 60), so a chunk near the top of either list rises and one near the top of both rises furthest. Ties resolve by chunk id; see ADR 0007. All three return the same `Hit` with citations. See ADR 0007.
 
 ## Decisions
 
