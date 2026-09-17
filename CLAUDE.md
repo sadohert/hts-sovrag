@@ -30,6 +30,8 @@ every claim in the README against the code.
 - Tests first. Watch the test fail, then implement. Keep test-only helpers out of src/.
 - Any architecture decision gets a short ADR in docs/adr/ before the code lands.
 - Design specs and implementation plans live in docs/superpowers/.
+- uv.lock and tests/fixtures/real/ are generated or copied inputs (see .gitattributes).
+  Regenerate them, never hand-edit, and do not review them line by line.
 - Keep the scope to what the README states. Anything beyond it needs an ADR first.
 - Done means: ruff, mypy and pytest pass locally, CI is green, and the README status line
   matches what the code does.
