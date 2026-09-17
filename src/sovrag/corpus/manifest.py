@@ -11,14 +11,14 @@ from pathlib import Path
 
 import yaml
 
-DEPARTMENTS = frozenset({"DND", "CSE", "PS", "PSPC", "SSC", "TBS", "GC_WIDE"})
+from sovrag.auth import DEPARTMENTS
+
 CLASSIFICATION_BY_DOC_TYPE = {
     "DP": "UNCLASSIFIED",
     "POLICY": "UNCLASSIFIED",
     "DRR": "PROTECTED_A",
     "OAG": "PROTECTED_B",
 }
-CLASSIFICATION_RANK = {"UNCLASSIFIED": 0, "PROTECTED_A": 1, "PROTECTED_B": 2}
 
 
 @dataclass(frozen=True)
