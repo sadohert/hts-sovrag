@@ -16,7 +16,7 @@ RUN groupadd -r sovrag && useradd -r -g sovrag -d /app sovrag
 WORKDIR /app
 COPY --from=builder --chown=sovrag:sovrag /app/.venv /app/.venv
 COPY --from=builder --chown=sovrag:sovrag /app/src /app/src
-COPY --chown=sovrag:sovrag data/manifest.yaml ./data/manifest.yaml
+COPY --chown=sovrag:sovrag data/manifest.yaml data/principals.yaml ./data/
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 USER sovrag
 EXPOSE 8000
