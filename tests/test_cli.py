@@ -167,7 +167,7 @@ def test_hybrid_mode_returns_fused_hits(env: Path) -> None:
     assert payload["hits"][0]["doc_id"] == "directive-identity-management"
 
 
-def test_unknown_mode_is_rejected(env: Path) -> None:
+def test_unknown_mode_is_rejected() -> None:
     result = runner.invoke(cli.app, ["query", "x", "--principal", "analyst_dnd", "--mode", "bm25"])
     assert result.exit_code != 0
     assert "bm25" in result.output

@@ -41,9 +41,16 @@ join documents d on d.id = c.doc_id
 """
 
 
+# pgvector's HNSW index scan returns at most hnsw.ef_search rows (default 40); raise it
+# on the connection when k exceeds the default so search_vector can return k rows.
+HNSW_EF_SEARCH_DEFAULT = 40
+
+
 def search_vector(
     conn: psycopg.Connection, query_embedding: Sequence[float], *, k: int
 ) -> list[Hit]:
+    if k > HNSW_EF_SEARCH_DEFAULT:
+        conn.execute(f"set hnsw.ef_search = {min(k, 1000)}")
     sql = _SELECT.format(score="1 - (c.embedding <=> %(q)s)") + (
         " order by c.embedding <=> %(q)s limit %(k)s"
     )
@@ -55,7 +62,8 @@ _TSQUERY = "websearch_to_tsquery('english', %(q)s)"
 
 
 def search_keyword(conn: psycopg.Connection, query: str, *, k: int) -> list[Hit]:
-    """Full-text match ranked by ts_rank_cd. A query of stop words only matches nothing."""
+    """Full-text match ranked by ts_rank_cd. Every term must match: a query of stop words
+    only, or any question with one term absent from a chunk, returns no rows."""
     sql = _SELECT.format(score=f"ts_rank_cd(c.tsv, {_TSQUERY})") + (
         f" where c.tsv @@ {_TSQUERY} order by score desc, c.id limit %(k)s"
     )
@@ -73,6 +81,7 @@ def search_hybrid(
     window = max(4 * k, CANDIDATE_MIN)
     by_vector = search_vector(conn, query_embedding, k=window)
     by_keyword = search_keyword(conn, query, k=window)
+    # Entitlement filtering belongs inside search_vector and search_keyword (SQL WHERE), never here.
     candidates = {h.chunk_id: h for h in [*by_vector, *by_keyword]}
     fused = rrf([[h.chunk_id for h in by_vector], [h.chunk_id for h in by_keyword]])
     return [replace(candidates[chunk_id], score=score) for chunk_id, score in fused[:k]]
