@@ -29,6 +29,14 @@ PLUGIN_TOOLS = (
     "Bash(gh pr list:*)",
 )
 
+# The prompt is a plugin command, which the reviewer loads through the Skill tool. A skill's
+# own `allowed-tools` are granted only during the turn that invokes it, so when the Skill call
+# itself was denied the grant never happened and the reviewer improvised, then gave up.
+SKILL_RULES = (
+    "Skill(code-review:code-review)",
+    "Skill(code-review:code-review *)",
+)
+
 needs_shell_tools = pytest.mark.skipif(
     shutil.which("bash") is None or shutil.which("jq") is None, reason="needs bash and jq"
 )
@@ -99,6 +107,12 @@ def test_allowed_tools_cover_everything_the_review_plugin_needs() -> None:
     claude_args = str(_step("Run Claude Code Review")["with"]["claude_args"])  # type: ignore[index]
     for tool in PLUGIN_TOOLS:
         assert tool in claude_args, f"{tool} missing from --allowedTools"
+
+
+def test_allowed_tools_let_the_reviewer_load_the_review_skill() -> None:
+    claude_args = str(_step("Run Claude Code Review")["with"]["claude_args"])  # type: ignore[index]
+    for rule in SKILL_RULES:
+        assert rule in claude_args, f"{rule} missing from --allowedTools"
 
 
 def test_guard_runs_after_the_review_and_reads_its_execution_file() -> None:
