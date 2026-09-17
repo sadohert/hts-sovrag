@@ -3,7 +3,7 @@
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:0.8.6-pg18-trixie
     environment:
       POSTGRES_USER: sovrag
       POSTGRES_PASSWORD: sovrag
@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sovrag -d sovrag"]
       interval: 5s
@@ -42,7 +42,7 @@ services:
   vllm:
     profiles: [vllm]
     image: vllm/vllm-openai:latest
-    command: ["--model", "${VLLM_MODEL:-Qwen/Qwen2.5-7B-Instruct}", "--dtype", "bfloat16"]
+    command: ["--model", "${VLLM_MODEL:-Qwen/Qwen3.5-9B}", "--dtype", "bfloat16"]
     ports:
       - "8001:8000"
     deploy:
@@ -75,7 +75,7 @@ services:
 
 models:
   llm:
-    model: ai/qwen2.5:7B-Q4_K_M
+    model: ai/qwen3.5:9b-q4_K_M
     context_size: 8192
   embed:
     model: hf.co/gpustack/bge-m3-gguf:Q8_0

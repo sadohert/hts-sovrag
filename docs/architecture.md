@@ -12,7 +12,7 @@ flowchart LR
     R --> P[parse.py<br/>heading-path sections]
     P --> C[chunk.py<br/>&le;340 tokens, 50 overlap]
     C --> E[embed.py<br/>OpenAI-compatible /embeddings]
-    E --> S[(Postgres 16<br/>pgvector 0.8)]
+    E --> S[(Postgres 18<br/>pgvector 0.8)]
   end
 
   subgraph serve [Query path]
@@ -21,12 +21,12 @@ flowchart LR
     RT --> S
     S --> RT
     RT --> G[generate/llm.py<br/>grounded answer, citations]
-    G --> A[answer + citations[] + applied_filter]
+    G --> A["answer + citations[] + applied_filter"]
   end
 
   subgraph models [Docker Model Runner]
-    LLM[ai/qwen2.5:7B-Q4_K_M]
-    EMB[hf.co/gpustack/bge-m3-gguf:Q8_0]
+    LLM["ai/qwen3.5:9b-q4_K_M"]
+    EMB["hf.co/gpustack/bge-m3-gguf:Q8_0"]
   end
 
   E -.-> EMB
@@ -82,3 +82,4 @@ The vector for each chunk is computed over the document title, the heading path 
 
 - ADR 0003: synthetic classification labels, assigned per document.
 - ADR 0005: Docker Model Runner serves both the generator and the embedding model.
+- ADR 0006: generator upgraded to Qwen 3.5 9B; embedding model held at BGE-M3 until the retrieval eval exists.

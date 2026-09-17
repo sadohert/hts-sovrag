@@ -4,7 +4,7 @@ Status: accepted (2026-09-15)
 
 ## Context
 
-The app talks to inference through the OpenAI-compatible client only. The plan called for Docker Model Runner (DMR) as the default backend and left open whether DMR could also serve BGE-M3 embeddings, with an in-process `sentence-transformers` fallback if not.
+The app talks to inference through the OpenAI-compatible client only. The design called for Docker Model Runner (DMR) as the default backend and left open whether DMR could also serve BGE-M3 embeddings, with an in-process `sentence-transformers` fallback if not.
 
 ## Decision
 
@@ -12,7 +12,7 @@ Both models are served by DMR and declared in the Compose `models:` block:
 
 | Role | Model | Quantisation | Source |
 |---|---|---|---|
-| generator | `ai/qwen2.5:7B-Q4_K_M` | Q4_K_M GGUF | Docker Hub `ai/` namespace |
+| generator | `ai/qwen2.5:7B-Q4_K_M` (superseded by ADR 0006) | Q4_K_M GGUF | Docker Hub `ai/` namespace |
 | embeddings | `hf.co/gpustack/bge-m3-gguf:Q8_0` | Q8_0 GGUF | Hugging Face, pulled directly by DMR |
 
 `ai/bge-m3` does not exist on Docker Hub, so the embedding model is pulled from Hugging Face by repository reference. DMR's `/engines/v1/embeddings` endpoint returns 1024-dimensional vectors for this model, which matches the `vector(1024)` column in the schema.
