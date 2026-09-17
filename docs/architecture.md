@@ -68,9 +68,11 @@ erDiagram
 
 A principal is who is asking: an id, a clearance (`UNCLASSIFIED`, `PROTECTED_A` or `PROTECTED_B`) and a set of departments. The type and the label vocabulary live in `src/sovrag/auth/principal.py`, which the corpus manifest imports so documents and principals share one vocabulary. `GC_WIDE` is a label on documents, never a membership a principal can hold.
 
-`data/principals.yaml` ships five named principals, one per row of the entitlement grid: `public`, `analyst_dnd`, `analyst_ps`, `cio_ssc` and `auditor`. An unknown id, clearance or department is an error; nothing downgrades quietly. `LEAST_PRIVILEGED` (id `anonymous`, unclassified, no departments) is reserved for callers that authenticate but carry no recognised entitlement.
+A `Principal` validates itself on construction, so one that exists is valid whatever built it: a non-empty string id, a `Clearance`, and a frozenset of known memberships. `LEAST_PRIVILEGED` (id `anonymous`, unclassified, no departments) is reserved for callers that authenticate but carry no recognised entitlement, and no other principal may use that id in any letter case.
 
-Like the classification labels, clearances are synthetic (ADR 0003). The entitlement filter that applies a principal to retrieval is not implemented yet.
+`data/principals.yaml` ships five named principals, one per row of the entitlement grid: `public`, `analyst_dnd`, `analyst_ps`, `cio_ssc` and `auditor`, which holds every membership. `load_principals` reads the file strictly. A repeated id, an id YAML does not read as a string, a missing clearance, an unknown clearance or department, or a malformed shape is a `ValueError` that names the principal; nothing downgrades quietly. `resolve_principal` raises `KeyError` only for an id that is not in the file. See ADR 0012.
+
+Like the classification labels, clearances are synthetic (ADR 0003). The entitlement filter that applies a principal to retrieval is not implemented yet, and until it lands `sovrag query --principal` accepts any string without resolving it.
 
 ## Deployment
 
@@ -104,3 +106,4 @@ The vector for each chunk is computed over the document title, the heading path 
 - ADR 0009: the server binds the principal, from configuration or from an authenticated transport it verifies; never from message text or tool arguments.
 - ADR 0010: for Mattermost users, entitlement comes from admin-managed Mattermost user attributes, read once per tool call.
 - ADR 0011: Mattermost runs in Compose as Mattermost Entry on the existing Postgres, with the Agents plugin pinned and Docker Model Runner as its model.
+- ADR 0012: the principal model has two axes, validates itself on construction, and loads from YAML strictly.

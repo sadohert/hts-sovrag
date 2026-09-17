@@ -38,18 +38,20 @@ a built-in plugin setting (`channelAccessLevel: None`).
 ### `sovrag.auth` (new package; the existing empty package is used)
 
 - `Clearance(StrEnum)`: `UNCLASSIFIED`, `PROTECTED_A`, `PROTECTED_B`.
-  `CLASSIFICATION_RANK` moves here from `corpus/manifest.py`, which imports it back, so
-  there is one source. `DEPARTMENTS` holds the vocabulary used by `documents.department`.
+  `CLASSIFICATION_RANK` and `DEPARTMENTS` move here from `corpus/manifest.py`, which
+  imports `DEPARTMENTS` back, so there is one source. `DEPARTMENTS` holds the vocabulary
+  used by `documents.department`; `MEMBERSHIPS` is that set without `GC_WIDE`.
 - `Principal(frozen dataclass)`: `id: str`, `clearance: Clearance`,
-  `departments: frozenset[str]`.
+  `departments: frozenset[str]`. It validates itself on construction (ADR 0012), so the
+  Mattermost resolver gets the same guarantees as the YAML loader.
 - `LEAST_PRIVILEGED = Principal("anonymous", Clearance.UNCLASSIFIED, frozenset())`.
 - `load_principals(path) -> dict[str, Principal]` and `resolve_principal(id, path) -> Principal`
   over `data/principals.yaml`. Unknown id raises `KeyError`; the CLI turns that into a usage
   error. Never a silent downgrade.
 - `data/principals.yaml` ships five principals covering the entitlement grid:
   `public` (UNCLASSIFIED, none), `analyst_dnd` (PROTECTED_A, DND), `analyst_ps`
-  (PROTECTED_A, PS), `cio_ssc` (PROTECTED_A, SSC and TBS), `auditor` (PROTECTED_B, all
-  five departments).
+  (PROTECTED_A, PS), `cio_ssc` (PROTECTED_A, SSC and TBS), `auditor` (PROTECTED_B, every
+  membership). The file loads strictly; see ADR 0012.
 
 ### `sovrag.auth.mattermost` (new)
 
