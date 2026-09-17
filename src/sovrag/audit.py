@@ -1,8 +1,9 @@
 """Append-only JSONL audit log shared by the CLI, HTTP and MCP paths.
 
-One line per event. Every retrieval and answer is logged with the principal, the entitlement
-predicate applied and the chunk ids returned, on every path, so the two enforcement layers
-can be checked against each other after the fact.
+One line per event. Every answer is logged today with the principal, the entitlement predicate
+applied (None until filtering lands) and the chunk ids returned. Retrieval through the HTTP and
+MCP paths will log the same way, so the two enforcement layers can be checked against each
+other after the fact.
 
 One process appends at a time today. The HTTP and MCP servers will need a lock or a single
 writer before they share this file.

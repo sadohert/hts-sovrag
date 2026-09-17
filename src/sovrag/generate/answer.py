@@ -1,7 +1,8 @@
 """Grounded answers: retrieve, prompt, cite, refuse, audit.
 
-This is the one entry point for answering. The CLI, the HTTP API and the MCP server all call
-it, so the citation rule, the refusal rule and the audit line are enforced in one place.
+This is the one entry point for answering. The CLI calls it today; the HTTP API and the MCP
+server will call it, so the citation rule, the refusal rule and the audit line are enforced in
+one place.
 The principal is passed in by the caller, which is responsible for binding it (ADR on
 principal binding). Entitlement filtering will happen inside the search functions.
 """
