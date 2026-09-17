@@ -16,6 +16,10 @@ dist/
 # corpus (fetched, not committed)
 data/raw/
 
+# per-developer Claude Code files
+CLAUDE.local.md
+.superpowers/
+
 # local scratch
 .DS_Store
 *.log

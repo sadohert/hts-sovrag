@@ -1,0 +1,4 @@
+# Generated or copied inputs. GitHub collapses these in diffs and excludes them
+# from language statistics; reviewers should not read them line by line.
+uv.lock linguist-generated=true
+tests/fixtures/real/*.html linguist-generated=true

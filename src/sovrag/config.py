@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     llm_base_url: str = "http://localhost:12434/engines/v1"
-    llm_model: str = "ai/qwen2.5:7B-Q4_K_M"
+    llm_model: str = "ai/qwen3.5:9b-q4_K_M"
     llm_api_key: str = "not-needed"
 
     embed_base_url: str = "http://localhost:12434/engines/v1"
