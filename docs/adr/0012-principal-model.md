@@ -33,4 +33,5 @@ The model also rested on decisions that had not been written down.
 - A principal that exists is valid, so the entitlement filter can use `principal.clearance.rank` and `principal.departments` without defending against bad shapes.
 - Tests and callers must build principals with `Clearance` members, not strings.
 - The shipped `auditor` holds every membership, and a test asserts that equality so the vocabulary and the file cannot drift apart.
-- `DEFAULT_PRINCIPALS_PATH` is still relative to the working directory, like the manifest path. It moves into settings when the CLI starts resolving `--principal`, with the entitlement filter. Until then the CLI accepts any string for `--principal` and does not resolve it.
+- `sovrag ask` resolves `--principal` and reports an unknown id as a usage error. It catches `KeyError` only, which is now correct: a malformed file is a `ValueError` and surfaces as the configuration error it is. `sovrag query` still accepts any string for `--principal` and does not resolve it; that changes with the entitlement filter.
+- `DEFAULT_PRINCIPALS_PATH` is still relative to the working directory, like the manifest path, so `sovrag ask` must be run from the repository root or the image's working directory. It moves into settings with the entitlement filter.

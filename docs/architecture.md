@@ -72,7 +72,7 @@ A `Principal` validates itself on construction, so one that exists is valid what
 
 `data/principals.yaml` ships five named principals, one per row of the entitlement grid: `public`, `analyst_dnd`, `analyst_ps`, `cio_ssc` and `auditor`, which holds every membership. `load_principals` reads the file strictly. A repeated id, an id YAML does not read as a string, a missing clearance, an unknown clearance or department, or a malformed shape is a `ValueError` that names the principal; nothing downgrades quietly. `resolve_principal` raises `KeyError` only for an id that is not in the file. See ADR 0012.
 
-Like the classification labels, clearances are synthetic (ADR 0003). The entitlement filter that applies a principal to retrieval is not implemented yet, and until it lands `sovrag query --principal` accepts any string without resolving it.
+Like the classification labels, clearances are synthetic (ADR 0003). `sovrag ask` resolves `--principal` and rejects an unknown id as a usage error. The entitlement filter that applies a principal to retrieval is not implemented yet, and until it lands `sovrag query --principal` accepts any string without resolving it.
 
 ## Deployment
 
