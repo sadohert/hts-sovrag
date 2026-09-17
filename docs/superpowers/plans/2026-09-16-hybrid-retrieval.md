@@ -173,7 +173,9 @@ def _seed(db: psycopg.Connection) -> None:
         "a",
         [
             Chunk(0, "A > x", "Shared Services Canada delivers cloud brokering for departments."),
-            Chunk(1, "A > y", "The PSPC procurement program manages contracting for the government."),
+            Chunk(
+                1, "A > y", "The PSPC procurement program manages contracting for the government."
+            ),
         ],
         [_unit(0), _unit(1)],
     )
@@ -325,7 +327,9 @@ def _seed(db: psycopg.Connection) -> None:
         "a",
         [
             Chunk(0, "A > x", "Shared Services Canada delivers cloud brokering for departments."),
-            Chunk(1, "A > y", "The PSPC procurement program manages contracting for the government."),
+            Chunk(
+                1, "A > y", "The PSPC procurement program manages contracting for the government."
+            ),
         ],
         [_unit(0), _unit(1)],
     )
@@ -453,7 +457,15 @@ def test_keyword_mode_never_builds_the_embedder(env: Path, monkeypatch: pytest.M
     monkeypatch.setattr(cli.Embedder, "from_settings", classmethod(boom))
     result = runner.invoke(
         cli.app,
-        ["query", "identity management", "--principal", "analyst_dnd", "--mode", "keyword", "--json"],
+        [
+            "query",
+            "identity management",
+            "--principal",
+            "analyst_dnd",
+            "--mode",
+            "keyword",
+            "--json",
+        ],
     )
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
@@ -468,7 +480,15 @@ def test_hybrid_mode_returns_fused_hits(env: Path) -> None:
     _ingest(env)
     result = runner.invoke(
         cli.app,
-        ["query", "authorities for identity management", "--principal", "analyst_dnd", "--mode", "hybrid", "--json"],
+        [
+            "query",
+            "authorities for identity management",
+            "--principal",
+            "analyst_dnd",
+            "--mode",
+            "hybrid",
+            "--json",
+        ],
     )
     assert result.exit_code == 0, result.output
     payload = json.loads(result.output)
