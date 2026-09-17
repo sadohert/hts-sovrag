@@ -423,9 +423,7 @@ def load_principals(path: Path = DEFAULT_PRINCIPALS_PATH) -> dict[str, Principal
         try:
             clearance = Clearance(entry["clearance"])
         except ValueError:
-            raise ValueError(
-                f"{principal_id}: unknown clearance {entry['clearance']!r}"
-            ) from None
+            raise ValueError(f"{principal_id}: unknown clearance {entry['clearance']!r}") from None
         departments = frozenset(entry.get("departments") or ())
         unknown = departments - memberships
         if unknown:

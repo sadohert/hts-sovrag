@@ -290,7 +290,7 @@ def answer(
     question: str,
     *,
     principal: Principal,
-    mode: Mode = Mode.hybrid,      # sovrag.retrieve.Mode
+    mode: Mode = Mode.hybrid,  # sovrag.retrieve.Mode
     k: int = 5,
     request_id: str | None = None,
 ) -> Answer: ...
