@@ -40,5 +40,6 @@ every claim in the README against the code.
 - docker compose up -d postgres
 - uv run sovrag ingest --manifest data/manifest.yaml
 - uv run sovrag query "..." --principal analyst_dnd --mode vector   # or keyword | hybrid
+- uv run sovrag ask "..." --principal analyst_dnd   # answer with [n] citations, or refuse
 - uv run pytest
-- Not implemented yet: sovrag serve, sovrag eval, the mcp profile.
+- Not implemented yet: sovrag serve, sovrag eval, the mcp profile, entitlement filtering.

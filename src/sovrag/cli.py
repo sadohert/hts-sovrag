@@ -1,33 +1,29 @@
-"""sovrag CLI: ingest | query | serve | serve-mcp | eval."""
+"""sovrag CLI: ingest | query | ask | serve."""
 
 from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
 import typer
 
+from sovrag.auth import resolve_principal
 from sovrag.config import get_settings
 from sovrag.corpus.fetch import browser_getter, fetch_document
 from sovrag.corpus.ingest import ingest_document
 from sovrag.corpus.manifest import load_manifest
+from sovrag.generate import MAX_K, GenerationError
+from sovrag.generate.answer import answer
 from sovrag.index.embed import Embedder
 from sovrag.index.store import connect
-from sovrag.retrieve.hybrid import search_hybrid, search_keyword, search_vector
+from sovrag.retrieve import Mode, search
 
 app = typer.Typer(
     help="Permissions-aware RAG over Canadian federal public documents.",
     no_args_is_help=True,
 )
-
-
-class Mode(StrEnum):
-    vector = "vector"
-    keyword = "keyword"
-    hybrid = "hybrid"
 
 
 @app.command()
@@ -67,17 +63,19 @@ def query(
     k: Annotated[int, typer.Option(min=1)] = 5,
     json_out: Annotated[bool, typer.Option("--json", help="Emit JSON instead of text")] = False,
 ) -> None:
-    """Retrieve the top-k chunks for a question, as a principal. Generation is not wired in yet."""
+    """Retrieve the top-k chunks for a question, as a principal.
+
+    Use `ask` for an answer with citations.
+    """
     settings = get_settings()
     with connect(settings.database_url) as conn:
-        if mode is Mode.keyword:
-            hits = search_keyword(conn, question, k=k)
-        else:
-            query_vec = Embedder.from_settings(settings).embed([question])[0]
-            if mode is Mode.vector:
-                hits = search_vector(conn, query_vec, k=k)
-            else:
-                hits = search_hybrid(conn, question, query_vec, k=k)
+        hits = search(
+            conn,
+            question,
+            mode=mode,
+            k=k,
+            embed_query=lambda q: Embedder.from_settings(settings).embed_one(q),
+        )
 
     if json_out:
         payload = {
@@ -96,6 +94,40 @@ def query(
         typer.echo(f"    {h.source_url}")
         preview = h.text.replace("\n", " ")
         typer.echo(f"    {preview[:240]}{'...' if len(preview) > 240 else ''}\n")
+
+
+@app.command()
+def ask(
+    question: str,
+    principal: Annotated[str, typer.Option(help="Principal id from data/principals.yaml")],
+    mode: Annotated[Mode, typer.Option(help="vector | keyword | hybrid")] = Mode.hybrid,
+    k: Annotated[int, typer.Option(min=1, max=MAX_K)] = 5,
+    json_out: Annotated[bool, typer.Option("--json", help="Emit JSON instead of text")] = False,
+    request_id: Annotated[
+        str | None, typer.Option(help="Caller's id, echoed into the audit log")
+    ] = None,
+) -> None:
+    """Answer a question from retrieved chunks only, with citations; refuse when unsupported."""
+    try:
+        who = resolve_principal(principal)
+    except KeyError as exc:
+        raise typer.BadParameter(
+            f"unknown principal: {principal}", param_hint="--principal"
+        ) from exc
+    try:
+        result = answer(question, principal=who, mode=mode, k=k, request_id=request_id)
+    except GenerationError as exc:
+        typer.echo(f"error: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    if json_out:
+        typer.echo(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        return
+    typer.echo(result.text)
+    if result.citations:
+        typer.echo("\nSources:")
+        for c in result.citations:
+            typer.echo(f"[{c.n}] {c.title}, {c.heading_path}, {c.source_url}")
 
 
 @app.command()

@@ -11,6 +11,10 @@ class Settings(BaseSettings):
     llm_base_url: str = "http://localhost:12434/engines/v1"
     llm_model: str = "ai/qwen3.5:9b-q4_K_M"
     llm_api_key: str = "not-needed"
+    llm_timeout_s: float = 180.0
+    # No transport-level retries by default: the client never silently re-sends a request.
+    # answer() itself may make a second completion on the uncited-retry path (ADR 0008).
+    llm_max_retries: int = 0
 
     embed_base_url: str = "http://localhost:12434/engines/v1"
     embed_model: str = "hf.co/gpustack/bge-m3-gguf:Q8_0"

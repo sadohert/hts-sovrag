@@ -2,7 +2,7 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: corpus indexed; vector, keyword and hybrid retrieval with citations from the CLI. No generation, no entitlement filtering yet.
+Status: corpus indexed; vector, keyword and hybrid retrieval; grounded answers with citations and refusal from the CLI. No entitlement filtering yet.
 
 ## What it will do
 
