@@ -17,7 +17,7 @@ flowchart LR
 
   subgraph serve [Query path]
     Q[question + principal] --> QE[embed query]
-    QE --> RT[retrieve/hybrid.py<br/>vector, BM25, RRF]
+    QE --> RT[retrieve/hybrid.py<br/>vector, keyword, RRF]
     RT --> S
     S --> RT
     RT --> G[generate/llm.py<br/>grounded answer, citations]
@@ -34,7 +34,7 @@ flowchart LR
   G -.-> LLM
 ```
 
-Status: the corpus pipeline and vector retrieval exist. BM25, fusion, generation, entitlement filtering and the HTTP API follow.
+Status: the corpus pipeline and all three retrieval modes exist. Generation, entitlement filtering and the HTTP API follow.
 
 ## Data model
 
@@ -78,8 +78,13 @@ Classification labels are synthetic and derived from document type. See ADR 0003
 
 The vector for each chunk is computed over the document title, the heading path and the chunk text, in that order. The stored text is the bare chunk. Split documents and near-identical section headings across departments made bare-text vectors under-specify which document and year a chunk came from; the first eyeball pass showed it.
 
+## Retrieval modes
+
+`vector` orders chunks by cosine distance over the HNSW index. `keyword` parses the question with `websearch_to_tsquery` and ranks full-text matches with `ts_rank_cd`; a question of stop words only returns nothing. `hybrid` takes the top `max(4k, 20)` from each and fuses by reciprocal rank fusion (k = 60), so a chunk near the top of either list rises and one near the top of both rises furthest. All three return the same `Hit` with citations. See ADR 0007.
+
 ## Decisions
 
 - ADR 0003: synthetic classification labels, assigned per document.
 - ADR 0005: Docker Model Runner serves both the generator and the embedding model.
 - ADR 0006: generator upgraded to Qwen 3.5 9B; embedding model held at BGE-M3 until the retrieval eval exists.
+- ADR 0007: keyword ranking is Postgres `ts_rank_cd`, not BM25; hybrid fuses vector and keyword rankings by reciprocal rank fusion.
