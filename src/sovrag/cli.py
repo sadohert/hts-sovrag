@@ -63,7 +63,10 @@ def query(
     k: Annotated[int, typer.Option(min=1)] = 5,
     json_out: Annotated[bool, typer.Option("--json", help="Emit JSON instead of text")] = False,
 ) -> None:
-    """Retrieve the top-k chunks for a question, as a principal. Generation is not wired in yet."""
+    """Retrieve the top-k chunks for a question, as a principal.
+
+    Use `ask` for an answer with citations.
+    """
     settings = get_settings()
     with connect(settings.database_url) as conn:
         hits = search(

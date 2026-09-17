@@ -61,7 +61,8 @@ per answer, two on the uncited-retry path; one audit line per call.
   `from_settings(settings)` and `complete(messages, *, max_tokens=600) -> str`. Temperature 0.
   Sends `extra_body={"chat_template_kwargs": {"enable_thinking": False}}` so Qwen 3.x answers
   directly (ADR 0006). Raises `GenerationError` on transport failure, non-2xx, or an empty
-  reply. Nothing else escapes.
+  reply. Nothing else escapes. Timeout and retry count come from settings (`llm_timeout_s`,
+  `llm_max_retries`); the default of zero retries preserves the one-call guarantee.
 - `src/sovrag/generate/prompts.py`: pure. `SENTINEL = "INSUFFICIENT_CONTEXT"`,
   `REFUSAL_TEXT = "The retrieved documents do not contain enough information to answer this question."`,
   `build_messages(question, hits, *, firm=False) -> list[dict[str, str]]`. The system message
@@ -90,7 +91,8 @@ per answer, two on the uncited-retry path; one audit line per call.
 
 `write_event("answer", request_id=..., principal=..., mode=..., k=..., model=...,
 retrieved_chunk_ids=[...], cited_chunk_ids=[...], refused=..., reason=..., applied_filter=...)`
-where `reason` is `None`, `"no_hits"`, `"sentinel"` or `"uncited"`.
+where `reason` is `None`, `"no_hits"`, `"sentinel"`, `"uncited"` or `"error"`. A `GenerationError`
+is audited with reason `error` and then raised.
 
 ## Edge cases
 

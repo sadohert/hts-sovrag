@@ -20,7 +20,7 @@ flowchart LR
     QE --> RT[retrieve/hybrid.py<br/>vector, keyword, RRF]
     RT --> S
     S --> RT
-    RT --> G[generate/answer.py<br/>grounded answer, [n] citations, refusal]
+    RT --> G["generate/answer.py<br/>grounded answer, [n] citations, refusal"]
     G --> A["answer + citations[] + applied_filter"]
   end
 
