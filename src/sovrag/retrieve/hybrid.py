@@ -8,8 +8,9 @@ these queries as a WHERE clause, never in Python.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, replace
+from enum import StrEnum
 
 import psycopg
 from pgvector import Vector
@@ -30,6 +31,12 @@ class Hit:
     doc_type: str
     source_url: str
     score: float
+
+
+class Mode(StrEnum):
+    vector = "vector"
+    keyword = "keyword"
+    hybrid = "hybrid"
 
 
 _SELECT = """
@@ -85,3 +92,20 @@ def search_hybrid(
     candidates = {h.chunk_id: h for h in [*by_vector, *by_keyword]}
     fused = rrf([[h.chunk_id for h in by_vector], [h.chunk_id for h in by_keyword]])
     return [replace(candidates[chunk_id], score=score) for chunk_id, score in fused[:k]]
+
+
+def search(
+    conn: psycopg.Connection,
+    question: str,
+    *,
+    mode: Mode,
+    k: int,
+    embed_query: Callable[[str], Sequence[float]],
+) -> list[Hit]:
+    """Dispatch on mode. embed_query is called only when a vector is needed."""
+    if mode is Mode.keyword:
+        return search_keyword(conn, question, k=k)
+    query_vec = embed_query(question)
+    if mode is Mode.vector:
+        return search_vector(conn, query_vec, k=k)
+    return search_hybrid(conn, question, query_vec, k=k)

@@ -91,3 +91,26 @@ def test_hybrid_score_is_the_fusion_score(db: psycopg.Connection) -> None:
 def test_k_limits_results(db: psycopg.Connection) -> None:
     _seed(db)
     assert len(search_hybrid(db, "departments", _mix(1.0, 0.5, 0.25), k=2)) == 2
+
+
+def test_search_dispatches_by_mode_and_embeds_only_when_needed(db: psycopg.Connection) -> None:
+    from sovrag.retrieve import Mode, search
+
+    _seed(db)
+    calls: list[str] = []
+
+    def embed_query(q: str) -> list[float]:
+        calls.append(q)
+        return _mix(1.0, 0.5, 0.25)
+
+    kw = search(db, "cloud brokering", mode=Mode.keyword, k=3, embed_query=embed_query)
+    assert [h.chunk_id for h in kw] == [1]
+    assert calls == []
+
+    vec = search(db, "cloud brokering", mode=Mode.vector, k=3, embed_query=embed_query)
+    assert [h.chunk_id for h in vec] == [1, 2, 3]
+    assert calls == ["cloud brokering"]
+
+    hyb = search(db, "cloud brokering", mode=Mode.hybrid, k=3, embed_query=embed_query)
+    assert hyb[0].chunk_id == 1
+    assert calls == ["cloud brokering", "cloud brokering"]

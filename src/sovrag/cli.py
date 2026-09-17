@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
 
@@ -16,18 +15,12 @@ from sovrag.corpus.ingest import ingest_document
 from sovrag.corpus.manifest import load_manifest
 from sovrag.index.embed import Embedder
 from sovrag.index.store import connect
-from sovrag.retrieve.hybrid import search_hybrid, search_keyword, search_vector
+from sovrag.retrieve import Mode, search
 
 app = typer.Typer(
     help="Permissions-aware RAG over Canadian federal public documents.",
     no_args_is_help=True,
 )
-
-
-class Mode(StrEnum):
-    vector = "vector"
-    keyword = "keyword"
-    hybrid = "hybrid"
 
 
 @app.command()
@@ -70,14 +63,13 @@ def query(
     """Retrieve the top-k chunks for a question, as a principal. Generation is not wired in yet."""
     settings = get_settings()
     with connect(settings.database_url) as conn:
-        if mode is Mode.keyword:
-            hits = search_keyword(conn, question, k=k)
-        else:
-            query_vec = Embedder.from_settings(settings).embed([question])[0]
-            if mode is Mode.vector:
-                hits = search_vector(conn, query_vec, k=k)
-            else:
-                hits = search_hybrid(conn, question, query_vec, k=k)
+        hits = search(
+            conn,
+            question,
+            mode=mode,
+            k=k,
+            embed_query=lambda q: Embedder.from_settings(settings).embed([q])[0],
+        )
 
     if json_out:
         payload = {

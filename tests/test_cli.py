@@ -171,3 +171,10 @@ def test_unknown_mode_is_rejected() -> None:
     result = runner.invoke(cli.app, ["query", "x", "--principal", "analyst_dnd", "--mode", "bm25"])
     assert result.exit_code != 0
     assert "bm25" in result.output
+
+
+def test_mode_is_the_retrieve_package_enum() -> None:
+    from sovrag.retrieve import Mode
+
+    assert cli.Mode is Mode
+    assert Mode("keyword") is Mode.keyword
