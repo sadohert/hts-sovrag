@@ -33,18 +33,27 @@ class Generator:
         api_key: str = "not-needed",
         max_tokens: int = 600,
         max_retries: int = 2,
+        timeout_s: float = 180.0,
         http_client: httpx2.Client | None = None,
     ) -> None:
         self.model = model
         self.max_tokens = max_tokens
         self._client = OpenAI(
-            base_url=base_url, api_key=api_key, http_client=http_client, max_retries=max_retries
+            base_url=base_url,
+            api_key=api_key,
+            http_client=http_client,
+            max_retries=max_retries,
+            timeout=httpx2.Timeout(timeout_s, connect=5.0),
         )
 
     @classmethod
     def from_settings(cls, settings: Settings) -> Generator:
         return cls(
-            base_url=settings.llm_base_url, model=settings.llm_model, api_key=settings.llm_api_key
+            base_url=settings.llm_base_url,
+            model=settings.llm_model,
+            api_key=settings.llm_api_key,
+            max_retries=settings.llm_max_retries,
+            timeout_s=settings.llm_timeout_s,
         )
 
     def complete(self, messages: Sequence[dict[str, str]], *, max_tokens: int | None = None) -> str:

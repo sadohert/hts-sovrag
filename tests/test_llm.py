@@ -5,6 +5,7 @@ import json
 import httpx2 as httpx
 import pytest
 
+from sovrag.config import Settings
 from sovrag.generate.llm import GenerationError, Generator
 
 
@@ -70,3 +71,10 @@ def test_empty_reply_becomes_generation_error() -> None:
         _gen(reply="   ").complete(MESSAGES)
     with pytest.raises(GenerationError, match="empty"):
         _gen(reply=None).complete(MESSAGES)
+
+
+def test_from_settings_applies_timeout_and_retries() -> None:
+    settings = Settings(llm_timeout_s=7.5, llm_max_retries=0)
+    gen = Generator.from_settings(settings)
+    assert gen._client.timeout.read == 7.5
+    assert gen._client.max_retries == 0

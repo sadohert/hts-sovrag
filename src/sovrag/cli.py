@@ -71,7 +71,7 @@ def query(
             question,
             mode=mode,
             k=k,
-            embed_query=lambda q: Embedder.from_settings(settings).embed([q])[0],
+            embed_query=lambda q: Embedder.from_settings(settings).embed_one(q),
         )
 
     if json_out:

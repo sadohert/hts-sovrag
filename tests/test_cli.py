@@ -31,6 +31,9 @@ class FakeEmbedder:
             out.append(v)
         return out
 
+    def embed_one(self, text: str) -> list[float]:
+        return self.embed([text])[0]
+
 
 @pytest.fixture
 def env(monkeypatch: pytest.MonkeyPatch, test_database_url: str, tmp_path: Path) -> Path:

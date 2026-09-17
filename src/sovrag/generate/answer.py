@@ -14,7 +14,7 @@ from sovrag.audit import write_event
 from sovrag.auth import Principal
 from sovrag.config import get_settings
 from sovrag.generate.citations import is_refusal, parse
-from sovrag.generate.llm import Generator
+from sovrag.generate.llm import GenerationError, Generator
 from sovrag.generate.prompts import REFUSAL_TEXT, build_messages
 from sovrag.index.embed import Embedder
 from sovrag.index.store import connect
@@ -64,7 +64,22 @@ def answer(
             mode=mode,
             k=k,
             # entitlement: pass principal here once the filter lands
-            embed_query=lambda q: Embedder.from_settings(settings).embed([q])[0],
+            embed_query=lambda q: Embedder.from_settings(settings).embed_one(q),
+        )
+
+    def audit(*, cited_chunk_ids: list[int], refused: bool, reason: str | None) -> None:
+        write_event(
+            "answer",
+            request_id=request_id,
+            principal=principal.id,
+            mode=mode.value,
+            k=k,
+            model=settings.llm_model,
+            retrieved_chunk_ids=[h.chunk_id for h in hits],
+            cited_chunk_ids=cited_chunk_ids,
+            refused=refused,
+            reason=reason,
+            applied_filter=None,
         )
 
     def finish(
@@ -82,19 +97,7 @@ def answer(
             retrieved_chunk_ids=tuple(h.chunk_id for h in hits),
             applied_filter=None,
         )
-        write_event(
-            "answer",
-            request_id=request_id,
-            principal=principal.id,
-            mode=mode.value,
-            k=k,
-            model=settings.llm_model,
-            retrieved_chunk_ids=list(result.retrieved_chunk_ids),
-            cited_chunk_ids=[c.chunk_id for c in citations],
-            refused=refused,
-            reason=reason,
-            applied_filter=None,
-        )
+        audit(cited_chunk_ids=[c.chunk_id for c in citations], refused=refused, reason=reason)
         return result
 
     def refuse(reason: str) -> Answer:
@@ -103,18 +106,22 @@ def answer(
     if not hits:
         return refuse("no_hits")
 
-    generator = Generator.from_settings(settings)
-    text = generator.complete(build_messages(question, hits))
-    if is_refusal(text):
-        return refuse("sentinel")
-    cleaned, cited = parse(text, len(hits))
-    if not cited:
-        text = generator.complete(build_messages(question, hits, firm=True))
+    try:
+        generator = Generator.from_settings(settings)
+        text = generator.complete(build_messages(question, hits))
         if is_refusal(text):
             return refuse("sentinel")
         cleaned, cited = parse(text, len(hits))
         if not cited:
-            return refuse("uncited")
+            text = generator.complete(build_messages(question, hits, firm=True))
+            if is_refusal(text):
+                return refuse("sentinel")
+            cleaned, cited = parse(text, len(hits))
+            if not cited:
+                return refuse("uncited")
+    except GenerationError:
+        audit(cited_chunk_ids=[], refused=True, reason="error")
+        raise
 
     citations = tuple(
         Citation(

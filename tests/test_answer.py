@@ -11,6 +11,7 @@ import pytest
 from sovrag.auth import Clearance, Principal
 from sovrag.generate import answer as answer_mod
 from sovrag.generate.answer import MAX_K, Answer, Citation, answer
+from sovrag.generate.llm import GenerationError
 from sovrag.generate.prompts import REFUSAL_TEXT, SENTINEL
 from sovrag.retrieve import Hit, Mode
 
@@ -52,9 +53,15 @@ def audit_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 def _wire(monkeypatch: pytest.MonkeyPatch, hits: list[Hit], replies: list[str]) -> FakeGenerator:
     gen = FakeGenerator(replies)
+
+    def fake_search(conn: object, q: str, **kw: object) -> list[Hit]:
+        if kw["mode"] is not Mode.keyword:
+            kw["embed_query"](q)  # type: ignore[operator]
+        return list(hits[: kw["k"]])  # type: ignore[misc]
+
     monkeypatch.setattr(answer_mod.Generator, "from_settings", classmethod(lambda cls, s: gen))
     monkeypatch.setattr(answer_mod, "connect", lambda url: nullcontext(object()))
-    monkeypatch.setattr(answer_mod, "search", lambda conn, q, **kw: list(hits[: kw["k"]]))
+    monkeypatch.setattr(answer_mod, "search", fake_search)
     return gen
 
 
@@ -129,6 +136,30 @@ def test_no_hits_refuses_without_calling_the_model(
     assert _audit_lines(audit_path)[0]["reason"] == "no_hits"
 
 
+class BoomGenerator:
+    def complete(self, messages: list[dict[str, str]], *, max_tokens: int | None = None) -> str:
+        raise GenerationError("boom")
+
+
+def test_generation_error_is_audited_then_raised(
+    monkeypatch: pytest.MonkeyPatch, audit_path: Path
+) -> None:
+    monkeypatch.setattr(
+        answer_mod.Generator, "from_settings", classmethod(lambda cls, s: BoomGenerator())
+    )
+    monkeypatch.setattr(answer_mod, "connect", lambda url: nullcontext(object()))
+    monkeypatch.setattr(answer_mod, "search", lambda conn, q, **kw: [_hit(1)][: kw["k"]])
+
+    with pytest.raises(GenerationError):
+        answer("q", principal=WHO)
+
+    (line,) = _audit_lines(audit_path)
+    assert line["reason"] == "error"
+    assert line["refused"] is True
+    assert line["cited_chunk_ids"] == []
+    assert line["retrieved_chunk_ids"] == [101]
+
+
 def test_k_is_clamped_to_max_k(monkeypatch: pytest.MonkeyPatch, audit_path: Path) -> None:
     seen: list[int] = []
     gen = FakeGenerator(["ok [1]"])
@@ -155,3 +186,22 @@ def test_keyword_mode_never_builds_the_embedder(
 
     monkeypatch.setattr(answer_mod.Embedder, "from_settings", classmethod(boom))
     assert not answer("q", principal=WHO, mode=Mode.keyword).refused
+
+
+def test_vector_mode_builds_the_embedder_once(
+    monkeypatch: pytest.MonkeyPatch, audit_path: Path
+) -> None:
+    _wire(monkeypatch, [_hit(1)], ["ok [1]"])
+    calls: list[object] = []
+
+    class FakeEmbedder:
+        def embed_one(self, q: str) -> list[float]:
+            return [0.0] * 4
+
+    def from_settings(cls: type, s: object) -> FakeEmbedder:
+        calls.append(s)
+        return FakeEmbedder()
+
+    monkeypatch.setattr(answer_mod.Embedder, "from_settings", classmethod(from_settings))
+    assert not answer("q", principal=WHO, mode=Mode.vector).refused
+    assert len(calls) == 1
