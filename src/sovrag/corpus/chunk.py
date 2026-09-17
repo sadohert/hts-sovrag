@@ -17,6 +17,10 @@ import tiktoken
 from sovrag.corpus.parse import Section
 
 _JOIN_MARGIN = 2
+# Chunk text ceiling (cl100k tokens). The embedded input is title + heading path + text and must
+# stay under Docker Model Runner's 512-token embedding limit; see corpus/ingest.py and ADR 0005.
+DEFAULT_MAX_TOKENS = 340
+DEFAULT_OVERLAP_TOKENS = 50
 
 
 @dataclass(frozen=True)
@@ -38,8 +42,8 @@ def count_tokens(text: str) -> int:
 def chunk_sections(
     sections: Iterable[Section],
     *,
-    max_tokens: int = 400,
-    overlap_tokens: int = 50,
+    max_tokens: int = DEFAULT_MAX_TOKENS,
+    overlap_tokens: int = DEFAULT_OVERLAP_TOKENS,
 ) -> list[Chunk]:
     chunks: list[Chunk] = []
     for section in sections:

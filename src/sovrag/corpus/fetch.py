@@ -42,7 +42,7 @@ def browser_getter(timeout_s: float = 30.0) -> Getter:
     """A Getter backed by curl_cffi impersonating a current Chrome TLS/HTTP2 fingerprint."""
     from curl_cffi import requests as cffi_requests
 
-    session = cffi_requests.Session(impersonate=IMPERSONATE, timeout=timeout_s)
+    session: Any = cffi_requests.Session(impersonate=IMPERSONATE, timeout=timeout_s)
 
     def get(url: str) -> Page:
         try:
