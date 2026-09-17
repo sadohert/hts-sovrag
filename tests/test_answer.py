@@ -51,6 +51,11 @@ def audit_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return target
 
 
+class StubEmbedder:
+    def embed_one(self, q: str) -> list[float]:
+        return [0.0] * 4
+
+
 def _wire(monkeypatch: pytest.MonkeyPatch, hits: list[Hit], replies: list[str]) -> FakeGenerator:
     gen = FakeGenerator(replies)
 
@@ -62,6 +67,9 @@ def _wire(monkeypatch: pytest.MonkeyPatch, hits: list[Hit], replies: list[str]) 
     monkeypatch.setattr(answer_mod.Generator, "from_settings", classmethod(lambda cls, s: gen))
     monkeypatch.setattr(answer_mod, "connect", lambda url: nullcontext(object()))
     monkeypatch.setattr(answer_mod, "search", fake_search)
+    monkeypatch.setattr(
+        answer_mod.Embedder, "from_settings", classmethod(lambda cls, s: StubEmbedder())
+    )
     return gen
 
 
