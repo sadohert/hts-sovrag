@@ -158,7 +158,7 @@ git commit -m "Move Mode into the retrieval package and add a search dispatcher"
 
 ### Task 2: Principals (only if `sovrag.auth` is still empty on this branch)
 
-Check first: `ls src/sovrag/auth/`. If it already contains `principals.py` (delivered by the `principal-model` branch), skip this task entirely and report SKIPPED.
+Check first: `ls src/sovrag/auth/`. If it already contains `principal.py` (delivered by the `principal-model` branch, PR 8), skip this task entirely and report SKIPPED. That package exports `Clearance` (with a `.rank` property), `Principal`, `LEAST_PRIVILEGED`, `load_principals`, `resolve_principal`, `CLASSIFICATION_RANK`, `DEPARTMENTS`, `GC_WIDE`, `ANONYMOUS_ID` and `DEFAULT_PRINCIPALS_PATH`; later tasks only import `Clearance`, `Principal` and `resolve_principal`, which exist under both this task and PR 8.
 
 **Files:**
 - Create: `src/sovrag/auth/principals.py`, `data/principals.yaml`
@@ -217,7 +217,9 @@ def test_least_privileged_sees_nothing_protected() -> None:
 
 def test_loader_reads_departments_as_a_frozenset(tmp_path: Path) -> None:
     f = tmp_path / "p.yaml"
-    f.write_text("principals:\n  - id: x\n    clearance: PROTECTED_A\n    departments: [SSC, TBS]\n")
+    f.write_text(
+        "principals:\n  - id: x\n    clearance: PROTECTED_A\n    departments: [SSC, TBS]\n"
+    )
     assert load_principals(f)["x"].departments == frozenset({"SSC", "TBS"})
 ```
 
@@ -490,7 +492,9 @@ def _hit(n: int) -> Hit:
 
 def test_sources_are_numbered_in_order_with_title_and_heading() -> None:
     text = format_sources([_hit(1), _hit(2)])
-    assert text.index("[1] Title 1 > Part 1 > Section\nBody of chunk 1.") < text.index("[2] Title 2")
+    assert text.index("[1] Title 1 > Part 1 > Section\nBody of chunk 1.") < text.index(
+        "[2] Title 2"
+    )
 
 
 def test_messages_carry_system_rules_and_the_question() -> None:
@@ -538,9 +542,7 @@ from collections.abc import Sequence
 from sovrag.retrieve import Hit
 
 SENTINEL = "INSUFFICIENT_CONTEXT"
-REFUSAL_TEXT = (
-    "The retrieved documents do not contain enough information to answer this question."
-)
+REFUSAL_TEXT = "The retrieved documents do not contain enough information to answer this question."
 
 SYSTEM = (
     "You answer questions about Government of Canada documents using only the numbered "
@@ -734,7 +736,9 @@ def _server(reply: str | None, status: int, seen: list[dict]) -> httpx.Client:
     return httpx.Client(transport=httpx.MockTransport(handler))
 
 
-def _gen(reply: str | None = "ok [1]", status: int = 200, seen: list[dict] | None = None) -> Generator:
+def _gen(
+    reply: str | None = "ok [1]", status: int = 200, seen: list[dict] | None = None
+) -> Generator:
     return Generator(
         base_url="http://m/engines/v1",
         model="m",
@@ -932,9 +936,7 @@ def audit_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     return target
 
 
-def _wire(
-    monkeypatch: pytest.MonkeyPatch, hits: list[Hit], replies: list[str]
-) -> FakeGenerator:
+def _wire(monkeypatch: pytest.MonkeyPatch, hits: list[Hit], replies: list[str]) -> FakeGenerator:
     gen = FakeGenerator(replies)
     monkeypatch.setattr(answer_mod.Generator, "from_settings", classmethod(lambda cls, s: gen))
     monkeypatch.setattr(answer_mod, "connect", lambda url: nullcontext(object()))
@@ -974,7 +976,9 @@ def test_cited_answer_builds_citations_for_cited_hits_only(
     assert line["refused"] is False and line["reason"] is None
 
 
-def test_sentinel_refuses_with_no_citations(monkeypatch: pytest.MonkeyPatch, audit_path: Path) -> None:
+def test_sentinel_refuses_with_no_citations(
+    monkeypatch: pytest.MonkeyPatch, audit_path: Path
+) -> None:
     _wire(monkeypatch, [_hit(1)], [SENTINEL])
     result = answer("q", principal=WHO)
     assert result.refused and result.text == REFUSAL_TEXT and result.citations == ()
@@ -1116,7 +1120,9 @@ def answer(
             embed_query=lambda q: Embedder.from_settings(settings).embed([q])[0],
         )
 
-    def finish(text: str, citations: tuple[Citation, ...], *, refused: bool, reason: str | None) -> Answer:
+    def finish(
+        text: str, citations: tuple[Citation, ...], *, refused: bool, reason: str | None
+    ) -> Answer:
         result = Answer(
             question=question,
             principal=principal.id,
@@ -1223,15 +1229,30 @@ def _fake_answer(refused: bool = False) -> object:
 
     if refused:
         return Answer(
-            question="q", principal="analyst_dnd", mode="hybrid", request_id=None,
+            question="q",
+            principal="analyst_dnd",
+            mode="hybrid",
+            request_id=None,
             text="The retrieved documents do not contain enough information to answer this question.",
-            citations=(), refused=True, model="m", retrieved_chunk_ids=(1,), applied_filter=None,
+            citations=(),
+            refused=True,
+            model="m",
+            retrieved_chunk_ids=(1,),
+            applied_filter=None,
         )
     return Answer(
-        question="q", principal="analyst_dnd", mode="hybrid", request_id="r7",
+        question="q",
+        principal="analyst_dnd",
+        mode="hybrid",
+        request_id="r7",
         text="SSC plans cloud brokering [1].",
-        citations=(Citation(1, "ssc-dp-2025-26", 42, "SSC Plan", "Plans > Cloud", "https://x/ssc"),),
-        refused=False, model="m", retrieved_chunk_ids=(42, 43), applied_filter=None,
+        citations=(
+            Citation(1, "ssc-dp-2025-26", 42, "SSC Plan", "Plans > Cloud", "https://x/ssc"),
+        ),
+        refused=False,
+        model="m",
+        retrieved_chunk_ids=(42, 43),
+        applied_filter=None,
     )
 
 
@@ -1309,13 +1330,17 @@ def ask(
     mode: Annotated[Mode, typer.Option(help="vector | keyword | hybrid")] = Mode.hybrid,
     k: Annotated[int, typer.Option(min=1, max=MAX_K)] = 5,
     json_out: Annotated[bool, typer.Option("--json", help="Emit JSON instead of text")] = False,
-    request_id: Annotated[str | None, typer.Option(help="Caller's id, echoed into the audit log")] = None,
+    request_id: Annotated[
+        str | None, typer.Option(help="Caller's id, echoed into the audit log")
+    ] = None,
 ) -> None:
     """Answer a question from retrieved chunks only, with citations; refuse when unsupported."""
     try:
         who = resolve_principal(principal)
     except KeyError as exc:
-        raise typer.BadParameter(str(exc.args[0]), param_hint="--principal") from exc
+        raise typer.BadParameter(
+            f"unknown principal: {principal}", param_hint="--principal"
+        ) from exc
     try:
         result = answer(question, principal=who, mode=mode, k=k, request_id=request_id)
     except GenerationError as exc:

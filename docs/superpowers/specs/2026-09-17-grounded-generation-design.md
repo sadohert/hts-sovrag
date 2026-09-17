@@ -15,25 +15,27 @@ Module `sovrag.generate.answer`:
 ```python
 @dataclass(frozen=True)
 class Citation:
-    n: int                # the [n] marker used in the text, 1-based
+    n: int  # the [n] marker used in the text, 1-based
     doc_id: str
     chunk_id: int
     title: str
     heading_path: str
     source_url: str
 
+
 @dataclass(frozen=True)
 class Answer:
     question: str
-    principal: str                        # principal.id
-    mode: str                             # "vector" | "keyword" | "hybrid"
+    principal: str  # principal.id
+    mode: str  # "vector" | "keyword" | "hybrid"
     request_id: str | None
-    text: str                             # prose with [n] markers, or REFUSAL_TEXT
-    citations: tuple[Citation, ...]       # only chunks the text cites; empty when refused
+    text: str  # prose with [n] markers, or REFUSAL_TEXT
+    citations: tuple[Citation, ...]  # only chunks the text cites; empty when refused
     refused: bool
-    model: str                            # generator id from settings
+    model: str  # generator id from settings
     retrieved_chunk_ids: tuple[int, ...]  # everything retrieval returned
-    applied_filter: str | None            # None until entitlement filtering lands
+    applied_filter: str | None  # None until entitlement filtering lands
+
 
 def answer(
     question: str,
