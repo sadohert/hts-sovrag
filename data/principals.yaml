@@ -1,0 +1,19 @@
+# Named principals for the CLI and the tests. One per row of the entitlement grid.
+# Clearance labels are synthetic and every document in the corpus is public; see ADR 0003.
+# `anonymous` is reserved for the least privileged principal and may not be defined here.
+principals:
+  public:
+    clearance: UNCLASSIFIED
+    departments: []
+  analyst_dnd:
+    clearance: PROTECTED_A
+    departments: [DND]
+  analyst_ps:
+    clearance: PROTECTED_A
+    departments: [PS]
+  cio_ssc:
+    clearance: PROTECTED_A
+    departments: [SSC, TBS]
+  auditor:
+    clearance: PROTECTED_B
+    departments: [DND, PS, PSPC, SSC, TBS]

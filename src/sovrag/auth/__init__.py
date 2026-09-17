@@ -3,19 +3,25 @@
 from sovrag.auth.principal import (
     ANONYMOUS_ID,
     CLASSIFICATION_RANK,
+    DEFAULT_PRINCIPALS_PATH,
     DEPARTMENTS,
     GC_WIDE,
     LEAST_PRIVILEGED,
     Clearance,
     Principal,
+    load_principals,
+    resolve_principal,
 )
 
 __all__ = [
     "ANONYMOUS_ID",
     "CLASSIFICATION_RANK",
+    "DEFAULT_PRINCIPALS_PATH",
     "DEPARTMENTS",
     "GC_WIDE",
     "LEAST_PRIVILEGED",
     "Clearance",
     "Principal",
+    "load_principals",
+    "resolve_principal",
 ]
