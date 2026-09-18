@@ -45,8 +45,12 @@ jobs:
           # first-step subagent uses to read the pull request. `gh api` can also write with
           # the bot's token, so every form that makes it write is denied; deny rules win.
           # The short flags carry no trailing space because gh accepts `-fbody=x` and `-XPOST`.
+          # The appended system prompt exists because this run is non-interactive: when the
+          # reviewer launched its first-step agent in the background and stopped to wait for
+          # the completion notification, the run ended right there, with no error, no denial
+          # and nothing posted. A background agent never reports back here.
           claude_args: |
-            --allowedTools "Skill(code-review:code-review),Skill(code-review:code-review *),mcp__github_inline_comment__create_inline_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh repo view:*),Bash(gh api *)" --disallowedTools "Bash(gh api * -X*),Bash(gh api * --method*),Bash(gh api * -f*),Bash(gh api * -F*),Bash(gh api * --field*),Bash(gh api * --raw-field*),Bash(gh api * --input*)"
+            --allowedTools "Skill(code-review:code-review),Skill(code-review:code-review *),mcp__github_inline_comment__create_inline_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh repo view:*),Bash(gh api *)" --disallowedTools "Bash(gh api * -X*),Bash(gh api * --method*),Bash(gh api * -f*),Bash(gh api * -F*),Bash(gh api * --field*),Bash(gh api * --raw-field*),Bash(gh api * --input*)" --append-system-prompt "This is a non-interactive run. Every Agent tool call must set run_in_background to false and wait for the result in the same call. A background agent never reports back here: the run ends the moment you stop to wait for a notification, and nothing you planned after that happens. Never schedule a wakeup or wait for a notification."
 
       # The action reports success when it skips and when the reviewer gives up, so a green
       # check proved nothing. With --comment a finished review always posts, either findings

@@ -129,6 +129,17 @@ def test_allowed_tools_let_the_reviewer_load_the_review_skill() -> None:
         assert rule in claude_args, f"{rule} missing from --allowedTools"
 
 
+def test_the_reviewer_is_told_to_run_its_agents_synchronously() -> None:
+    """The run is non-interactive. When the reviewer launched its first-step agent in the
+    background and stopped to wait for the notification, the run ended there, with no error
+    and no denial, and nothing was posted."""
+    claude_args = str(_step("Run Claude Code Review")["with"]["claude_args"])  # type: ignore[index]
+    appended = _flag(claude_args, "--append-system-prompt")
+    assert "run_in_background" in appended
+    assert "false" in appended
+    assert "never" in appended
+
+
 def test_gh_api_is_allowed_for_reads_and_denied_for_every_write_form() -> None:
     claude_args = str(_step("Run Claude Code Review")["with"]["claude_args"])  # type: ignore[index]
     allowed, disallowed = (
