@@ -18,8 +18,10 @@ every claim in the README against the code.
   in Python after retrieval. A chunk the principal may not see must never leave the database.
 - Every retrieval returns citations with doc_id, chunk_id, heading_path and source_url, so
   any answer can be traced to a public source.
-- The MCP server binds its principal from config at startup. Tool arguments never carry
-  identity, because an agent that can name its principal can escalate it.
+- A principal is bound by the server, from configuration or from an authenticated transport
+  the server verifies. Identity never comes from message text, tool arguments, or any value
+  an agent or model can set, because whoever names the principal chooses the entitlement
+  (ADR 0009).
 - Classification labels are synthetic (ADR 0003). Never write copy implying real protected
   data was used.
 - Never claim Docker org-level governance was applied; only local sandbox policy was.
