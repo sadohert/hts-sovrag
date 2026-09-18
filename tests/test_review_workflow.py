@@ -37,6 +37,20 @@ SKILL_RULES = (
     "Skill(code-review:code-review *)",
 )
 
+# The plugin's first-step subagent reads the pull request with `gh api`, so reads are allowed
+# and every form that makes `gh api` write is denied. Deny rules win over allow rules. The
+# short flags are matched without a trailing space because gh accepts `-fbody=x` and `-XPOST`.
+API_ALLOW = "Bash(gh api *)"
+API_DENY = (
+    "Bash(gh api * -X*)",
+    "Bash(gh api * --method*)",
+    "Bash(gh api * -f*)",
+    "Bash(gh api * -F*)",
+    "Bash(gh api * --field*)",
+    "Bash(gh api * --raw-field*)",
+    "Bash(gh api * --input*)",
+)
+
 needs_shell_tools = pytest.mark.skipif(
     shutil.which("bash") is None or shutil.which("jq") is None, reason="needs bash and jq"
 )
@@ -113,6 +127,22 @@ def test_allowed_tools_let_the_reviewer_load_the_review_skill() -> None:
     claude_args = str(_step("Run Claude Code Review")["with"]["claude_args"])  # type: ignore[index]
     for rule in SKILL_RULES:
         assert rule in claude_args, f"{rule} missing from --allowedTools"
+
+
+def test_gh_api_is_allowed_for_reads_and_denied_for_every_write_form() -> None:
+    claude_args = str(_step("Run Claude Code Review")["with"]["claude_args"])  # type: ignore[index]
+    allowed, disallowed = (
+        _flag(claude_args, "--allowedTools"),
+        _flag(claude_args, "--disallowedTools"),
+    )
+    assert API_ALLOW in allowed
+    for rule in API_DENY:
+        assert rule in disallowed, f"{rule} missing from --disallowedTools"
+
+
+def _flag(claude_args: str, name: str) -> str:
+    """The quoted value that follows a flag in the claude_args text."""
+    return claude_args.split(f'{name} "', 1)[1].split('"', 1)[0]
 
 
 def test_guard_runs_after_the_review_and_reads_its_execution_file() -> None:

@@ -37,9 +37,12 @@ jobs:
           # the Skill rules come first: a skill's own allowed-tools are granted only during the
           # turn that invokes it, and when the Skill call was denied the reviewer improvised by
           # hand and gave up. The rest is everything the plugin's allowed-tools lists, so its
-          # subagents are covered too, plus `gh repo view`, which the reviewer reaches for.
+          # subagents are covered too, plus `gh repo view` and `gh api`, which the reviewer's
+          # first-step subagent uses to read the pull request. `gh api` can also write with
+          # the bot's token, so every form that makes it write is denied; deny rules win.
+          # The short flags carry no trailing space because gh accepts `-fbody=x` and `-XPOST`.
           claude_args: |
-            --allowedTools "Skill(code-review:code-review),Skill(code-review:code-review *),mcp__github_inline_comment__create_inline_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh repo view:*)"
+            --allowedTools "Skill(code-review:code-review),Skill(code-review:code-review *),mcp__github_inline_comment__create_inline_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh repo view:*),Bash(gh api *)" --disallowedTools "Bash(gh api * -X*),Bash(gh api * --method*),Bash(gh api * -f*),Bash(gh api * -F*),Bash(gh api * --field*),Bash(gh api * --raw-field*),Bash(gh api * --input*)"
 
       # The action reports success when it skips and when the reviewer gives up, so a green
       # check proved nothing. With --comment a finished review always posts, either findings
