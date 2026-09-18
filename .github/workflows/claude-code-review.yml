@@ -8,10 +8,16 @@ on:
       - "uv.lock"
       - "tests/fixtures/**"
 
+# A new push cancels the review still running on the previous commit of the same pull request.
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   claude-review:
-    if: github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       pull-requests: read
@@ -24,38 +30,50 @@ jobs:
         with:
           fetch-depth: 1
 
-      # The review reads CLAUDE.md from main, so the invariants listed there are the rubric.
+      # One agent, one pass, an inline prompt. The multi-agent review plugin cost one to five
+      # dollars per review and needed skill, gh api and foreground-agent rules before it would
+      # run in a non-interactive job; this shape needs none of them. CLAUDE.md is the rubric.
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@a4f54ef2c58884867281bd8e2f8d63352ad019a9 # v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          # Debugging aid while the review is being made to work: prints the reviewer's full
-          # transcript, including tool results, into the job log. Safe only while this
-          # repository is private. Remove before the repository is made public.
-          show_full_output: true
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # The prompt is a plugin command, which the reviewer loads through the Skill tool, so
-          # the Skill rules come first: a skill's own allowed-tools are granted only during the
-          # turn that invokes it, and when the Skill call was denied the reviewer improvised by
-          # hand and gave up. The rest is everything the plugin's allowed-tools lists, so its
-          # subagents are covered too, plus `gh repo view` and `gh api`, which the reviewer's
-          # first-step subagent uses to read the pull request. `gh api` can also write with
-          # the bot's token, so every form that makes it write is denied; deny rules win.
-          # The short flags carry no trailing space because gh accepts `-fbody=x` and `-XPOST`.
-          # The appended system prompt exists because this run is non-interactive: when the
-          # reviewer launched its first-step agent in the background and stopped to wait for
-          # the completion notification, the run ended right there, with no error, no denial
-          # and nothing posted. A background agent never reports back here.
-          claude_args: |
-            --allowedTools "Skill(code-review:code-review),Skill(code-review:code-review *),mcp__github_inline_comment__create_inline_comment,Bash(gh issue view:*),Bash(gh search:*),Bash(gh issue list:*),Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr list:*),Bash(gh repo view:*),Bash(gh api *)" --disallowedTools "Bash(gh api * -X*),Bash(gh api * --method*),Bash(gh api * -f*),Bash(gh api * -F*),Bash(gh api * --field*),Bash(gh api * --raw-field*),Bash(gh api * --input*)" --append-system-prompt "This is a non-interactive run. Every Agent tool call must set run_in_background to false and wait for the result in the same call. A background agent never reports back here: the run ends the moment you stop to wait for a notification, and nothing you planned after that happens. Never schedule a wakeup or wait for a notification."
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
 
-      # The action reports success when it skips and when the reviewer gives up, so a green
-      # check proved nothing. With --comment a finished review always posts, either findings
-      # or "No issues found", so no post from claude[bot] means nothing reviewed this change.
-      # Kept inline so the action's "identical to the default branch" validation covers it.
+            Review this pull request in one pass. Read CLAUDE.md first: its Invariants section
+            is the rubric, and its Working section says what done means. Read the diff with
+            `gh pr diff` and the description with `gh pr view`.
+
+            Look for, in this order:
+            1. Invariant violations: entitlement filtering anywhere but SQL, retrieval that
+               returns chunk text without citations, identity taken from tool arguments or
+               message text, copy implying real protected data was used, claims of Docker
+               organisation-level governance, versions written from memory instead of checked.
+            2. Bugs in the changed code: wrong results, unhandled failure at a system boundary,
+               a test that cannot fail, a claim in a docstring or comment the code does not keep.
+            3. Documentation that the code does not back: a README or ADR statement a reader
+               could not verify against the repository.
+
+            Skip style and formatting; ruff and mypy run in a separate job. Do not run tests or
+            build anything; the test job does that. Be concise: no filler, no praise.
+
+            Use an inline comment for each specific finding, with a suggestion block when a
+            small change fixes it entirely. If claude[bot] has already commented on this pull
+            request, review only what changed since that comment and keep the summary to that.
+
+            Always finish by posting exactly one top-level comment with `gh pr comment` whose
+            first line is "## Code review", followed by the findings in brief, or by
+            "No issues found. Checked for bugs, CLAUDE.md invariants and documentation
+            accuracy." if there are none. The check fails if that comment is missing.
+          claude_args: |
+            --model claude-sonnet-5 --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Grep,Glob"
+
+      # The action reports success when it skips and when the reviewer stops early, so a green
+      # check proved nothing. The prompt makes a finished review always post a "## Code review"
+      # comment, so its absence means nothing reviewed this change. Kept inline so the action's
+      # "identical to the default branch" validation covers it.
       - name: Verify the review was posted
         env:
           GH_TOKEN: ${{ github.token }}
@@ -75,12 +93,10 @@ jobs:
           echo "review run: turns=$turns cost_usd=$cost denials=$denials"
           jq -r '(.permission_denials // [])[] | "denied: \(.tool_name) \((.tool_input.command // "") | .[0:80])"' <<<"$result"
 
-          count() {
-            gh api "$1" --paginate --jq '.[] | select(.user.login == "claude[bot]") | .id' | wc -l
-          }
-          posted=$(( $(count "repos/$REPO/issues/$PR/comments") + $(count "repos/$REPO/pulls/$PR/comments") + $(count "repos/$REPO/pulls/$PR/reviews") ))
-          if [ "$posted" -eq 0 ]; then
-            echo "::error title=Pull request not reviewed::The reviewer ran (turns=$turns, denials=$denials) but posted nothing. Either it could not read the pull request, or it judged the change too trivial to review. Nothing reviewed this pull request."
+          summaries=$(gh api "repos/$REPO/issues/$PR/comments" --paginate --jq '.[] | select(.user.login == "claude[bot]" and (.body | startswith("## Code review"))) | .id' | wc -l | tr -d ' ')
+          inline=$(gh api "repos/$REPO/pulls/$PR/comments" --paginate --jq '.[] | select(.user.login == "claude[bot]") | .id' | wc -l | tr -d ' ')
+          if [ "$summaries" -eq 0 ]; then
+            echo "::error title=Pull request not reviewed::The reviewer ran (turns=$turns, denials=$denials, inline comments=$inline) but posted no '## Code review' summary. Nothing reviewed this pull request."
             exit 1
           fi
-          echo "review output on the pull request: $posted"
+          echo "review output on the pull request: summaries=$summaries inline=$inline"
