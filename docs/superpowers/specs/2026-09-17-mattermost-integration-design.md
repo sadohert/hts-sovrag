@@ -252,9 +252,10 @@ The CLI is unchanged in shape: `--principal <id>` resolves through `principals.y
 - A Mattermost API error, a timeout on either call, or a user ID Mattermost does not know:
   the tool call fails with an error and nothing is retrieved. An outage must not look like
   a refusal.
-- A static plugin header named `X-Mattermost-UserID` would override every user's ID, since
-  the plugin lets administrator headers win. The seed script writes only `Authorization`
-  as a static header, and a test asserts it.
+- An administrator-configured plugin header named `X-Mattermost-UserID`, in the static or
+  the service-account map, would override every user's ID, since those layers win over the
+  plugin's own header. The seed script leaves the static map empty and writes only
+  `Authorization` in the service-account map, and a test asserts both.
 - `MCP_IDENTITY` unset or invalid: the server refuses to start.
 - Static mode with an unknown `PRINCIPAL`: the server refuses to start.
 - Zero entitled hits: `answer` refuses with the fixed sentence and no citations; `search`
@@ -290,8 +291,8 @@ Each lands with its pull request. Database tests use the existing `db` fixture.
   audit lines for `resolve`, `search` and `answer` share a `request_id`; the server refuses
   to start with `MCP_IDENTITY` unset.
 - `tests/test_seed_mattermost.py`: dry run prints the expected sequence of calls; running
-  twice is a no-op; the MCP server's static headers contain `Authorization` and nothing
-  else.
+  twice is a no-op; the MCP server's static header map is empty and its service-account
+  header map contains `Authorization` and nothing else.
 - Manual, in the demo walkthrough: the full stack, the five beats, the `mattermost` role
   being refused a connection to the `sovrag` database, and the eval harness's leak
   questions through the MCP path (a later branch).
