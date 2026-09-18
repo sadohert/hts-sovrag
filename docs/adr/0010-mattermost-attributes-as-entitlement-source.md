@@ -25,11 +25,12 @@ Two attributes carry the entitlement, using the same vocabulary as `documents`:
 
 `sovrag.auth.mattermost` resolves a user ID to a `Principal` with these rules, in order:
 
-1. Only a field whose definition is admin-managed is read. A value from any other field is ignored. The definition is checked on every request, so a later change in the System Console can only reduce access.
-2. A value outside the vocabulary is ignored. `GC_WIDE` is a document label and is not offered as a department.
-3. No attributes, no recognised values, an HTTP error, or a timeout yields `LEAST_PRIVILEGED`, with the reason recorded.
+1. Only a field whose definition is admin-managed is read. A value from any other field is ignored. The definition is fetched with every resolution, so a field that stops being admin-managed stops counting at once. This guards the field's definition only. An administrator who sets a user's value grants that access, which is the purpose of the feature, and an administrator's mistake in a value can raise access as easily as lower it.
+2. Select values arrive as option IDs. They are mapped to option names through the definition fetched in the same resolution, and a name outside the vocabulary is ignored. `GC_WIDE` is a document label and is not offered as a department.
+3. A user with no attributes, or none that are recognised, is bound to `LEAST_PRIVILEGED`, with the reason recorded.
+4. If either REST call fails, times out, or reports that Mattermost does not know the user, resolution fails. The tool call returns an error and nothing is retrieved (ADR 0009). A failed lookup says nothing about the user's entitlement, so it is never treated as least privilege.
 
-There is no cache. One attribute lookup per question is cheap beside an embedding call and a chat completion, and it means an administrator's change takes effect on the next question. The attribute snapshot (field name and value) is written to the audit log with every request, so an answer can be traced to the entitlement that produced it.
+There is no cache. Each resolution makes two REST calls, the field definitions and the user's values, once per tool call and so once per question. That is cheap beside an embedding call and a chat completion, and it means an administrator's change takes effect on the next question. The attribute snapshot (field name and value) is written to the audit log with every tool call, so an answer can be traced to the entitlement that produced it.
 
 The seed script creates both fields as admin-managed. In a real deployment they would be synced from the identity provider; the resolver does not care which.
 

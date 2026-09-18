@@ -51,6 +51,9 @@ services:
           devices:
             - capabilities: [gpu]
 
+  # Not implemented yet. This is the service's earlier shape: a default PRINCIPAL and a
+  # Dockerfile.mcp that does not exist. It changes with the MCP server, which takes a required
+  # MCP_IDENTITY with no default and reuses the single Dockerfile (ADR 0009).
   mcp:
     profiles: [mcp]
     build:

@@ -54,22 +54,31 @@ a built-in plugin setting (`channelAccessLevel: None`).
 ### `sovrag.auth.mattermost` (new)
 
 `MattermostResolver(base_url, bot_token)` with `resolve(user_id) -> Resolution`, where
-`Resolution` carries the `Principal`, the attribute snapshot (field name to value) and an
-optional `error` string. It calls two REST endpoints with the bot token:
+`Resolution` carries the `Principal`, the attribute snapshot (field name to value) and a
+`note` saying why a user was bound to least privilege. It raises `ResolutionError` when it
+cannot tell what the user is entitled to. It calls two REST endpoints with the bot token:
 `GET /api/v4/custom_profile_attributes/fields` for the field definitions and
-`GET /api/v4/users/{id}/custom_profile_attributes` for the values.
+`GET /api/v4/users/{id}/custom_profile_attributes` for the values. The caller has already
+checked that `user_id` is shaped like a Mattermost ID, so it is safe in the URL path.
 
 Rules, in order:
 
 1. Only fields whose definition is admin-managed (`attrs.managed == "admin"`) are read.
-   A value from any other field is ignored. This is checked on every request, so a later
-   change in the System Console can only reduce access.
+   A value from any other field is ignored. The definitions are fetched with every
+   resolution, so a field that stops being admin-managed stops counting at once. This
+   guards the definition only; an administrator who sets a value grants that access.
 2. `sovrag_clearance` (single select) maps to `Clearance`; `sovrag_departments`
-   (multi-select) maps to `departments`. A value outside the vocabulary is ignored.
-3. No attributes, no recognised values, an HTTP error, or a timeout all yield
-   `LEAST_PRIVILEGED`, with the reason in `Resolution.error`.
+   (multi-select) maps to `departments`. Select values arrive as option IDs and are
+   mapped to option names through the definitions fetched in the same resolution. A name
+   outside the vocabulary is ignored.
+3. A user with no attributes, or none recognised, is bound to `LEAST_PRIVILEGED`, with the
+   reason in `Resolution.note`.
+4. If either call fails, times out, or reports an unknown user, `resolve` raises
+   `ResolutionError`. A failed lookup says nothing about entitlement, so it is never
+   treated as least privilege.
 
-No cache. One attributes call per request, so an admin's change shows on the next question.
+No cache. Two REST calls per resolution, one resolution per tool call, so an admin's change
+shows on the next question.
 
 ### `sovrag.retrieve.filters` (new)
 
@@ -127,14 +136,25 @@ the command line. New settings:
 | `MATTERMOST_URL` | mattermost mode: base URL for the resolver |
 | `MATTERMOST_BOT_TOKEN` | mattermost mode: bot token for the resolver |
 
-Request handling in mattermost mode, as an ASGI middleware in front of the MCP app:
+In mattermost mode every HTTP request is authenticated by an ASGI middleware in front of
+the MCP app, and the principal is resolved once per tool call, in the tool handler. One tool
+call over Streamable HTTP is several HTTP requests (`initialize`, `tools/list`,
+`tools/call` and more), so resolving in the middleware would multiply the Mattermost
+lookups and the `resolve` audit events.
+
+Every request, in the middleware:
 
 1. Compare `Authorization: Bearer <token>` against `MCP_SHARED_SECRET` in constant time.
    Missing or wrong: HTTP 401, nothing else runs.
-2. Read `X-Mattermost-UserID`. Missing: HTTP 401. The plugin always sends it; its absence
-   means a different caller.
-3. Generate a `request_id`, resolve the principal, write a `resolve` audit event with the
-   user id, attribute snapshot, resulting principal and any error.
+2. Read `X-Mattermost-UserID`. Missing, empty, or not 26 lowercase letters and digits:
+   HTTP 401. The plugin always sends a real ID, so anything else is a different caller.
+
+Each tool call, in the handler:
+
+3. Generate a `request_id`, resolve the principal, and write a `resolve` audit event with
+   the user id, attribute snapshot and resulting principal. If resolution raises, write the
+   event with the failure, return a tool error ("entitlement could not be determined") and
+   retrieve nothing.
 
 In static mode steps 1 to 3 are replaced by the principal bound at startup. Whether the
 handler reads headers from the SDK's request context or the middleware stores them on the
@@ -166,10 +186,13 @@ is not created; the service builds the single `Dockerfile` and overrides the com
   publishes amd64 images only, so the service sets `platform: linux/amd64` and runs under
   emulation on Apple silicon.
 - Database: the existing Postgres container, with a database and a role both named
-  `mattermost`; the role has no rights on the `sovrag` database. Mattermost 11.11.0 was
-  booted against the pinned Postgres 18 image and its migrations ran cleanly (ADR 0011).
-  A one-shot service under the same profile creates the role and database if they are
-  missing, because Postgres init scripts only run on an empty volume.
+  `mattermost`. Mattermost 11.11.0 was booted against the pinned Postgres 18 image and its
+  migrations ran cleanly (ADR 0011). A one-shot service under the same profile creates the
+  role and database if they are missing, because Postgres init scripts only run on an
+  empty volume, and runs `REVOKE CONNECT, TEMPORARY ON DATABASE sovrag FROM PUBLIC`, since
+  Postgres grants both to every role by default. The isolation runs one way: the `sovrag`
+  role is the container's superuser and can read the `mattermost` database. Acceptable for
+  a single-machine demo, not a production layout.
 - Agents plugin, pinned to v2.7.0 (minimum server 11.9.0). The 11.11.0 image bundles
   v2.6.1, which predates the MCP service-account headers, so the seed script uploads the
   v2.7.0 release asset. One service of type "OpenAI Compatible" pointed at Docker Model Runner
@@ -211,8 +234,9 @@ terminal throughout.
 1. User sends the bot a direct message.
 2. The plugin's LLM (Model Runner) decides to call `answer`. The plugin opens the MCP
    connection with the bearer and the user's Mattermost ID.
-3. Middleware verifies the bearer, reads the user ID, resolves the principal from
-   Mattermost attributes, writes the `resolve` event.
+3. Middleware verifies the bearer and the shape of the user ID on every HTTP request. When
+   the `tools/call` request arrives, the tool handler resolves the principal from
+   Mattermost attributes and writes the `resolve` event.
 4. `answer` retrieves with the entitlement predicate in SQL, generates, writes the
    `answer` event, returns text, citations, `refused`, `applied_filter`, `request_id`.
 5. The plugin's LLM relays the result to the user.
@@ -221,10 +245,16 @@ The CLI is unchanged in shape: `--principal <id>` resolves through `principals.y
 
 ## Edge cases
 
-- Bearer wrong or missing, or user ID header missing: 401 before any retrieval. Never
-  mapped to `anonymous`.
-- Authenticated user with no attributes, unrecognised values, a non-admin-managed field,
-  or a Mattermost API failure: `LEAST_PRIVILEGED`, reason in the `resolve` event.
+- Bearer wrong or missing, or user ID header missing, empty or malformed: 401 before any
+  retrieval. Never mapped to `anonymous`.
+- A user Mattermost knows, with no attributes, unrecognised values, or only
+  non-admin-managed fields: `LEAST_PRIVILEGED`, reason in the `resolve` event.
+- A Mattermost API error, a timeout on either call, or a user ID Mattermost does not know:
+  the tool call fails with an error and nothing is retrieved. An outage must not look like
+  a refusal.
+- A static plugin header named `X-Mattermost-UserID` would override every user's ID, since
+  the plugin lets administrator headers win. The seed script writes only `Authorization`
+  as a static header, and a test asserts it.
 - `MCP_IDENTITY` unset or invalid: the server refuses to start.
 - Static mode with an unknown `PRINCIPAL`: the server refuses to start.
 - Zero entitled hits: `answer` refuses with the fixed sentence and no citations; `search`
@@ -245,19 +275,26 @@ Each lands with its pull request. Database tests use the existing `db` fixture.
   whose vector guarantees a hit, asserting the exact document set per principal and zero
   rows for forbidden documents; the three search functions reject a call without
   `principal`; `search_hybrid` never returns a chunk either arm would have filtered.
-- `tests/test_mattermost_resolver.py`: recorded responses for each demo user, a user with
-  no values, an unknown value, a non-admin-managed field, an HTTP error, a timeout; each
-  asserts the principal and the error text.
-- `tests/test_audit.py`: one line per event, timestamp present, directory created.
+- `tests/test_mattermost_resolver.py`: recorded responses for each demo user, option IDs
+  mapped to names, a user with no values, an unknown value, a non-admin-managed field; each
+  asserts the principal and the note. An HTTP error and a timeout on the definitions call,
+  the same on the values call, and an unknown user each raise `ResolutionError`.
+- `tests/test_audit.py`: one line per event, timestamp present, directory created, and
+  concurrent writers never interleave or tear a line.
 - `tests/test_mcp_server.py`: in-process SDK client against the test database with a
-  stubbed resolver. Both 401 cases; static mode; each demo principal's document set through
-  `search`; `answer` returns the "not available" refusal when generation is absent and the
-  `Answer` JSON when present; audit lines for `resolve`, `search` and `answer` share a
-  `request_id`; the server refuses to start with `MCP_IDENTITY` unset.
+  stubbed resolver. The 401 cases (bad bearer, missing, empty and malformed user ID);
+  static mode; each demo principal's document set through `search`; a resolver failure
+  returns a tool error and retrieves nothing; one tool call resolves exactly once and
+  writes exactly one `resolve` event, however many HTTP requests it took; `answer` returns
+  the "not available" refusal when generation is absent and the `Answer` JSON when present;
+  audit lines for `resolve`, `search` and `answer` share a `request_id`; the server refuses
+  to start with `MCP_IDENTITY` unset.
 - `tests/test_seed_mattermost.py`: dry run prints the expected sequence of calls; running
-  twice is a no-op.
-- Manual, in the demo walkthrough: the full stack, the five beats, and the original plan's
-  20 leak questions through the MCP path (eval harness; a later branch).
+  twice is a no-op; the MCP server's static headers contain `Authorization` and nothing
+  else.
+- Manual, in the demo walkthrough: the full stack, the five beats, the `mattermost` role
+  being refused a connection to the `sovrag` database, and the eval harness's leak
+  questions through the MCP path (a later branch).
 
 ## Documentation
 
@@ -316,7 +353,8 @@ ordinary input; the MCP `answer` tool turns it into a tool error, not a refusal.
 3. `entitlement-filter`: `filters.py`, `principal` on the three search functions, the two
    `SET LOCAL`s, leak tests, CLI resolution of `--principal`; if generation has merged,
    the two marked call sites in `generate/answer.py` pass the principal through.
-4. `mattermost-resolver`: `sovrag.audit` (if not yet on main) and `sovrag.auth.mattermost`.
+4. `mattermost-resolver`: `sovrag.auth.mattermost`, and a locking or single-writer change
+   to `sovrag.audit`, which appends without a lock and will be shared by concurrent writers.
 5. `mcp-server`: `serve-mcp`, both tools, Compose `mcp` service settings.
 6. `mattermost-demo`: Compose profile, seed script, demo walkthrough, README.
 
