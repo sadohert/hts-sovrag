@@ -1,6 +1,8 @@
 # Named principals for the CLI and the tests. One per row of the entitlement grid.
 # Clearance labels are synthetic and every document in the corpus is public; see ADR 0003.
 # `anonymous` is reserved for the least privileged principal and may not be defined here.
+# The file loads strictly: a repeated id, an unquoted id such as 123 or no, a missing clearance
+# or an unknown department is an error. See ADR 0012.
 principals:
   public:
     clearance: UNCLASSIFIED
@@ -14,6 +16,7 @@ principals:
   cio_ssc:
     clearance: PROTECTED_A
     departments: [SSC, TBS]
+  # Every membership, so "the auditor sees everything" stays true. A test asserts the equality.
   auditor:
     clearance: PROTECTED_B
-    departments: [DND, PS, PSPC, SSC, TBS]
+    departments: [CSE, DND, PS, PSPC, SSC, TBS]
