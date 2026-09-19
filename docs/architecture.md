@@ -107,3 +107,4 @@ The vector for each chunk is computed over the document title, the heading path 
 - ADR 0010: for Mattermost users, entitlement comes from admin-managed Mattermost user attributes, read once per tool call.
 - ADR 0011: Mattermost runs in Compose as Mattermost Entry on the existing Postgres, with the Agents plugin pinned and Docker Model Runner as its model.
 - ADR 0012: the principal model has two axes, validates itself on construction, and loads from YAML strictly.
+- ADR 0013: the entitlement predicate is one bound WHERE clause inside every retrieval query; HNSW scans continue past the filter with `SET LOCAL hnsw.iterative_scan`.
