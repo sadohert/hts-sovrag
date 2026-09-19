@@ -14,7 +14,7 @@ every claim in the README against the code.
 - Storage: PostgreSQL 18 with pgvector. Schema in src/sovrag/index/schema.sql.
 
 ## Invariants
-- Entitlement filtering happens in SQL (src/sovrag/retrieve/filters.py, once it lands), never
+- Entitlement filtering happens in SQL (src/sovrag/retrieve/filters.py), never
   in Python after retrieval. A chunk the principal may not see must never leave the database.
 - Every retrieval returns citations with doc_id, chunk_id, heading_path and source_url, so
   any answer can be traced to a public source.
@@ -44,4 +44,4 @@ every claim in the README against the code.
 - uv run sovrag query "..." --principal analyst_dnd --mode vector   # or keyword | hybrid
 - uv run sovrag ask "..." --principal analyst_dnd   # answer with [n] citations, or refuse
 - uv run pytest
-- Not implemented yet: sovrag serve, sovrag eval, the mcp profile, entitlement filtering.
+- Not implemented yet: sovrag serve, sovrag eval, the mcp profile.
