@@ -27,6 +27,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql://sovrag:sovrag@localhost:5432/sovrag"
     audit_log_path: str = "./audit.jsonl"
+    # Named principals for the CLI and the MCP server's static mode (ADR 0012).
+    principals_path: str = "data/principals.yaml"
 
     # MCP server only. Bound at startup; never read from tool arguments.
     principal: str = ""
