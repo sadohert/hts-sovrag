@@ -2,6 +2,7 @@
 
 import psycopg
 
+from sovrag.auth import LEAST_PRIVILEGED
 from sovrag.corpus.chunk import Chunk
 from sovrag.corpus.manifest import DocumentMeta
 from sovrag.index.store import replace_chunks, upsert_document
@@ -44,14 +45,14 @@ def test_returns_k_nearest_chunks_ordered_by_similarity(db: psycopg.Connection) 
     query = [0.0] * DIM
     query[1] = 1.0
     query[0] = 0.5
-    hits = search_vector(db, query, k=2)
+    hits = search_vector(db, query, k=2, principal=LEAST_PRIVILEGED)
     assert [h.text for h in hits] == ["a1", "a0"]
     assert hits[0].score > hits[1].score > 0
 
 
 def test_hit_carries_full_citation(db: psycopg.Connection) -> None:
     _seed(db)
-    (hit,) = search_vector(db, _unit(2), k=1)
+    (hit,) = search_vector(db, _unit(2), k=1, principal=LEAST_PRIVILEGED)
     assert isinstance(hit, Hit)
     assert hit.doc_id == "b"
     assert hit.heading_path == "B > z"
@@ -64,7 +65,7 @@ def test_hit_carries_full_citation(db: psycopg.Connection) -> None:
 
 def test_k_larger_than_corpus_returns_everything(db: psycopg.Connection) -> None:
     _seed(db)
-    assert len(search_vector(db, _unit(0), k=50)) == 3
+    assert len(search_vector(db, _unit(0), k=50, principal=LEAST_PRIVILEGED)) == 3
 
 
 def test_k_above_hnsw_default_ef_search_still_returns_k(db: psycopg.Connection) -> None:
@@ -72,5 +73,5 @@ def test_k_above_hnsw_default_ef_search_still_returns_k(db: psycopg.Connection) 
     chunks = [Chunk(i, f"C > {i}", f"c{i}") for i in range(60)]
     embeddings = [_unit(i % DIM) for i in range(60)]
     replace_chunks(db, "c", chunks, embeddings)
-    hits = search_vector(db, _unit(0), k=50)
+    hits = search_vector(db, _unit(0), k=50, principal=LEAST_PRIVILEGED)
     assert len(hits) == 50
