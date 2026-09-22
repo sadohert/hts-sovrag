@@ -34,7 +34,8 @@ PLUGIN_ASSET_URL = (
     "https://github.com/mattermost/mattermost-plugin-agents/releases/download/"
     f"v{PLUGIN_VERSION}/mattermost-plugin-agents-v{PLUGIN_VERSION}-linux-amd64.tar.gz"
 )
-PLUGIN_SHA256 = "REPLACED_IN_TASK_3"
+# SHA-256 of the release asset above, computed from the download (26,206,412 bytes).
+PLUGIN_SHA256 = "72fdbd268342928a9c6ac2ced26dcd58b088f029c642359ab0c6c85a0edc8bfd"
 
 CLEARANCES = ["UNCLASSIFIED", "PROTECTED_A", "PROTECTED_B"]
 DEPARTMENTS = ["CSE", "DND", "PS", "PSPC", "SSC", "TBS"]
