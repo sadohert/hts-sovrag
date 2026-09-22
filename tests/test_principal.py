@@ -280,3 +280,19 @@ def test_one_malformed_entry_is_a_valueerror_not_an_unknown_id(tmp_path: Path) -
     )
     with pytest.raises(ValueError, match="bad: missing clearance"):
         resolve_principal("good", path)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "principals:\n  a:\n    clearance: [UNCLASSIFIED\n",  # unterminated flow sequence
+        "principals:\n\t a:\n    clearance: UNCLASSIFIED\n",  # tab indentation
+        "principals:\n  ? [a, b]\n  : {clearance: UNCLASSIFIED}\n",  # unhashable key
+    ],
+)
+def test_a_file_yaml_cannot_parse_is_a_valueerror_naming_the_path(
+    tmp_path: Path, body: str
+) -> None:
+    path = _write(tmp_path, body)
+    with pytest.raises(ValueError, match=rf"{path.name}: not a valid principals file"):
+        load_principals(path)

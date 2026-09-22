@@ -265,3 +265,43 @@ def test_ask_generation_error_exits_one(monkeypatch: pytest.MonkeyPatch) -> None
     result = runner.invoke(cli.app, ["ask", "q", "--principal", "analyst_dnd"])
     assert result.exit_code == 1
     assert "connection refused" in result.output
+
+
+ANALYST_DND_FILTER = (
+    "classification in (UNCLASSIFIED, PROTECTED_A)"
+    " and (classification = UNCLASSIFIED or department in (GC_WIDE, DND))"
+)
+
+
+def test_query_unknown_principal_is_a_usage_error(env: Path) -> None:
+    result = runner.invoke(cli.app, ["query", "x", "--principal", "nobody"])
+    assert result.exit_code == 2
+    assert "unknown principal" in result.output
+
+
+def test_query_prints_the_applied_filter(env: Path) -> None:
+    _ingest(env)
+    result = runner.invoke(cli.app, ["query", "identity", "--principal", "analyst_dnd"])
+    assert result.exit_code == 0, result.output
+    assert f"filter: {ANALYST_DND_FILTER}" in result.output
+
+
+def test_query_json_carries_the_applied_filter(env: Path) -> None:
+    import json
+
+    _ingest(env)
+    result = runner.invoke(cli.app, ["query", "identity", "--principal", "analyst_dnd", "--json"])
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.output)["applied_filter"] == ANALYST_DND_FILTER
+
+
+def test_principals_file_comes_from_settings(env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    _ingest(env)
+    principals = env / "principals.yaml"
+    principals.write_text("principals:\n  tester:\n    clearance: UNCLASSIFIED\n")
+    monkeypatch.setenv("PRINCIPALS_PATH", str(principals))
+    ok = runner.invoke(cli.app, ["query", "identity", "--principal", "tester"])
+    assert ok.exit_code == 0, ok.output
+    missing = runner.invoke(cli.app, ["query", "identity", "--principal", "analyst_dnd"])
+    assert missing.exit_code == 2
+    assert "unknown principal" in missing.output

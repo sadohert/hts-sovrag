@@ -2,6 +2,7 @@
 
 import psycopg
 
+from sovrag.auth import LEAST_PRIVILEGED
 from sovrag.corpus.chunk import Chunk
 from sovrag.corpus.manifest import DocumentMeta
 from sovrag.index.store import replace_chunks, upsert_document
@@ -55,19 +56,19 @@ def _seed(db: psycopg.Connection) -> None:
 
 def test_exact_acronym_ranks_first(db: psycopg.Connection) -> None:
     _seed(db)
-    hits = search_keyword(db, "PSPC procurement", k=5)
+    hits = search_keyword(db, "PSPC procurement", k=5, principal=LEAST_PRIVILEGED)
     assert hits[0].chunk_id == 2
     assert all(h.score > 0 for h in hits)
 
 
 def test_filler_only_query_returns_nothing(db: psycopg.Connection) -> None:
     _seed(db)
-    assert search_keyword(db, "the of and", k=5) == []
+    assert search_keyword(db, "the of and", k=5, principal=LEAST_PRIVILEGED) == []
 
 
 def test_hits_carry_citations(db: psycopg.Connection) -> None:
     _seed(db)
-    hit = search_keyword(db, "cloud brokering", k=5)[0]
+    hit = search_keyword(db, "cloud brokering", k=5, principal=LEAST_PRIVILEGED)[0]
     assert (hit.doc_id, hit.chunk_id, hit.heading_path, hit.source_url) == (
         "a",
         1,
@@ -78,5 +79,5 @@ def test_hits_carry_citations(db: psycopg.Connection) -> None:
 
 def test_k_limits_results(db: psycopg.Connection) -> None:
     _seed(db)
-    assert len(search_keyword(db, "departments", k=1)) == 1
-    assert len(search_keyword(db, "departments", k=5)) == 2
+    assert len(search_keyword(db, "departments", k=1, principal=LEAST_PRIVILEGED)) == 1
+    assert len(search_keyword(db, "departments", k=5, principal=LEAST_PRIVILEGED)) == 2

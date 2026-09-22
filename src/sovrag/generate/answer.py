@@ -3,8 +3,9 @@
 This is the one entry point for answering. The CLI calls it today; the HTTP API and the MCP
 server will call it, so the citation rule, the refusal rule and the audit line are enforced in
 one place.
-The principal is passed in by the caller, which is responsible for binding it (ADR on
-principal binding). Entitlement filtering will happen inside the search functions.
+The principal is passed in by the caller, which is responsible for binding it (ADR 0009).
+Entitlement filtering happens inside the search functions (ADR 0013); this module only
+reports the predicate that was applied.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from sovrag.generate.llm import GenerationError, Generator
 from sovrag.generate.prompts import REFUSAL_TEXT, build_messages
 from sovrag.index.embed import Embedder
 from sovrag.index.store import connect
-from sovrag.retrieve import Hit, Mode, search
+from sovrag.retrieve import Hit, Mode, entitlement_for, search
 
 MAX_K = 10
 
@@ -58,13 +59,14 @@ def answer(
 ) -> Answer:
     settings = get_settings()
     k = max(1, min(k, MAX_K))
+    applied_filter = entitlement_for(principal).render()
     with connect(settings.database_url) as conn:
         hits: list[Hit] = search(
             conn,
             question,
             mode=mode,
             k=k,
-            # entitlement: pass principal here once the filter lands
+            principal=principal,
             embed_query=lambda q: Embedder.from_settings(settings).embed_one(q),
         )
 
@@ -80,7 +82,7 @@ def answer(
             cited_chunk_ids=cited_chunk_ids,
             refused=refused,
             reason=reason,
-            applied_filter=None,
+            applied_filter=applied_filter,
         )
 
     def finish(
@@ -96,7 +98,7 @@ def answer(
             refused=refused,
             model=settings.llm_model,
             retrieved_chunk_ids=tuple(h.chunk_id for h in hits),
-            applied_filter=None,
+            applied_filter=applied_filter,
         )
         audit(cited_chunk_ids=[c.chunk_id for c in citations], refused=refused, reason=reason)
         return result

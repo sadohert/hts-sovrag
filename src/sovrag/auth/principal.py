@@ -99,7 +99,11 @@ class _UniqueKeyLoader(yaml.SafeLoader):
 
 def load_principals(path: Path = DEFAULT_PRINCIPALS_PATH) -> dict[str, Principal]:
     """Read named principals from YAML. A bad file is an error, never a quiet downgrade."""
-    raw = yaml.load(Path(path).read_text(encoding="utf-8"), Loader=_UniqueKeyLoader)
+    text = Path(path).read_text(encoding="utf-8")
+    try:
+        raw = yaml.load(text, Loader=_UniqueKeyLoader)
+    except (yaml.YAMLError, TypeError) as exc:
+        raise ValueError(f"{path}: not a valid principals file: {exc}") from exc
     entries = raw.get("principals") if isinstance(raw, dict) else None
     if not isinstance(entries, dict):
         raise ValueError(f"{path}: expected a top-level 'principals' mapping")

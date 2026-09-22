@@ -34,7 +34,7 @@ flowchart LR
   G -.-> LLM
 ```
 
-Status: the corpus pipeline, all three retrieval modes, and grounded generation with citations and refusal exist. Entitlement filtering and the HTTP API follow.
+Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, and grounded generation with citations and refusal exist. The HTTP API and the MCP server follow.
 
 ## Data model
 
@@ -72,7 +72,7 @@ A `Principal` validates itself on construction, so one that exists is valid what
 
 `data/principals.yaml` ships five named principals, one per row of the entitlement grid: `public`, `analyst_dnd`, `analyst_ps`, `cio_ssc` and `auditor`, which holds every membership. `load_principals` reads the file strictly. A repeated id, an id YAML does not read as a string, a missing clearance, an unknown clearance or department, or a malformed shape is a `ValueError` that names the principal; nothing downgrades quietly. `resolve_principal` raises `KeyError` only for an id that is not in the file. See ADR 0012.
 
-Like the classification labels, clearances are synthetic (ADR 0003). `sovrag ask` resolves `--principal` and rejects an unknown id as a usage error. The entitlement filter that applies a principal to retrieval is not implemented yet, and until it lands `sovrag query --principal` accepts any string without resolving it.
+Like the classification labels, clearances are synthetic (ADR 0003). `sovrag ask` resolves `--principal` and rejects an unknown id as a usage error. Both `sovrag query` and `sovrag ask` resolve `--principal` against the file `PRINCIPALS_PATH` names and reject an unknown id as a usage error.
 
 ## Deployment
 
@@ -92,6 +92,10 @@ The vector for each chunk is computed over the document title, the heading path 
 
 `vector` orders chunks by cosine distance over the HNSW index. `keyword` parses the question with `websearch_to_tsquery` and ranks full-text matches with `ts_rank_cd`; a question of stop words only returns nothing. Because every term must match, sentence-length questions often return nothing from keyword mode; on a ten-question set four did. Hybrid then falls back to the vector ranking. `hybrid` takes the top `max(4k, 20)` from each and fuses by reciprocal rank fusion (k = 60), so a chunk near the top of either list rises and one near the top of both rises furthest. Ties resolve by chunk id; see ADR 0007. All three return the same `Hit` with citations. See ADR 0007.
 
+## Entitlement filter
+
+`retrieve/filters.py` turns a principal into an `Entitlement`: one fixed SQL fragment and two bound arrays, the classification labels at or below the clearance and the department memberships. A document is visible when its classification is at or below the clearance and it is unclassified, government-wide, or in one of the principal's departments. All three search functions require a principal and put the predicate in their `WHERE` clause; hybrid passes it to both arms and fuses only what they return. Vector search runs in a transaction with `SET LOCAL hnsw.iterative_scan = relaxed_order` so the HNSW scan continues past filtered-out rows until `k` visible ones are found, then re-sorts those `k` by score. The rendered predicate is reported as `applied_filter` on every answer and audit line. Against the indexed corpus `analyst_dnd` sees 16 of 27 documents. See ADR 0013.
+
 ## Generation
 
 `generate/answer.py` is the single entry point for answering. It retrieves with the chosen mode, builds a prompt that lists the chunks as numbered sources, and makes one chat completion call at temperature 0 with the model's thinking mode off, and a second one only when the first reply carried no citations. The model must cite with `[n]` or reply with a sentinel; code validates the markers, builds a `Citation` for each, and turns the sentinel into a fixed refusal. An answer with no citations is retried once with a firmer instruction, then refused. Every call appends one line to the JSONL audit log. See ADR 0008.
@@ -107,3 +111,4 @@ The vector for each chunk is computed over the document title, the heading path 
 - ADR 0010: for Mattermost users, entitlement comes from admin-managed Mattermost user attributes, read once per tool call.
 - ADR 0011: Mattermost runs in Compose as Mattermost Entry on the existing Postgres, with the Agents plugin pinned and Docker Model Runner as its model.
 - ADR 0012: the principal model has two axes, validates itself on construction, and loads from YAML strictly.
+- ADR 0013: the entitlement predicate is one bound WHERE clause inside every retrieval query; HNSW scans continue past the filter with `SET LOCAL hnsw.iterative_scan`.

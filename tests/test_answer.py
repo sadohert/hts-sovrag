@@ -16,6 +16,10 @@ from sovrag.generate.prompts import REFUSAL_TEXT, SENTINEL
 from sovrag.retrieve import Hit, Mode
 
 WHO = Principal(id="analyst_dnd", clearance=Clearance.PROTECTED_A, departments=frozenset({"DND"}))
+WHO_FILTER = (
+    "classification in (UNCLASSIFIED, PROTECTED_A)"
+    " and (classification = UNCLASSIFIED or department in (GC_WIDE, DND))"
+)
 
 
 def _hit(n: int) -> Hit:
@@ -60,6 +64,7 @@ def _wire(monkeypatch: pytest.MonkeyPatch, hits: list[Hit], replies: list[str]) 
     gen = FakeGenerator(replies)
 
     def fake_search(conn: object, q: str, **kw: object) -> list[Hit]:
+        assert kw["principal"] is WHO
         if kw["mode"] is not Mode.keyword:
             kw["embed_query"](q)  # type: ignore[operator]
         return list(hits[: kw["k"]])  # type: ignore[misc]
@@ -95,7 +100,7 @@ def test_cited_answer_builds_citations_for_cited_hits_only(
         refused=False,
         model=result.model,
         retrieved_chunk_ids=(101, 102, 103),
-        applied_filter=None,
+        applied_filter=WHO_FILTER,
     )
     (line,) = _audit_lines(audit_path)
     assert line["event"] == "answer"
@@ -103,6 +108,7 @@ def test_cited_answer_builds_citations_for_cited_hits_only(
     assert line["cited_chunk_ids"] == [101, 103]
     assert line["retrieved_chunk_ids"] == [101, 102, 103]
     assert line["refused"] is False and line["reason"] is None
+    assert line["applied_filter"] == WHO_FILTER
 
 
 def test_sentinel_refuses_with_no_citations(
@@ -213,3 +219,13 @@ def test_vector_mode_builds_the_embedder_once(
     monkeypatch.setattr(answer_mod.Embedder, "from_settings", classmethod(from_settings))
     assert not answer("q", principal=WHO, mode=Mode.vector).refused
     assert len(calls) == 1
+
+
+def test_refusal_still_reports_the_applied_filter(
+    monkeypatch: pytest.MonkeyPatch, audit_path: Path
+) -> None:
+    _wire(monkeypatch, [], ["unused"])
+    result = answer("q", principal=WHO)
+    assert result.refused and result.applied_filter == WHO_FILTER
+    (line,) = _audit_lines(audit_path)
+    assert line["applied_filter"] == WHO_FILTER

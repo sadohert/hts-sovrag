@@ -2,7 +2,7 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: corpus indexed; vector, keyword and hybrid retrieval; grounded answers with citations and refusal from the CLI. No entitlement filtering yet.
+Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI.
 
 ## What it will do
 
@@ -24,8 +24,9 @@ docker compose up -d postgres
 uv sync
 uv run sovrag ingest                              # fetch, parse, chunk, embed, index (~2 min)
 uv run sovrag query "What did the Auditor General find about ArriveCAN?" --principal analyst_dnd
+uv run sovrag query "What did the Auditor General find about ArriveCAN?" --principal auditor
 ```
 
-`ingest` pulls the two models declared in `compose.yaml` on first use. Pages are cached under `data/raw/`; re-running is idempotent.
+The two queries differ: `analyst_dnd` is cleared to `PROTECTED_A` and never sees the Auditor General reports, which are labelled `PROTECTED_B`; `auditor` does. Each result prints the filter that was applied. `ingest` pulls the two models declared in `compose.yaml` on first use. Pages are cached under `data/raw/`; re-running is idempotent.
 
 See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.
