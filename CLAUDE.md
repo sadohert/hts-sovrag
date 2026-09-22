@@ -44,4 +44,5 @@ every claim in the README against the code.
 - uv run sovrag query "..." --principal analyst_dnd --mode vector   # or keyword | hybrid
 - uv run sovrag ask "..." --principal analyst_dnd   # answer with [n] citations, or refuse
 - uv run pytest
-- Not implemented yet: sovrag serve, sovrag eval, the mcp profile.
+- uv run sovrag eval load-fixture && uv run sovrag eval retrieval --check && uv run sovrag eval leak --check
+- Not implemented yet: sovrag serve, the mcp profile.

@@ -2,7 +2,7 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI.
+Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI; retrieval and leak suites gate CI, generation judged locally.
 
 ## What it will do
 
@@ -28,5 +28,26 @@ uv run sovrag query "What did the Auditor General find about ArriveCAN?" --princ
 ```
 
 The two queries differ: `analyst_dnd` is cleared to `PROTECTED_A` and never sees the Auditor General reports, which are labelled `PROTECTED_B`; `auditor` does. Each result prints the filter that was applied. `ingest` pulls the two models declared in `compose.yaml` on first use. Pages are cached under `data/raw/`; re-running is idempotent.
+
+## Measure it
+
+```
+uv run sovrag eval load-fixture       # the committed index; no model needed
+uv run sovrag eval retrieval --check  # hit@5, recall@10, MRR per mode, against eval/thresholds.json
+uv run sovrag eval leak --check       # zero forbidden chunks for every principal
+uv run sovrag eval generation         # needs JUDGE_MODEL; judged locally, results labelled by model
+```
+
+Measured baseline, `eval/results/retrieval-2026-09-22.json`:
+
+| Mode | hit@5 | recall@10 | MRR |
+|---|---|---|---|
+| hybrid | 0.900 | 0.933 | 0.716 |
+| vector | 0.867 | 0.933 | 0.705 |
+
+Generator `ai/qwen3.5:9b-q4_K_M`, embedder `hf.co/gpustack/bge-m3-gguf:Q8_0`, on
+`docker-model-runner` with the `llama.cpp` backend. Results under `eval/results/` carry these
+model, quantization and backend labels, so a run on a different backend is compared against
+this baseline, never confused with it.
 
 See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.
