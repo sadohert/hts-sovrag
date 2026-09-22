@@ -95,7 +95,7 @@ def test_the_plugin_upload_verifies_the_pinned_asset(monkeypatch: pytest.MonkeyP
         )
 
 
-def test_static_header_map_is_empty_and_service_account_map_is_only_authorization(
+def test_static_header_map_is_only_authorization_and_service_account_map_is_empty(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _, _, _ = _run_dry(monkeypatch)
@@ -103,8 +103,8 @@ def test_static_header_map_is_empty_and_service_account_map_is_only_authorizatio
     config = transport_calls[("PUT", f"/plugins/{seed.PLUGIN_ID}/admin/config")]
     (server,) = config["mcp"]["servers"]
     assert server["name"] == "sovrag" and server["baseURL"] == "http://mcp:8002/mcp"
-    assert server["headers"] == {}
-    assert server["serviceAccountHeaders"] == {"Authorization": "Bearer s3cret"}
+    assert server["headers"] == {"Authorization": "Bearer s3cret"}
+    assert server["serviceAccountHeaders"] == {}
     assert [t["name"] for t in server["tool_configs"]] == ["search", "answer"]
     assert all(t["policy"] == "auto_run_in_dm" and t["enabled"] for t in server["tool_configs"])
     assert config["mcp"]["enabled"] is True
@@ -114,14 +114,14 @@ def test_static_header_map_is_empty_and_service_account_map_is_only_authorizatio
     assert service["defaultModel"] == "ai/qwen3.5:9b-q4_K_M"
 
 
-def test_the_bot_is_direct_message_only_with_service_account_auth_and_both_tools(
+def test_the_bot_is_direct_message_only_with_per_user_connections_and_both_tools(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _run_dry(monkeypatch)
     agent = seed.DryRunTransport.last_bodies[("POST", f"/plugins/{seed.PLUGIN_ID}/agents")]
     assert agent["username"] == "sovrag"
     assert agent["channelAccessLevel"] == 3 and agent["userAccessLevel"] == 0
-    assert agent["useServiceAccountAuth"] is True and agent["disableTools"] is False
+    assert agent["useServiceAccountAuth"] is False and agent["disableTools"] is False
     assert agent["enabledMCPTools"] == [
         {"server_origin": "http://mcp:8002/mcp", "tool_name": "search"},
         {"server_origin": "http://mcp:8002/mcp", "tool_name": "answer"},
@@ -246,7 +246,7 @@ class FakeMattermost:
             if method == "GET":
                 return httpx.Response(200, json=self.config)
             stored = json.loads(json.dumps(body))
-            stored["mcp"]["servers"][0]["headers"] = None  # the server stores {} as null
+            stored["mcp"]["servers"][0]["serviceAccountHeaders"] = None  # {} is stored as null
             self.config = {**stored, "allowUnsafeLinks": False}  # and adds defaults
             return httpx.Response(200, json=self.config)
         if path == "/plugins/mattermost-ai/agents":

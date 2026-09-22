@@ -35,7 +35,9 @@ docker compose --profile mcp exec mcp tail -f /app/audit/audit.jsonl   # keep th
 
 Open http://localhost:8065. Sign in as `admin` (password `Passw0rd!admin` unless you changed it)
 once to create a team and add the three users to it; that is the one manual step, because a
-team is a workspace choice, not configuration. Then sign in as each demo user in a private
+team is a workspace choice, not configuration. Expect about 40 seconds from a question to its
+reply on a laptop, most of it the plugin's model deciding to call the tool and relaying the
+result under emulation; sovrag's own step is 5 to 11 seconds. Then sign in as each demo user in a private
 window and open a direct message with `@sovrag`.
 
 ## The users
@@ -83,9 +85,11 @@ A refusal and an outage look different: an outage is a tool error and writes no 
 - A request without the shared secret gets 401 before anything runs:
   `curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8002/mcp -H 'Content-Type: application/json' -d '{}'`
   prints `401`.
-- The plugin's MCP server entry has an empty static header map and only `Authorization` in the
-  service-account map; `tests/test_seed_mattermost.py` asserts it, because a header named
-  `X-Mattermost-UserID` in either map would override every user's identity (ADR 0009).
+- The plugin's MCP server entry has only `Authorization` in its static header map and an empty
+  service-account map, with service-account authentication off for the bot;
+  `tests/test_seed_mattermost.py` asserts it. A header named `X-Mattermost-UserID` in that map
+  would override every user's identity, and service-account authentication would make every
+  question resolve to the bot itself (ADR 0009, amendment).
 
 ## Reset
 

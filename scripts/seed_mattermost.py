@@ -6,7 +6,7 @@ nothing. What it creates: the admin (the first user, which Mattermost makes a sy
 the two admin-managed attributes with the document vocabulary as options; the three demo users
 and their attribute values; the Agents plugin at the pinned version, uploaded because the image
 bundles an older one; the plugin's provider (Docker Model Runner) and its sovrag MCP server
-entry, with the shared secret in the service-account header map and nothing in the static map;
+entry, with the shared secret in the static header map and nothing in the service-account map;
 the bot, restricted to direct messages, with both sovrag tools enabled; and a token for the bot
 user, which the sovrag resolver uses to read attributes. It prints the two values to put in
 .env. --dry-run prints the calls it would make against an empty server and touches nothing.
@@ -266,8 +266,11 @@ def _plugin_config(
                     "name": "sovrag",
                     "enabled": True,
                     "baseURL": mcp_url,
-                    "headers": {},
-                    "serviceAccountHeaders": {"Authorization": f"Bearer {shared_secret}"},
+                    # Per-user connections: the plugin sends X-Mattermost-UserID for the person
+                    # asking and layers this static map on top. Service-account auth would make
+                    # the pool bot-owned and send the bot's own id instead (ADR 0009, amendment).
+                    "headers": {"Authorization": f"Bearer {shared_secret}"},
+                    "serviceAccountHeaders": {},
                     "tool_configs": [
                         {"name": name, "policy": "auto_run_in_dm", "enabled": True}
                         for name in TOOL_NAMES
@@ -322,7 +325,7 @@ def _agent_body(mcp_url: str) -> dict[str, Any]:
         "enabledMCPTools": [{"server_origin": mcp_url, "tool_name": name} for name in TOOL_NAMES],
         "autoEnableNewMCPTools": False,
         "mcpDynamicToolLoading": False,
-        "useServiceAccountAuth": True,
+        "useServiceAccountAuth": False,
         "model": "",
         "enableVision": False,
         "disableTools": False,
@@ -349,7 +352,7 @@ def _ensure_agent(mm: Mattermost, mcp_url: str) -> str:
                 _say(f"bot {BOT_USERNAME}: exists")
             return str(agent["botUserID"])
     created = mm.call("POST", f"/plugins/{PLUGIN_ID}/agents", json=wanted).json()
-    _say(f"bot {BOT_USERNAME}: created (direct messages only, service-account auth)")
+    _say(f"bot {BOT_USERNAME}: created (direct messages only, per-user MCP connections)")
     return str(created["botUserID"])
 
 
