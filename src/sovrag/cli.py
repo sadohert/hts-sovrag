@@ -1,4 +1,4 @@
-"""sovrag CLI: ingest | query | ask | serve."""
+"""sovrag CLI: ingest | query | ask | serve-mcp | serve."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Annotated
 
 import typer
+import uvicorn
 
 from sovrag.auth import Principal, resolve_principal
 from sovrag.config import Settings, get_settings
@@ -18,6 +19,7 @@ from sovrag.generate import MAX_K, GenerationError
 from sovrag.generate.answer import answer
 from sovrag.index.embed import Embedder
 from sovrag.index.store import connect
+from sovrag.mcp.server import build_app
 from sovrag.retrieve import Mode, entitlement_for, search
 
 app = typer.Typer(
@@ -148,6 +150,23 @@ def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
     """Run the FastAPI server."""
     typer.echo("serve: not implemented yet", err=True)
     raise typer.Exit(code=2)
+
+
+@app.command("serve-mcp")
+def serve_mcp(host: str = "127.0.0.1", port: int = 8001) -> None:
+    """Run the MCP server (Streamable HTTP at /mcp). MCP_IDENTITY chooses how the principal is
+    bound; the server refuses to start with a configuration that could bind the wrong one."""
+    settings = get_settings()
+    try:
+        built = build_app(settings)
+    except ValueError as exc:
+        typer.echo(f"serve-mcp: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    who = settings.principal if built.identity.value == "static" else "per tool call"
+    typer.echo(
+        f"serve-mcp: identity={built.identity.value} principal={who} at http://{host}:{port}/mcp"
+    )
+    uvicorn.run(built.app, host=host, port=port, log_level="info")
 
 
 if __name__ == "__main__":
