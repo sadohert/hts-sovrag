@@ -44,7 +44,9 @@ jobs:
 
             Review this pull request in one pass. Read CLAUDE.md first: its Invariants section
             is the rubric, and its Working section says what done means. Read the diff with
-            `gh pr diff` and the description with `gh pr view`.
+            `gh pr diff` and the description with `gh pr view`. The pull request is already
+            checked out in the working directory, so read any file with Read and search with
+            Grep; do not fetch branches or file contents another way, and do not run scripts.
 
             Look for, in this order:
             1. Invariant violations: entitlement filtering anywhere but SQL, retrieval that

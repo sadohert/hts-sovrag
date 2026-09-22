@@ -129,6 +129,14 @@ def test_allowed_tools_are_exactly_read_the_pull_request_read_the_repo_and_post(
     assert tuple(allowed.split(",")) == ALLOWED_TOOLS
 
 
+def test_the_prompt_says_the_checkout_already_holds_the_pull_request() -> None:
+    """Without this the reviewer spent a dozen denied turns on git fetch and gh api trying to
+    get at files that were already on disk."""
+    prompt = " ".join(str(_with(REVIEW_STEP)["prompt"]).split())
+    assert "already checked out in the working directory" in prompt
+    assert "read any file with Read and search with Grep" in prompt
+
+
 def test_the_prompt_makes_a_finished_review_always_post_a_summary_the_guard_can_find() -> None:
     prompt = str(_with(REVIEW_STEP)["prompt"])
     assert '"## Code review"' in prompt
