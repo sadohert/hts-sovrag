@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     # answer() itself may make a second completion on the uncited-retry path (ADR 0008).
     llm_max_retries: int = 0
 
+    # Labels only: the OpenAI-compatible API does not say what runs the model. Every eval result
+    # records them so a Q4 GGUF on llama.cpp is never mistaken for full precision on vLLM.
+    engine: str = "docker-model-runner"
+    engine_backend: str = "llama.cpp"
+
     embed_base_url: str = "http://localhost:12434/engines/v1"
     embed_model: str = "hf.co/gpustack/bge-m3-gguf:Q8_0"
     embed_dim: int = 1024
