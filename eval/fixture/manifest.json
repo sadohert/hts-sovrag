@@ -4,12 +4,12 @@
   "documents": 27,
   "chunks": 3357,
   "questions": 60,
-  "built_at": "2026-09-22T15:13:33.916430+00:00",
+  "built_at": "2026-09-22T15:21:11.290845+00:00",
   "sha256": {
     "documents.jsonl": "fb8d0d755f8db58e50ab0c56d839493cc48b60ac84d5d03999825de883bd4ea0",
     "chunks.jsonl": "0c206892f1f2ad81af1511d334ba2e0c40f4d3ff43663fc35807040997197a47",
     "chunks.f32": "2ebcd6bd783993a7e274ad798f1a83ffc0feb5fd09f7dfb21f7ba6332db465eb",
-    "questions.jsonl": "85dabd4c27ae3c2a15cb3ca20e8133eda81c490f7818914bbccbf4320e89c84a",
-    "questions.f32": "cd22b1bfde021f16bff3ddf4470e289dca91d9e527cfa7617d616430dacb7b1d"
+    "questions.jsonl": "6c31a055c5251750fceb0471f34ed36ab741cc5ebb68e846a13994d060a097b4",
+    "questions.f32": "63b7591e662b4e3bafe849268bb7ba5c0312227a812d6fbaa7f44aa1ac7b79e2"
   }
 }
