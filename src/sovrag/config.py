@@ -32,6 +32,10 @@ class Settings(BaseSettings):
 
     # MCP server only. Bound at startup; never read from tool arguments.
     principal: str = ""
+    # MCP server, mattermost mode only: where the resolver reads user attributes, and the
+    # bot token it reads them with. The token is a credential; it is never logged.
+    mattermost_url: str = ""
+    mattermost_bot_token: str = ""
 
 
 def get_settings() -> Settings:

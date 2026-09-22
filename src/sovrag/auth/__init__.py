@@ -1,5 +1,7 @@
-"""Identity and the entitlement vocabulary. See principal.py."""
+"""Identity and the entitlement vocabulary (principal.py) and the Mattermost resolver
+(mattermost.py)."""
 
+from sovrag.auth.mattermost import MattermostResolver, Resolution, ResolutionError
 from sovrag.auth.principal import (
     ANONYMOUS_ID,
     CLASSIFICATION_RANK,
@@ -23,7 +25,10 @@ __all__ = [
     "LEAST_PRIVILEGED",
     "MEMBERSHIPS",
     "Clearance",
+    "MattermostResolver",
     "Principal",
+    "Resolution",
+    "ResolutionError",
     "load_principals",
     "resolve_principal",
 ]
