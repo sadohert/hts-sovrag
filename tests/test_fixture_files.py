@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from sovrag.eval.fixture import load_question_embeddings, read_chunks, read_documents
+from sovrag.eval.fixture import _read_jsonl, load_question_embeddings, read_chunks, read_documents
 from sovrag.eval.golden import load_leak, load_retrieval, load_unanswerable
 
 FIXTURE = Path("eval/fixture")
@@ -24,6 +24,19 @@ def test_every_gold_chunk_exists_in_the_fixture() -> None:
     for item in [*load_retrieval(GOLDEN / "retrieval.jsonl"), *load_leak(GOLDEN / "leak.jsonl")]:
         for g in item.gold:
             assert (g.doc_id, g.ordinal) in keys, f"{item.id}: {g}"
+
+
+def test_fixture_question_text_matches_the_golden_question_text() -> None:
+    golden_by_id = {
+        i.id: i.question
+        for i in [
+            *load_retrieval(GOLDEN / "retrieval.jsonl"),
+            *load_unanswerable(GOLDEN / "unanswerable.jsonl"),
+            *load_leak(GOLDEN / "leak.jsonl"),
+        ]
+    }
+    for row in _read_jsonl(FIXTURE / "questions.jsonl"):
+        assert row["question"] == golden_by_id[str(row["id"])], row["id"]
 
 
 def test_every_golden_question_has_an_embedding() -> None:

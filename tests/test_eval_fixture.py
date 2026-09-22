@@ -127,3 +127,26 @@ def test_manifest_records_models_and_counts(db4: psycopg.Connection, tmp_path: P
         "questions.jsonl",
         "questions.f32",
     }
+
+
+def test_manifest_missing_sha256_key_is_refused(db4: psycopg.Connection, tmp_path: Path) -> None:
+    """manifest.json itself is not sha256-checked, so a hand-edit to it needs its own guard."""
+    _seed(db4)
+    build_fixture(db4, tmp_path, [("q1", "alpha?")], _fake_embed, embed_model="m", dim=DIM)
+    manifest_path = tmp_path / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    del manifest["sha256"]["chunks.jsonl"]
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match=r"chunks\.jsonl"):
+        load_fixture(db4, tmp_path)
+
+
+def test_manifest_wrong_chunk_count_is_refused(db4: psycopg.Connection, tmp_path: Path) -> None:
+    _seed(db4)
+    build_fixture(db4, tmp_path, [("q1", "alpha?")], _fake_embed, embed_model="m", dim=DIM)
+    manifest_path = tmp_path / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["chunks"] = manifest["chunks"] + 1
+    manifest_path.write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="chunks"):
+        load_fixture(db4, tmp_path)

@@ -117,7 +117,15 @@ def run_leak_answers(
             result = answer_fn(item.question, principal)
             asked += 1
             refused += int(result.refused)
-            rows.append({"id": item.id, "principal": name, "refused": result.refused})
+            rows.append(
+                {
+                    "id": item.id,
+                    "principal": name,
+                    "refused": result.refused,
+                    "answer": result.text,
+                    "citations": [c.chunk_id for c in result.citations],
+                }
+            )
         metrics[f"{name}.asked"] = float(asked)
         metrics[f"{name}.refused"] = float(refused)
     return SuiteResult(metrics=metrics, rows=rows)

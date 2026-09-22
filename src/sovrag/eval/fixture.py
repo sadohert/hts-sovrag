@@ -80,6 +80,13 @@ def _to_floats(embedding: Any) -> list[float]:
 
 def _manifest(fixture_dir: Path) -> dict[str, Any]:
     manifest: dict[str, Any] = json.loads((fixture_dir / "manifest.json").read_text("utf-8"))
+    present = set(manifest["sha256"])
+    expected_files = set(FILES)
+    if present != expected_files:
+        missing = sorted(expected_files - present)
+        extra = sorted(present - expected_files)
+        detail = f"missing {missing}" if missing else f"extra {extra}"
+        raise ValueError(f"manifest.json sha256 map does not match FILES: {detail}")
     for name, expected in manifest["sha256"].items():
         actual = _sha256(fixture_dir / name)
         if actual != expected:
@@ -144,6 +151,12 @@ def load_fixture(conn: psycopg.Connection, fixture_dir: Path) -> dict[str, int]:
     manifest = _manifest(fixture_dir)
     documents = _read_jsonl(fixture_dir / "documents.jsonl")
     chunks = _read_jsonl(fixture_dir / "chunks.jsonl")
+    if len(documents) != manifest["documents"]:
+        raise ValueError(
+            f"manifest documents={manifest['documents']} but documents.jsonl has {len(documents)}"
+        )
+    if len(chunks) != manifest["chunks"]:
+        raise ValueError(f"manifest chunks={manifest['chunks']} but chunks.jsonl has {len(chunks)}")
     embeddings = _read_f32(fixture_dir / "chunks.f32", int(manifest["dim"]))
     if len(embeddings) != len(chunks):
         raise ValueError(f"{len(chunks)} chunks but {len(embeddings)} embeddings")
@@ -164,6 +177,10 @@ def load_fixture(conn: psycopg.Connection, fixture_dir: Path) -> dict[str, int]:
 def load_question_embeddings(fixture_dir: Path) -> dict[str, list[float]]:
     manifest = _manifest(fixture_dir)
     questions = _read_jsonl(fixture_dir / "questions.jsonl")
+    if len(questions) != manifest["questions"]:
+        raise ValueError(
+            f"manifest questions={manifest['questions']} but questions.jsonl has {len(questions)}"
+        )
     vectors = _read_f32(fixture_dir / "questions.f32", int(manifest["dim"]))
     if len(vectors) != len(questions):
         raise ValueError(f"{len(questions)} questions but {len(vectors)} embeddings")

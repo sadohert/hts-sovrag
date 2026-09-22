@@ -20,6 +20,7 @@ def test_report_carries_models_engine_and_metrics(tmp_path: Path) -> None:
         llm_model="ai/qwen3.5:9b-q4_K_M",
         judge_model="ai/gemma4:12b-q4_K_M",
         embed_model="hf.co/gpustack/bge-m3-gguf:Q8_0",
+        engine="docker-model-runner",
         engine_backend="llama.cpp",
     )
     report = make_report("retrieval", settings, SuiteResult({"hybrid.hit@5": 0.9}, [{"id": "r01"}]))

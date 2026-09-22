@@ -54,10 +54,18 @@ def test_parse_verdict_accepts_fenced_json_and_rejects_bad_values() -> None:
 
 
 def test_judge_messages_carry_sources_reference_and_answer() -> None:
-    messages = judge_messages("q?", "a [1]", ["source one"], "ref")
+    messages = judge_messages("q?", "a [1]", [(1, "source one")], "ref")
     assert messages[0]["role"] == "system"
     user = messages[1]["content"]
     assert "source one" in user and "ref" in user and "a [1]" in user and "q?" in user
+
+
+def test_judge_messages_number_sources_by_their_own_citation_marker() -> None:
+    """An answer citing [4] with a single citation whose n is 4 must show the judge [4], not [1]."""
+    messages = judge_messages("q?", "The plan is X [4].", [(4, "source four")], "ref")
+    user = messages[1]["content"]
+    assert "[4] source four" in user
+    assert "[1] source four" not in user
 
 
 def test_run_generation_reports_rates_and_samples_for_human_check() -> None:
@@ -122,3 +130,12 @@ def test_agreement_rate_over_filled_rows() -> None:
     ]
     assert agreement_rate(rows) == 0.5
     assert agreement_rate([{"verdict": {"faithful": True}, "human_check": None}]) is None
+
+
+def test_agreement_rate_ignores_a_non_bool_human_check() -> None:
+    """A string like "no" left in human_check by mistake must not count towards agreement."""
+    rows = [
+        {"verdict": {"faithful": True}, "human_check": True},
+        {"verdict": {"faithful": False}, "human_check": "no"},
+    ]
+    assert agreement_rate(rows) == 1.0

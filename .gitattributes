@@ -4,3 +4,4 @@ uv.lock linguist-generated=true
 tests/fixtures/real/*.html linguist-generated=true
 eval/fixture/* linguist-generated=true
 eval/fixture/*.f32 -diff
+eval/results/*.json linguist-generated=true

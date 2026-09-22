@@ -11,7 +11,7 @@ from sovrag.corpus.chunk import Chunk
 from sovrag.corpus.manifest import DocumentMeta
 from sovrag.eval.golden import GoldChunk, LeakItem
 from sovrag.eval.leak import forbidden_doc_ids, run_leak, run_leak_answers, visible
-from sovrag.generate.answer import Answer
+from sovrag.generate.answer import Answer, Citation
 from sovrag.index.store import replace_chunks, upsert_document
 from sovrag.retrieve.filters import entitlement_for
 
@@ -46,10 +46,19 @@ def _seed(db: psycopg.Connection) -> None:
     upsert_document(db, _meta("ps-drr", "PS", "DRR", "PROTECTED_A"))
     upsert_document(db, _meta("oag", "GC_WIDE", "OAG", "PROTECTED_B"))
     upsert_document(db, _meta("policy", "GC_WIDE", "POLICY", "UNCLASSIFIED"))
+    # Each disjunct of `visible` gets its own document, isolated from the others:
+    upsert_document(db, _meta("ps-dp", "PS", "DP", "UNCLASSIFIED"))  # classification alone
+    upsert_document(db, _meta("gc-drr", "GC_WIDE", "DRR", "PROTECTED_A"))  # GC_WIDE alone
+    upsert_document(
+        db, _meta("dnd-oag", "DND", "OAG", "PROTECTED_B")
+    )  # department membership alone
     replace_chunks(db, "dnd-drr", [Chunk(0, "h", "defence results achieved")], [_unit(0)])
     replace_chunks(db, "ps-drr", [Chunk(0, "h", "public safety results achieved")], [_unit(1)])
     replace_chunks(db, "oag", [Chunk(0, "h", "the audit found contracting gaps")], [_unit(2)])
     replace_chunks(db, "policy", [Chunk(0, "h", "the policy applies to departments")], [_unit(3)])
+    replace_chunks(db, "ps-dp", [Chunk(0, "h", "public safety plan priorities")], [_unit(4)])
+    replace_chunks(db, "gc-drr", [Chunk(0, "h", "government wide results reporting")], [_unit(5)])
+    replace_chunks(db, "dnd-oag", [Chunk(0, "h", "defence audit findings")], [_unit(6)])
 
 
 def test_visible_states_the_rule() -> None:
@@ -117,13 +126,14 @@ def test_a_forbidden_chunk_in_results_is_reported(
 def test_answer_check_counts_refusals() -> None:
     def fake_answer(question: str, principal: Principal) -> Answer:
         refused = principal.id != "auditor"
+        cites = () if refused else (Citation(1, "oag", 7, "t", "h", "https://example.test/oag"),)
         return Answer(
             question=question,
             principal=principal.id,
             mode="hybrid",
             request_id=None,
             text="x",
-            citations=(),
+            citations=cites,
             refused=refused,
             model="m",
             retrieved_chunk_ids=(),
@@ -138,4 +148,19 @@ def test_answer_check_counts_refusals() -> None:
         "dnd.refused": 1,
         "auditor.asked": 1,
         "auditor.refused": 0,
+    }
+    by_principal = {r["principal"]: r for r in result.rows}
+    assert by_principal["dnd"] == {
+        "id": "l1",
+        "principal": "dnd",
+        "refused": True,
+        "answer": "x",
+        "citations": [],
+    }
+    assert by_principal["auditor"] == {
+        "id": "l1",
+        "principal": "auditor",
+        "refused": False,
+        "answer": "x",
+        "citations": [7],
     }

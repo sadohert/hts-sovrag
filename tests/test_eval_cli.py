@@ -8,6 +8,7 @@ import pytest
 from typer.testing import CliRunner
 
 from sovrag import cli
+from sovrag.auth import Clearance, Principal
 from sovrag.corpus.chunk import Chunk
 from sovrag.corpus.manifest import DocumentMeta
 from sovrag.eval import cli as eval_cli
@@ -163,6 +164,54 @@ def test_check_exits_one_below_threshold(env: Path, monkeypatch: pytest.MonkeyPa
     result = runner.invoke(cli.app, ["eval", "retrieval", "--check", "--out", str(env / "o.json")])
     assert result.exit_code == 1
     assert "hybrid.hit@5: 0.500 < 0.900" in result.output
+
+
+def test_leak_check_gates_on_leaks_and_positive_control(
+    env: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    thresholds = env / "thresholds.json"
+    thresholds.write_text(json.dumps({"retrieval": {}, "leak": {"positive_control": 18}}))
+    monkeypatch.setattr(eval_cli, "THRESHOLDS_PATH", thresholds)
+    monkeypatch.setattr(eval_cli, "load_leak", lambda path, **kw: [])
+    monkeypatch.setattr(eval_cli, "load_question_embeddings", lambda d: {})
+    monkeypatch.setattr(
+        eval_cli,
+        "load_principals",
+        lambda path: {"auditor": Principal("auditor", Clearance.PROTECTED_B, frozenset({"DND"}))},
+    )
+    monkeypatch.setattr(
+        eval_cli, "connect", lambda url: __import__("contextlib").nullcontext(object())
+    )
+
+    # Case A: forbidden chunks were returned; the positive control does not save the run.
+    monkeypatch.setattr(
+        eval_cli,
+        "run_leak",
+        lambda *a, **kw: SuiteResult({"leaks": 1.0, "checks": 3.0, "positive_control": 20.0}, []),
+    )
+    result = runner.invoke(cli.app, ["eval", "leak", "--check", "--out", str(env / "a.json")])
+    assert result.exit_code == 1
+    assert "forbidden chunks returned" in result.output
+
+    # Case B: no leaks, but the positive control fell below its floor.
+    monkeypatch.setattr(
+        eval_cli,
+        "run_leak",
+        lambda *a, **kw: SuiteResult({"leaks": 0.0, "checks": 3.0, "positive_control": 10.0}, []),
+    )
+    result = runner.invoke(cli.app, ["eval", "leak", "--check", "--out", str(env / "b.json")])
+    assert result.exit_code == 1
+    assert "positive_control" in result.output
+
+    # Case C: no leaks and the positive control meets its floor.
+    monkeypatch.setattr(
+        eval_cli,
+        "run_leak",
+        lambda *a, **kw: SuiteResult({"leaks": 0.0, "checks": 3.0, "positive_control": 20.0}, []),
+    )
+    result = runner.invoke(cli.app, ["eval", "leak", "--check", "--out", str(env / "c.json")])
+    assert result.exit_code == 0
+    assert "thresholds met" in result.output
 
 
 def test_generation_refuses_same_model(env: Path, monkeypatch: pytest.MonkeyPatch) -> None:

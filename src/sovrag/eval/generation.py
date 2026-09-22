@@ -45,9 +45,9 @@ class Verdict:
 
 
 def judge_messages(
-    question: str, answer_text: str, sources: Sequence[str], reference: str
+    question: str, answer_text: str, sources: Sequence[tuple[int, str]], reference: str
 ) -> list[dict[str, str]]:
-    numbered = "\n\n".join(f"[{i}] {text}" for i, text in enumerate(sources, start=1))
+    numbered = "\n\n".join(f"[{n}] {text}" for n, text in sources)
     user = (
         f"Sources:\n\n{numbered}\n\nQuestion: {question}\n\nReference answer: {reference}\n\n"
         f"Answer to grade: {answer_text}"
@@ -121,7 +121,7 @@ def run_generation(
             false_refusals += 1
         else:
             texts = chunk_text_fn([c.chunk_id for c in result.citations])
-            sources = [texts.get(c.chunk_id, "") for c in result.citations]
+            sources = [(c.n, texts.get(c.chunk_id, "")) for c in result.citations]
             try:
                 verdict = parse_verdict(
                     judge_fn(
@@ -173,7 +173,7 @@ def run_generation(
 
 
 def agreement_rate(rows: Sequence[Mapping[str, Any]]) -> float | None:
-    filled = [r for r in rows if r.get("human_check") is not None and r.get("verdict")]
+    filled = [r for r in rows if isinstance(r.get("human_check"), bool) and r.get("verdict")]
     if not filled:
         return None
     agreed = sum(1 for r in filled if bool(r["human_check"]) == bool(r["verdict"]["faithful"]))
