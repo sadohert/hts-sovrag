@@ -322,7 +322,16 @@ async def test_search_returns_exactly_the_documents_the_user_may_see(
     assert data is not None and {h["doc_id"] for h in data["hits"]} == VISIBLE[user_id]
     assert data["principal"] == PRINCIPALS[user_id].id
     for hit in data["hits"]:
-        assert {"doc_id", "chunk_id", "heading_path", "source_url", "title", "score"} <= set(hit)
+        assert {
+            "doc_id",
+            "chunk_id",
+            "heading_path",
+            "source_url",
+            "title",
+            "text",
+            "score",
+        } <= set(hit)
+        assert hit["text"] == f"budget {hit['doc_id']}"
     resolve, search = _events(env)
     assert resolve["event"] == "resolve" and search["event"] == "search"
     assert resolve["user_id"] == user_id and resolve["principal"] == PRINCIPALS[user_id].id

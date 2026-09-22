@@ -36,6 +36,6 @@ uv run sovrag serve-mcp                                          # MCP_IDENTITY=
 MCP_IDENTITY=static PRINCIPAL=auditor docker compose --profile mcp up -d mcp
 ```
 
-The Mattermost mode, where each direct message runs as the Mattermost user asking, is configured in the Mattermost walkthrough that ships with the demo profile.
+In Mattermost mode each direct message runs as the Mattermost user asking; the settings are in `.env.example`, and the Compose profile that runs Mattermost alongside is not implemented yet.
 
 See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.

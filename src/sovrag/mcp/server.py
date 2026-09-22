@@ -196,7 +196,12 @@ def build_app(settings: Settings, *, resolver: Resolver | None = None) -> Sovrag
         ),
     )
 
-    @mcp.tool(description="Retrieve the passages most relevant to a question." + _NO_PRINCIPAL_ARG)
+    @mcp.tool(
+        description=(
+            "Retrieve the passages most relevant to a question, each with its text and its"
+            " citation (document, heading, source URL)." + _NO_PRINCIPAL_ARG
+        )
+    )
     def search(question: str, ctx: Context, k: int = 5) -> dict[str, object]:
         binding = binder.bind(ctx)
         k = max(1, min(k, MAX_K))
@@ -223,6 +228,7 @@ def build_app(settings: Settings, *, resolver: Resolver | None = None) -> Sovrag
                     "heading_path": h.heading_path,
                     "source_url": h.source_url,
                     "title": h.title,
+                    "text": h.text,
                     "score": h.score,
                 }
                 for h in hits

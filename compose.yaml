@@ -59,7 +59,7 @@ services:
     profiles: [mcp]
     build:
       context: .
-    command: ["sovrag", "serve-mcp", "--host", "0.0.0.0", "--port", "8001"]
+    command: ["sovrag", "serve-mcp", "--host", "0.0.0.0", "--port", "8002"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,7 +73,7 @@ services:
       MATTERMOST_URL: ${MATTERMOST_URL:-}
       MATTERMOST_BOT_TOKEN: ${MATTERMOST_BOT_TOKEN:-}
     ports:
-      - "8001:8001"
+      - "8002:8002"  # 8001 is the vllm profile's host port
     volumes:
       - audit:/app/audit
     models:
