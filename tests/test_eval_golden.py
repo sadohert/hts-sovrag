@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
+
 from sovrag.eval.golden import GoldChunk, load_leak, load_retrieval, load_unanswerable
 
 
@@ -64,3 +65,24 @@ def test_load_leak(tmp_path: Path) -> None:
     rows = [{"id": "l01", "question": "q", "gold": [{"doc_id": "d", "ordinal": 1}], "notes": "n"}]
     items = load_leak(_write(tmp_path / "l.jsonl", rows), known_doc_ids={"d"})
     assert items[0].gold == (GoldChunk("d", 1),)
+
+
+def test_gold_entry_missing_ordinal_is_an_error(tmp_path: Path) -> None:
+    row = _retrieval_row()
+    row["gold"] = [{"doc_id": "d1"}]  # missing ordinal
+    with pytest.raises(ValueError, match=r"r01.*ordinal"):
+        load_retrieval(_write(tmp_path / "r.jsonl", [row]))
+
+
+def test_gold_entry_missing_doc_id_is_an_error(tmp_path: Path) -> None:
+    row = _retrieval_row()
+    row["gold"] = [{"ordinal": 1}]  # missing doc_id
+    with pytest.raises(ValueError, match=r"r01.*doc_id"):
+        load_retrieval(_write(tmp_path / "r.jsonl", [row]))
+
+
+def test_gold_entry_with_non_integer_ordinal_is_an_error(tmp_path: Path) -> None:
+    row = _retrieval_row()
+    row["gold"] = [{"doc_id": "d1", "ordinal": "three"}]  # non-integer ordinal
+    with pytest.raises(ValueError, match=r"r01.*ordinal"):
+        load_retrieval(_write(tmp_path / "r.jsonl", [row]))

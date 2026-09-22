@@ -73,12 +73,33 @@ def _gold(
     raw = _field(path, lineno, row, "gold")
     if not raw:
         raise ValueError(f"{path}:{lineno}: {row['id']}: gold is empty")
-    gold = tuple(GoldChunk(doc_id=str(g["doc_id"]), ordinal=int(g["ordinal"])) for g in raw)
+
+    gold: list[GoldChunk] = []
+    for g in raw:
+        if not isinstance(g, dict):
+            raise ValueError(f"{path}:{lineno}: {row['id']}: gold entry must be a dict")
+
+        if "doc_id" not in g:
+            raise ValueError(f"{path}:{lineno}: {row['id']}: gold entry missing doc_id")
+
+        if "ordinal" not in g:
+            raise ValueError(f"{path}:{lineno}: {row['id']}: gold entry missing ordinal")
+
+        try:
+            ordinal_int = int(g["ordinal"])
+        except (ValueError, TypeError) as e:
+            raise ValueError(
+                f"{path}:{lineno}: {row['id']}: gold entry ordinal must be an integer"
+            ) from e
+
+        gold.append(GoldChunk(doc_id=str(g["doc_id"]), ordinal=ordinal_int))
+
+    gold_tuple = tuple(gold)
     if known_doc_ids is not None:
-        for g in gold:
+        for g in gold_tuple:
             if g.doc_id not in known_doc_ids:
                 raise ValueError(f"{path}:{lineno}: {row['id']}: unknown doc_id {g.doc_id}")
-    return gold
+    return gold_tuple
 
 
 def load_retrieval(
