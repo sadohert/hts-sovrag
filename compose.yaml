@@ -51,21 +51,29 @@ services:
           devices:
             - capabilities: [gpu]
 
-  # Not implemented yet. This is the service's earlier shape: a default PRINCIPAL and a
-  # Dockerfile.mcp that does not exist. It changes with the MCP server, which takes a required
-  # MCP_IDENTITY with no default and reuses the single Dockerfile (ADR 0009).
+  # The MCP server the Mattermost Agents plugin calls (ADR 0009). Same image as app, different
+  # command. MCP_IDENTITY has no default: "static" binds PRINCIPAL at startup; "mattermost"
+  # binds each tool call to the user the plugin names, after the plugin proves itself with
+  # MCP_SHARED_SECRET. MCP_ALLOWED_HOSTS must include the name the plugin dials.
   mcp:
     profiles: [mcp]
     build:
       context: .
-      dockerfile: Dockerfile.mcp
+    command: ["sovrag", "serve-mcp", "--host", "0.0.0.0", "--port", "8001"]
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://sovrag:sovrag@postgres:5432/sovrag
-      PRINCIPAL: ${PRINCIPAL:-analyst_dnd}
       AUDIT_LOG_PATH: /app/audit/audit.jsonl
+      MCP_IDENTITY: ${MCP_IDENTITY:?set MCP_IDENTITY to static or mattermost}
+      PRINCIPAL: ${PRINCIPAL:-}
+      MCP_SHARED_SECRET: ${MCP_SHARED_SECRET:-}
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-mcp:*,localhost:*}
+      MATTERMOST_URL: ${MATTERMOST_URL:-}
+      MATTERMOST_BOT_TOKEN: ${MATTERMOST_BOT_TOKEN:-}
+    ports:
+      - "8001:8001"
     volumes:
       - audit:/app/audit
     models:

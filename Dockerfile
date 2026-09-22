@@ -17,6 +17,9 @@ WORKDIR /app
 COPY --from=builder --chown=sovrag:sovrag /app/.venv /app/.venv
 COPY --from=builder --chown=sovrag:sovrag /app/src /app/src
 COPY --chown=sovrag:sovrag data/manifest.yaml data/principals.yaml ./data/
+# The audit volume mounts here; the directory must exist owned by the runtime user, or Docker
+# creates it as root and the unprivileged process cannot append.
+RUN mkdir -p /app/audit && chown sovrag:sovrag /app/audit
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1
 USER sovrag
 EXPOSE 8000
