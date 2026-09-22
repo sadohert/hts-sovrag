@@ -305,3 +305,24 @@ def test_principals_file_comes_from_settings(env: Path, monkeypatch: pytest.Monk
     missing = runner.invoke(cli.app, ["query", "identity", "--principal", "analyst_dnd"])
     assert missing.exit_code == 2
     assert "unknown principal" in missing.output
+
+
+def test_serve_mcp_refuses_to_start_without_an_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("MCP_IDENTITY", raising=False)
+    result = runner.invoke(cli.app, ["serve-mcp"])
+    assert result.exit_code == 2
+    assert "MCP_IDENTITY" in result.output
+
+
+def test_serve_mcp_hands_the_built_app_to_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MCP_IDENTITY", "static")
+    monkeypatch.setenv("PRINCIPAL", "analyst_dnd")
+    seen: list[tuple[object, str, int]] = []
+    monkeypatch.setattr(
+        cli.uvicorn, "run", lambda app, host, port, **kw: seen.append((app, host, port))
+    )
+    result = runner.invoke(cli.app, ["serve-mcp", "--host", "0.0.0.0", "--port", "9001"])
+    assert result.exit_code == 0, result.output
+    (app, host, port) = seen[0]
+    assert callable(app) and host == "0.0.0.0" and port == 9001
+    assert "static" in result.output and "analyst_dnd" in result.output
