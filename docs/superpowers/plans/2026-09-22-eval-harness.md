@@ -21,7 +21,7 @@
 - Thresholds in `eval/thresholds.json` may be raised by a pull request and never lowered.
 - Tests first; keep test-only helpers out of `src/`; `ruff check`, `ruff format --check`, `mypy src` and `pytest` pass at every commit.
 - Never write copy implying real protected data was used (ADR 0003). Do not mention any private planning outside the repo.
-- Commit messages end with the trailer `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` and nothing else after the subject and body.
+- Commit messages end with the two trailer lines main already uses: `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>` and `Claude-Session: <the session URL given in the dispatch>`.
 - Postgres tests use the `db` fixture from `tests/conftest.py` (needs `docker compose up -d postgres`); they skip when Postgres is unreachable, so run them with Postgres up.
 
 ---
