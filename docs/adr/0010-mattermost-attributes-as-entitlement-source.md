@@ -53,7 +53,7 @@ The values endpoint does not check that the user exists. In the server source at
 
 The resolver therefore makes three calls, in this order, all with the bot token:
 
-1. `GET /api/v4/users/{id}`. A 404 means Mattermost does not know the user; a user with `delete_at` set is deactivated. Both are resolution failures. The reply's `username` becomes the principal's id, so the audit log names the person the way Mattermost does. A user whose username is the reserved id `anonymous` cannot be bound to an entitled principal (ADR 0012) and is a resolution failure too.
+1. `GET /api/v4/users/{id}`. A 404 means Mattermost does not know the user; a user with `delete_at` set is deactivated. Both are resolution failures. The reply's `username` becomes the principal's id, so the audit log names the person the way Mattermost does. A user whose username is the reserved id `anonymous`, in any letter case, is a resolution failure whatever their attributes: that id belongs to `LEAST_PRIVILEGED` (ADR 0012), and a real user carrying it would be indistinguishable from an unentitled caller in the audit log.
 2. `GET /api/v4/custom_profile_attributes/fields`.
 3. `GET /api/v4/users/{id}/custom_profile_attributes`.
 

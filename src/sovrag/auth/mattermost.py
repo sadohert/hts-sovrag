@@ -73,6 +73,8 @@ class MattermostResolver:
         if user.get("delete_at"):
             raise ResolutionError(f"user {user_id} is deactivated")
         username: str = user["username"]
+        if username.lower() == ANONYMOUS_ID:
+            raise ResolutionError(f"username {username!r} is reserved and cannot be resolved")
         fields = self._get("/api/v4/custom_profile_attributes/fields")
         if not isinstance(fields, list):
             raise ResolutionError("fields reply has the wrong shape")
@@ -141,8 +143,6 @@ def _bind(user_id: str, username: str, fields: list[Any], values: Mapping[str, A
     if clearance is None:
         notes.append("bound to least privilege")
         return Resolution(user_id, username, LEAST_PRIVILEGED, snapshot, "; ".join(notes))
-    if username.lower() == ANONYMOUS_ID:
-        raise ResolutionError(f"username {username!r} is reserved and cannot be entitled")
     principal = Principal(id=username, clearance=clearance, departments=frozenset(departments))
     return Resolution(user_id, username, principal, snapshot, "; ".join(notes) or None)
 

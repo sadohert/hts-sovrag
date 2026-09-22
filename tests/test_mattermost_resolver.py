@@ -6,7 +6,6 @@ import json
 
 import httpx2 as httpx
 import pytest
-from sovrag.auth.mattermost import CLEARANCE_FIELD, DEPARTMENTS_FIELD
 
 from sovrag.auth import (
     LEAST_PRIVILEGED,
@@ -15,6 +14,7 @@ from sovrag.auth import (
     Resolution,
     ResolutionError,
 )
+from sovrag.auth.mattermost import CLEARANCE_FIELD, DEPARTMENTS_FIELD
 from sovrag.config import Settings
 
 # Mattermost IDs are 26 lowercase base-32 characters. These are shaped like real ones.
@@ -87,8 +87,18 @@ VALUES = {
 }
 
 
+def _call_name(path: str) -> str:
+    """Which of the three calls a path is: user, fields or values."""
+    if path == "/api/v4/custom_profile_attributes/fields":
+        return "fields"
+    if path.endswith("/custom_profile_attributes"):
+        return "values"
+    return "user"
+
+
 class FakeMattermost:
-    """Routes the three GET paths; records every request so tests can assert the calls."""
+    """Routes the three GET paths; records every request so tests can assert the calls.
+    `fail` maps a call name (user, fields, values) to a status code or an exception."""
 
     def __init__(
         self,
@@ -107,11 +117,11 @@ class FakeMattermost:
     def __call__(self, request: httpx.Request) -> httpx.Response:
         self.requests.append(request)
         path = request.url.path
-        for key, outcome in self.fail.items():
-            if key in path:
-                if isinstance(outcome, Exception):
-                    raise outcome
-                return httpx.Response(outcome, json={"message": "nope"})
+        outcome = self.fail.get(_call_name(path))
+        if outcome is not None:
+            if isinstance(outcome, Exception):
+                raise outcome
+            return httpx.Response(outcome, json={"message": "nope"})
         if path == "/api/v4/custom_profile_attributes/fields":
             return httpx.Response(200, json=self.fields)
         if path.startswith("/api/v4/users/") and path.endswith("/custom_profile_attributes"):
@@ -251,28 +261,30 @@ def test_a_deactivated_user_is_an_error() -> None:
         _resolver(FakeMattermost(users=users)).resolve(UID_DND)
 
 
-def test_a_user_named_anonymous_cannot_be_entitled() -> None:
-    users = {**USERS, UID_DND: {**USERS[UID_DND], "username": "anonymous"}}
-    with pytest.raises(ResolutionError, match="anonymous"):
-        _resolver(FakeMattermost(users=users)).resolve(UID_DND)
+@pytest.mark.parametrize("uid", [UID_DND, UID_PUB], ids=["entitled", "no-attributes"])
+def test_a_user_named_anonymous_is_never_resolved(uid: str) -> None:
+    """The id is reserved for LEAST_PRIVILEGED (ADR 0012), so a Mattermost user carrying it
+    would be indistinguishable from an unentitled caller in the audit log."""
+    users = {**USERS, uid: {**USERS[uid], "username": "Anonymous"}}
+    server = FakeMattermost(users=users)
+    with pytest.raises(ResolutionError, match="reserved"):
+        _resolver(server).resolve(uid)
+    assert len(server.requests) == 1
 
 
-@pytest.mark.parametrize(
-    "path_part",
-    ["/api/v4/users/", "custom_profile_attributes/fields", "/custom_profile_attributes"],
-)
+@pytest.mark.parametrize("call", ["user", "fields", "values"])
 @pytest.mark.parametrize(
     "outcome",
     [500, 401, httpx.ConnectTimeout("slow"), httpx.ConnectError("down")],
     ids=["500", "401", "timeout", "refused"],
 )
 def test_any_failed_call_is_an_error_and_never_least_privilege(
-    path_part: str, outcome: int | Exception
+    call: str, outcome: int | Exception
 ) -> None:
-    key = "/api/v4/users/" if path_part == "/api/v4/users/" else path_part
-    server = FakeMattermost(fail={key: outcome})
+    server = FakeMattermost(fail={call: outcome})
     with pytest.raises(ResolutionError):
         _resolver(server).resolve(UID_DND)
+    assert _call_name(server.requests[-1].url.path) == call
 
 
 def test_a_reply_that_is_not_json_is_an_error() -> None:
