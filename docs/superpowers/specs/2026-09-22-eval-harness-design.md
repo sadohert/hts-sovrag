@@ -69,7 +69,7 @@ reports do not state). Fields: `id`, `question`, `notes`.
 `leak.jsonl`, 20 items: questions answerable only from the 13 protected documents (10
 departmental results reports, 3 Auditor General reports), at least one per document. Fields:
 `id`, `question`, `gold` as above. The forbidden set for a principal is not stored; it is derived
-at run time from the visibility rule in `sovrag.retrieve.filters`, so the suite tracks the rule.
+at run time from the visibility rule (see the leak suite below), so the suite tracks the rule.
 
 The author drafts all 60 items; the user spot-checks ten before they are treated as truth. Both
 facts go in the pull request.
@@ -94,8 +94,11 @@ request may raise a threshold but never lower one.
 
 For each `leak.jsonl` item and each of the five named principals, search in all three modes with
 `k = 10` and assert that no returned chunk belongs to a document the principal may not see.
-Forbidden documents are those the visibility rule excludes for that principal, computed from
-`documents.jsonl`. This is exact and is the CI gate: any forbidden chunk fails the job.
+Forbidden documents are those the visibility rule excludes for that principal. The suite
+computes them with its own Python statement of the rule over the `documents` table, independent
+of the SQL predicate in `sovrag.retrieve.filters`, and a test asserts the two agree for every
+named principal. An oracle that reused the predicate would inherit its bugs. This check is exact
+and is the CI gate: any forbidden chunk fails the job.
 
 Positive control: the same questions searched as `auditor` must return at least one gold chunk
 in the top 10 in hybrid mode for at least 18 of the 20 items, so the suite cannot pass by asking
@@ -129,7 +132,7 @@ Reported: faithfulness rate, correctness distribution, refusal rate on unanswera
 refusal rate on answerable items (false refusals), and latency per call. How often the uncited
 retry fires is not observable from `Answer` or the audit line today and is not reported. Ten judged answers, chosen by a fixed seed, are listed
 in the result file with an empty `human_check` field for the user to fill; the agreement rate
-between the judge and the human is reported once filled.
+between the judge and the human is reported once filled, by `sovrag eval agreement <result file>`.
 
 ## Result files
 
@@ -144,9 +147,9 @@ Every suite writes one JSON file to `eval/results/<suite>-<YYYY-MM-DD>.json`:
 ```
 
 The model tags carry the quantization, and `engine_backend` names the runtime, so a Q4 GGUF on
-llama.cpp is never presented as the same generator as full precision on vLLM. The backend is a
-setting (`Settings.engine_backend`, default `llama.cpp`) because the OpenAI-compatible API does
-not report it.
+llama.cpp is never presented as the same generator as full precision on vLLM. Both labels are
+settings (`Settings.engine`, default `docker-model-runner`; `Settings.engine_backend`, default
+`llama.cpp`) because the OpenAI-compatible API does not report them.
 
 ## CLI
 
@@ -168,7 +171,7 @@ needs no model; the two suites read `questions.f32` for embeddings.
 
 ## Settings and dependencies
 
-`Settings` gains `engine_backend: str = "llama.cpp"`. `judge_*` already exist; `.env.example`
+`Settings` gains `engine: str = "docker-model-runner"` and `engine_backend: str = "llama.cpp"`. `judge_*` already exist; `.env.example`
 gets `JUDGE_BASE_URL`, `JUDGE_MODEL=ai/gemma4:12b-q4_K_M`. No new dependencies: float32 files
 are read and written with the standard `array` module.
 
