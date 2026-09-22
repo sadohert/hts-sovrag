@@ -128,10 +128,17 @@ question, then a judge model scores faithfulness to the cited chunks and correct
 the reference answer, and separately checks the refusal rate on ten unanswerable questions; one
 unanswerable question was answered with a negative statement rather than the refusal sentinel,
 which the harness counts as a non-refusal. It needs a live model and a judge from a different
-model family than the generator, so it runs locally rather than in CI. Ten judged answers,
-chosen by a fixed seed, carry an empty `human_check` field in the result file for a person to
-fill; `sovrag eval agreement <result file>` reports the agreement rate between judge and human
-once it is.
+model family than the generator, so it runs locally rather than in CI. The judge is shown each
+source labelled by the answer's own `[n]` citation marker, not by its position in the source
+list, so a judge verdict is never confused by a renumbering the answer text does not use. Ten
+judged answers, chosen by a fixed seed, carry an empty `human_check` field in the result file
+for a person to fill; `sovrag eval agreement <result file>` reports the agreement rate between
+judge and human once it is.
+
+On the current baseline (`eval/results/generation-2026-09-22.json`, judge `ai/gemma4:12b-q4_K_M`
+against generator `ai/qwen3.5:9b-q4_K_M`), all 29 judged answers were faithful
+(`faithful_rate` 1.000), `correct_yes` 0.966 and `correct_no` 0.034, `false_refusal_rate` 0.033,
+and 9 of the 10 unanswerable questions refused (`unanswerable_refusal_rate` 0.900).
 
 Every suite writes one result file to `eval/results/<suite>-<date>.json`, carrying the embed,
 generator and judge model names, `engine` and `engine_backend`, the metrics and the per-item

@@ -45,6 +45,12 @@ Measured baseline, `eval/results/retrieval-2026-09-22.json`:
 | hybrid | 0.900 | 0.933 | 0.716 |
 | vector | 0.867 | 0.933 | 0.705 |
 
+Measured baseline, `eval/results/generation-2026-09-22.json`, judge `ai/gemma4:12b-q4_K_M`:
+
+| faithful_rate | correct_yes | correct_partial | correct_no | false_refusal_rate | unanswerable_refusal_rate | mean_latency_s |
+|---|---|---|---|---|---|---|
+| 1.000 | 0.966 | 0.000 | 0.034 | 0.033 | 0.900 | 4.121 |
+
 Generator `ai/qwen3.5:9b-q4_K_M`, embedder `hf.co/gpustack/bge-m3-gguf:Q8_0`, on
 `docker-model-runner` with the `llama.cpp` backend. Results under `eval/results/` carry these
 model, quantization and backend labels, so a run on a different backend is compared against
