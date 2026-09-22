@@ -6,10 +6,10 @@ from pathlib import Path
 
 import psycopg
 import pytest
-from sovrag.eval.fixture import build_fixture, load_fixture, load_question_embeddings
 
 from sovrag.corpus.chunk import Chunk
 from sovrag.corpus.manifest import DocumentMeta
+from sovrag.eval.fixture import build_fixture, load_fixture, load_question_embeddings
 from sovrag.index.store import replace_chunks, upsert_document
 
 DIM = 4

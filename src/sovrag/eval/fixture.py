@@ -72,7 +72,7 @@ def _sha256(path: Path) -> str:
 
 
 def _to_floats(embedding: Any) -> list[float]:
-    """`register_vector` returns a pgvector `Vector` (or a numpy array); both convert this way."""
+    """`register_vector` returns a pgvector `Vector` (`.to_list()`) or a plain float sequence."""
     if hasattr(embedding, "to_list"):
         embedding = embedding.to_list()
     return [float(x) for x in embedding]
