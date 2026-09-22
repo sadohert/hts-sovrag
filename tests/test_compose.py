@@ -29,3 +29,30 @@ def test_mcp_identity_is_required_and_principal_has_no_default() -> None:
     assert env["MCP_SHARED_SECRET"] == "${MCP_SHARED_SECRET:-}"
     assert env["MCP_ALLOWED_HOSTS"] == "${MCP_ALLOWED_HOSTS:-mcp:*,localhost:*}"
     assert env["AUDIT_LOG_PATH"] == "/app/audit/audit.jsonl"
+
+
+def test_mattermost_profile_runs_the_pinned_enterprise_image_on_amd64() -> None:
+    mm = COMPOSE["services"]["mattermost"]
+    assert mm["profiles"] == ["mattermost"]
+    assert mm["image"] == "mattermost/mattermost-enterprise-edition:11.11.0"
+    assert mm["platform"] == "linux/amd64"
+    assert mm["ports"] == ["8065:8065"]
+    env = mm["environment"]
+    assert env["MM_SQLSETTINGS_DRIVERNAME"] == "postgres"
+    assert "mattermost:mattermost@postgres:5432/mattermost" in env["MM_SQLSETTINGS_DATASOURCE"]
+    assert env["MM_PLUGINSETTINGS_ENABLEUPLOADS"] == "true"
+    assert env["MM_SERVICESETTINGS_ENABLEBOTACCOUNTCREATION"] == "true"
+    assert env["MM_SERVICESETTINGS_ENABLEUSERACCESSTOKENS"] == "true"
+    assert "mcp" in env["MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS"]
+    assert mm["depends_on"]["mattermost-db-init"]["condition"] == "service_completed_successfully"
+
+
+def test_mattermost_database_is_created_by_a_one_shot_service_with_the_revoke() -> None:
+    init = COMPOSE["services"]["mattermost-db-init"]
+    assert init["profiles"] == ["mattermost"]
+    assert init["image"] == COMPOSE["services"]["postgres"]["image"]
+    assert init["depends_on"]["postgres"]["condition"] == "service_healthy"
+    sql = (Path(__file__).parents[1] / "scripts" / "mattermost_db_init.sql").read_text()
+    assert "REVOKE CONNECT, TEMPORARY ON DATABASE sovrag FROM PUBLIC" in sql
+    assert "create role mattermost" in sql.lower() and "create database mattermost" in sql.lower()
+    assert any("mattermost_db_init.sql" in v for v in init["volumes"])
