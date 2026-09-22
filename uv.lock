@@ -1677,6 +1677,7 @@ dependencies = [
     { name = "fastapi" },
     { name = "httpx2" },
     { name = "lxml" },
+    { name = "mcp" },
     { name = "openai" },
     { name = "pgvector" },
     { name = "psycopg", extra = ["binary"] },
@@ -1691,9 +1692,6 @@ dependencies = [
 [package.optional-dependencies]
 local-embed = [
     { name = "sentence-transformers" },
-]
-mcp = [
-    { name = "mcp" },
 ]
 rerank = [
     { name = "sentence-transformers" },
@@ -1715,7 +1713,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.141" },
     { name = "httpx2", specifier = ">=2.13" },
     { name = "lxml", specifier = ">=6.1" },
-    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=2.2" },
+    { name = "mcp", specifier = ">=2.2" },
     { name = "openai", specifier = ">=3.14" },
     { name = "pgvector", specifier = ">=0.5" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3" },
@@ -1728,7 +1726,7 @@ requires-dist = [
     { name = "typer", specifier = ">=0.27" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.53" },
 ]
-provides-extras = ["local-embed", "rerank", "mcp"]
+provides-extras = ["local-embed", "rerank"]
 
 [package.metadata.requires-dev]
 dev = [
