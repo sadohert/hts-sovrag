@@ -35,9 +35,14 @@ Keeping the `mattermost` role out of the `sovrag` database takes an explicit ste
 
 **Configuration is a script.** `scripts/seed_mattermost.py` creates users, attributes, the plugin configuration and the bot token through the REST API. Nothing is configured by hand in the System Console, so the demo is reproducible and reviewable.
 
-## Not yet verified
+## Verified on the live stack (2026-09-22)
 
-- That the plugin's tool calling works through Model Runner with `ai/qwen3.5:9b-q4_K_M`. The plugin needs streaming chat completions with tool calls. If it does not work, the fallback is a different local model for the plugin's provider; sovrag's own generator is unaffected because the `answer` tool calls it directly.
+- The plugin's tool calling works through Model Runner with `ai/qwen3.5:9b-q4_K_M` as the plugin's provider. On each of the five demo beats the plugin called the `answer` tool once, relayed its text and citations verbatim, and relayed the refusal sentence verbatim when the tool refused. A question took about 40 seconds from post to reply on an Apple silicon laptop with the Mattermost image under emulation; sovrag's own retrieve-and-generate step inside that was 5 to 11 seconds.
+- Entry serves the admin-managed attributes end to end: the seed script creates the fields and values, the resolver reads them with the bot token, and a user cannot change their own value.
+- The plugin's provider URL is Model Runner's `/engines/v1` prefix; the plugin appends `/chat/completions`.
+- The `mattermost` role is refused a connection to the `sovrag` database after the init service's `REVOKE`.
+
+## Not yet verified
 - What happens when the Entry licence lapses. The boot log shows an Entry licence that starts at boot and expires 100 days later. Whether a restart renews it was not tested.
 - The Entry limits in practice. Documentation lists 10,000 messages of viewable history, and a limit of 250 agent queries per month marked "will take effect in a future release".
 

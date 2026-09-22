@@ -1,5 +1,6 @@
 # sovrag: the whole stack. `docker compose up -d` is the runbook.
-# Profiles: (default) postgres + app on Docker Model Runner; vllm = GPU serving comparison; mcp = MCP server.
+# Profiles: (default) postgres + app on Docker Model Runner; vllm = GPU serving comparison; mcp = MCP server;
+# mattermost = Mattermost Entry for the direct-message demo.
 
 services:
   postgres:
@@ -55,6 +56,8 @@ services:
   # command. MCP_IDENTITY has no default: "static" binds PRINCIPAL at startup; "mattermost"
   # binds each tool call to the user the plugin names, after the plugin proves itself with
   # MCP_SHARED_SECRET. MCP_ALLOWED_HOSTS must include the name the plugin dials.
+  # In mattermost mode set MCP_IDENTITY=mattermost, MCP_SHARED_SECRET,
+  # MATTERMOST_URL=http://mattermost:8065 and MATTERMOST_BOT_TOKEN from the seed script's output.
   mcp:
     profiles: [mcp]
     build:
@@ -66,7 +69,7 @@ services:
     environment:
       DATABASE_URL: postgresql://sovrag:sovrag@postgres:5432/sovrag
       AUDIT_LOG_PATH: /app/audit/audit.jsonl
-      MCP_IDENTITY: ${MCP_IDENTITY:?set MCP_IDENTITY to static or mattermost}
+      MCP_IDENTITY: ${MCP_IDENTITY:-}  # no default; the server refuses to start without one
       PRINCIPAL: ${PRINCIPAL:-}
       MCP_SHARED_SECRET: ${MCP_SHARED_SECRET:-}
       MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-mcp:*,localhost:*}
@@ -84,6 +87,46 @@ services:
         endpoint_var: EMBED_BASE_URL
         model_var: EMBED_MODEL
 
+  # Creates the mattermost role and database on the shared Postgres, and revokes the default
+  # PUBLIC access to the sovrag database, then exits (ADR 0011). Postgres init scripts only run
+  # on an empty volume, so this runs every time and is idempotent.
+  mattermost-db-init:
+    profiles: [mattermost]
+    image: pgvector/pgvector:0.8.6-pg18-trixie
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: sovrag
+    volumes:
+      - ./scripts/mattermost_db_init.sql:/init.sql:ro
+    command: ["psql", "-v", "ON_ERROR_STOP=1", "-h", "postgres", "-U", "sovrag", "-d", "sovrag", "-f", "/init.sql"]
+
+  # Mattermost Entry: the enterprise image with no licence key (ADR 0011). amd64 only, so it
+  # runs under emulation on Apple silicon. The seed script (scripts/seed_mattermost.py) does
+  # every bit of configuration through the REST API; nothing is set in the System Console.
+  mattermost:
+    profiles: [mattermost]
+    image: mattermost/mattermost-enterprise-edition:11.11.0
+    platform: linux/amd64
+    depends_on:
+      mattermost-db-init:
+        condition: service_completed_successfully
+    environment:
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://mattermost:mattermost@postgres:5432/mattermost?sslmode=disable
+      MM_SERVICESETTINGS_SITEURL: http://localhost:8065
+      MM_SERVICESETTINGS_ENABLEBOTACCOUNTCREATION: "true"
+      MM_SERVICESETTINGS_ENABLEUSERACCESSTOKENS: "true"
+      MM_SERVICESETTINGS_ALLOWEDUNTRUSTEDINTERNALCONNECTIONS: "mcp model-runner.docker.internal"
+      MM_PLUGINSETTINGS_ENABLEUPLOADS: "true"
+      MM_LOGSETTINGS_CONSOLELEVEL: INFO
+    ports:
+      - "8065:8065"
+    volumes:
+      - mattermost-data:/mattermost/data
+      - mattermost-plugins:/mattermost/plugins
+
 models:
   llm:
     model: ai/qwen3.5:9b-q4_K_M
@@ -97,5 +140,7 @@ models:
     # raised here. The ingest pipeline keeps every input under it (see ADR 0005).
 
 volumes:
+  mattermost-data: {}
+  mattermost-plugins: {}
   pgdata: {}
   audit: {}

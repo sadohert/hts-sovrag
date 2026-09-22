@@ -34,7 +34,7 @@ flowchart LR
   G -.-> LLM
 ```
 
-Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, grounded generation with citations and refusal, and the MCP server exist. The HTTP API and the Mattermost Compose profile follow.
+Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, grounded generation with citations and refusal, the MCP server, and the Mattermost demo profile exist. The HTTP API follows.
 
 ## Data model
 
@@ -81,6 +81,8 @@ For Mattermost users, `auth/mattermost.py` resolves a user ID to a principal wit
 One Compose file. Postgres and the app are services; the two models are declared in the top-level `models:` block and Docker Model Runner serves them. Compose injects `LLM_BASE_URL`, `LLM_MODEL`, `EMBED_BASE_URL` and `EMBED_MODEL` into the app container. Outside Compose, the same variables point at Model Runner's host TCP endpoint on port 12434.
 
 Profiles add vLLM (GPU serving comparison) and the MCP server. See `docs/deployment.md` once it exists.
+
+The `mattermost` profile adds Mattermost Entry (the enterprise image with no licence key) on the same Postgres with its own role and database, and a one-shot service that creates them and revokes the default `PUBLIC` access to the sovrag database. `scripts/seed_mattermost.py` configures everything through REST: attributes, users, the Agents plugin at its pinned version, the plugin's provider and MCP server entry, the bot, and the bot token the resolver uses. See ADR 0011 and `docs/mattermost-demo.md`.
 
 ## Corpus
 

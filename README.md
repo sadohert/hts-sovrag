@@ -2,7 +2,7 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI and over MCP.
+Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI, over MCP, and in Mattermost direct messages.
 
 ## What it will do
 
@@ -36,6 +36,6 @@ uv run sovrag serve-mcp                                          # MCP_IDENTITY=
 MCP_IDENTITY=static PRINCIPAL=auditor docker compose --profile mcp up -d mcp
 ```
 
-In Mattermost mode each direct message runs as the Mattermost user asking; the settings are in `.env.example`, and the Compose profile that runs Mattermost alongside is not implemented yet.
+In Mattermost mode each direct message runs as the Mattermost user asking, with entitlement read from admin-managed user attributes. `docker compose --profile mattermost up -d` and `uv run python scripts/seed_mattermost.py` set it up; `docs/mattermost-demo.md` is the walkthrough. Prerequisites: Docker Desktop with Model Runner, and amd64 emulation on Apple silicon for the Mattermost image. Mattermost Entry needs no licence key (ADR 0011).
 
 See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.
