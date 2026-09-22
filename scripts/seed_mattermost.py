@@ -133,10 +133,26 @@ def _ensure_user(mm: Mattermost, username: str, password: str) -> str:
     return str(created["id"])
 
 
-def _login(mm: Mattermost, username: str, password: str) -> str:
-    response = mm.call(
-        "POST", "/api/v4/users/login", json={"login_id": username, "password": password}
-    )
+def _ensure_admin(mm: Mattermost, password: str) -> str:
+    """Log in as the admin, creating the account first if it does not exist yet. Nothing can be
+    looked up before a session exists, and the first account Mattermost creates is a system
+    admin, so this is the one step that starts from an unauthenticated call."""
+    body = {"login_id": ADMIN_USERNAME, "password": password}
+    response = mm.call("POST", "/api/v4/users/login", json=body, ok=(200, 401))
+    if response.status_code == 401:
+        mm.call(
+            "POST",
+            "/api/v4/users",
+            json={
+                "username": ADMIN_USERNAME,
+                "email": f"{ADMIN_USERNAME}@example.test",
+                "password": password,
+            },
+        )
+        _say(f"user {ADMIN_USERNAME}: created (system admin)")
+        response = mm.call("POST", "/api/v4/users/login", json=body)
+    else:
+        _say(f"user {ADMIN_USERNAME}: exists")
     mm.token = response.headers["Token"]
     return str(response.json()["id"])
 
@@ -262,10 +278,29 @@ def _plugin_config(
     }
 
 
+def _matches(current: Any, wanted: Any) -> bool:
+    """True when everything in `wanted` is already in `current`. The server adds default keys
+    and stores an empty list or map as null, so this is a subset check where None, [] and {}
+    are equal."""
+    if isinstance(wanted, dict):
+        current = current or {}
+        return isinstance(current, dict) and all(
+            _matches(current.get(k), v) for k, v in wanted.items()
+        )
+    if isinstance(wanted, list):
+        current = current or []
+        return (
+            isinstance(current, list)
+            and len(current) == len(wanted)
+            and all(_matches(c, w) for c, w in zip(current, wanted, strict=True))
+        )
+    return bool(current == wanted or (not current and not wanted))
+
+
 def _ensure_plugin_config(mm: Mattermost, wanted: dict[str, Any]) -> None:
     current = mm.get(f"/plugins/{PLUGIN_ID}/admin/config")
     merged = {**current, **wanted, "mcp": {**current.get("mcp", {}), **wanted["mcp"]}}
-    if all(current.get(k) == v for k, v in merged.items()):
+    if _matches(current, wanted):
         _say("plugin config: already set")
         return
     mm.call("PUT", f"/plugins/{PLUGIN_ID}/admin/config", json=merged)
@@ -304,7 +339,9 @@ def _ensure_agent(mm: Mattermost, mcp_url: str) -> str:
     wanted = _agent_body(mcp_url)
     for agent in mm.get(f"/plugins/{PLUGIN_ID}/agents"):
         if agent.get("name") == BOT_USERNAME or agent.get("username") == BOT_USERNAME:
-            drift = {k: v for k, v in wanted.items() if k != "username" and agent.get(k) != v}
+            drift = {
+                k: v for k, v in wanted.items() if k != "username" and not _matches(agent.get(k), v)
+            }
             if drift:
                 mm.call("PUT", f"/plugins/{PLUGIN_ID}/agents/{agent['id']}", json=wanted)
                 _say(f"bot {BOT_USERNAME}: updated {sorted(drift)}")
@@ -347,8 +384,7 @@ def seed(
     rotate_token: bool,
     download: Callable[[str], bytes] | None,
 ) -> Result:
-    _ensure_user(mm, ADMIN_USERNAME, admin_password)  # the first user is the system admin
-    _login(mm, ADMIN_USERNAME, admin_password)
+    _ensure_admin(mm, admin_password)
     clearance_field = _ensure_field(mm, CLEARANCE_FIELD, "select", CLEARANCES)
     departments_field = _ensure_field(mm, DEPARTMENTS_FIELD, "multiselect", DEPARTMENTS)
     user_ids: dict[str, str] = {}
@@ -382,6 +418,7 @@ class DryRunTransport(httpx2.BaseTransport):
     def __init__(self) -> None:
         self.calls: list[tuple[str, str]] = []
         self._n = 0
+        self._admin_created = False
         DryRunTransport.last_bodies = {}
         DryRunTransport.all_bodies = []
 
@@ -413,9 +450,13 @@ class DryRunTransport(httpx2.BaseTransport):
                 return httpx2.Response(200, json=[])
             return httpx2.Response(200, json=[] if path.endswith(("/agents", "/tokens")) else {})
         if path == "/api/v4/users/login":
+            if not self._admin_created:
+                return httpx2.Response(401, json={"message": "no such user"})
             return httpx2.Response(
                 200, json={"id": self._id()}, headers={"Token": "dry-run-session"}
             )
+        if path == "/api/v4/users":
+            self._admin_created = True
         if path.endswith("/custom_profile_attributes/fields"):
             options = [{**o, "id": self._id()} for o in body["attrs"]["options"]]
             return httpx2.Response(

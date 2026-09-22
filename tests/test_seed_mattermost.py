@@ -52,6 +52,7 @@ def test_dry_run_makes_the_expected_calls_in_order(monkeypatch: pytest.MonkeyPat
     result, calls, _ = _run_dry(monkeypatch)
     writes = [(m, p) for m, p in calls if m != "GET"]
     assert writes == [
+        ("POST", "/api/v4/users/login"),  # 401: no admin yet
         ("POST", "/api/v4/users"),  # admin
         ("POST", "/api/v4/users/login"),
         ("POST", "/api/v4/custom_profile_attributes/fields"),  # sovrag_clearance
@@ -244,7 +245,9 @@ class FakeMattermost:
         if path == "/plugins/mattermost-ai/admin/config":
             if method == "GET":
                 return httpx.Response(200, json=self.config)
-            self.config = body
+            stored = json.loads(json.dumps(body))
+            stored["mcp"]["servers"][0]["headers"] = None  # the server stores {} as null
+            self.config = {**stored, "allowUnsafeLinks": False}  # and adds defaults
             return httpx.Response(200, json=self.config)
         if path == "/plugins/mattermost-ai/agents":
             if method == "GET":
@@ -256,7 +259,9 @@ class FakeMattermost:
                 "delete_at": 0,
                 "is_bot": True,
             }
-            agent = {**body, "id": self._id(), "botUserID": uid, "name": body["username"]}
+            stored = {k: (None if v == [] else v) for k, v in body.items()}  # as the server does
+            stored.pop("username")
+            agent = {**stored, "id": self._id(), "botUserID": uid, "name": body["username"]}
             self.agents.append(agent)
             return httpx.Response(200, json=agent)
         if path.startswith("/plugins/mattermost-ai/agents/") and method == "PUT":

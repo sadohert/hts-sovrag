@@ -24,7 +24,7 @@ def test_mcp_host_port_does_not_collide_with_another_profile() -> None:
 
 def test_mcp_identity_is_required_and_principal_has_no_default() -> None:
     env = COMPOSE["services"]["mcp"]["environment"]
-    assert env["MCP_IDENTITY"].startswith("${MCP_IDENTITY:?")
+    assert env["MCP_IDENTITY"] == "${MCP_IDENTITY:-}"  # no default; the server refuses without one
     assert env["PRINCIPAL"] == "${PRINCIPAL:-}"
     assert env["MCP_SHARED_SECRET"] == "${MCP_SHARED_SECRET:-}"
     assert env["MCP_ALLOWED_HOSTS"] == "${MCP_ALLOWED_HOSTS:-mcp:*,localhost:*}"
