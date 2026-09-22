@@ -43,5 +43,6 @@ every claim in the README against the code.
 - uv run sovrag ingest --manifest data/manifest.yaml
 - uv run sovrag query "..." --principal analyst_dnd --mode vector   # or keyword | hybrid
 - uv run sovrag ask "..." --principal analyst_dnd   # answer with [n] citations, or refuse
+- uv run sovrag serve-mcp   # MCP_IDENTITY=static|mattermost; see .env.example
 - uv run pytest
-- Not implemented yet: sovrag serve, sovrag eval, the mcp profile.
+- Not implemented yet: sovrag serve, sovrag eval, the mattermost profile.
