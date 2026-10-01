@@ -2,15 +2,15 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: everything below exists on `main` and is exercised by the test suite and the CI evaluation gates; see `docs/architecture.md` for what comes next.
+Status: everything below exists on `main` and is exercised by the test suite and the CI evaluation gates.
 
 ## What it does
 
-- Ingests Departmental Plans, Departmental Results Reports, Treasury Board security policy instruments, and Auditor General reports: 27 public documents from five departments (DND, PS, PSPC, SSC, TBS) plus the government-wide instruments and reports. CSE publishes neither plans nor results reports, so it has none.
+- Ingests Departmental Plans, Departmental Results Reports, Treasury Board security policy instruments, and Auditor General reports: 27 public documents from five departments (DND, PS, PSPC, SSC, TBS) plus the government-wide instruments and reports. No Departmental Plan or Departmental Results Report could be located for CSE, so it has none in the corpus (the manifest records the search).
 - Indexes them in Postgres with pgvector (HNSW) and full-text search, and retrieves by vector, keyword or hybrid ranking.
 - Enforces a two-axis entitlement model (classification level and department) as a SQL pre-filter inside every retrieval query, never as a Python post-filter.
 - Answers questions from the entitled chunks only, with `[n]` citations traceable to a public source, and refuses when they do not contain the answer.
-- Serves those answers four ways: the `sovrag ask` command, an HTTP API, an MCP server for agents, and Mattermost direct messages, with the principal bound by the server in every case.
+- Serves those answers four ways: the `sovrag ask` command, an HTTP API, an MCP server for agents, and Mattermost direct messages. The HTTP API, the MCP server and Mattermost bind the principal on the server side, never from anything an agent or caller can set; the CLI takes `--principal` from the operator running it.
 - Measures itself: a retrieval suite and a leak suite run in CI against a committed index and fail the build on a quality regression or a single forbidden chunk; a generation suite judged by a second model family runs locally, with results labelled by model, quantization and backend.
 
 ## Classification labels are synthetic
