@@ -31,6 +31,13 @@ def test_mcp_identity_is_required_and_principal_has_no_default() -> None:
     assert env["AUDIT_LOG_PATH"] == "/app/audit/audit.jsonl"
 
 
+def test_app_service_defaults_to_static_identity() -> None:
+    env = COMPOSE["services"]["app"]["environment"]
+    assert env["API_IDENTITY"] == "${API_IDENTITY:-static}"
+    assert env["PRINCIPAL"] == "${PRINCIPAL:-analyst_dnd}"
+    assert env["API_SHARED_SECRET"] == "${API_SHARED_SECRET:-}"
+
+
 def test_mattermost_profile_runs_the_pinned_enterprise_image_on_amd64() -> None:
     mm = COMPOSE["services"]["mattermost"]
     assert mm["profiles"] == ["mattermost"]

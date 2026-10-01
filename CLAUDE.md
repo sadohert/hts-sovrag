@@ -44,7 +44,7 @@ every claim in the README against the code.
 - uv run sovrag query "..." --principal analyst_dnd --mode vector   # or keyword | hybrid
 - uv run sovrag ask "..." --principal analyst_dnd   # answer with [n] citations, or refuse
 - uv run sovrag serve-mcp   # MCP_IDENTITY=static|mattermost; see .env.example
+- uv run sovrag serve   # API_IDENTITY=static|gateway; POST /query, GET /healthz
 - docker compose --profile mattermost up -d && uv run python scripts/seed_mattermost.py   # demo
 - uv run pytest
 - uv run sovrag eval load-fixture && uv run sovrag eval retrieval --check && uv run sovrag eval leak --check
-- Not implemented yet: sovrag serve.

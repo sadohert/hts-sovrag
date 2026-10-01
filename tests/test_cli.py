@@ -7,6 +7,7 @@ import pytest
 from typer.testing import CliRunner
 
 from sovrag import cli
+from sovrag.config import Settings
 from sovrag.corpus.manifest import load_manifest
 
 REAL = Path(__file__).parent / "fixtures" / "real"
@@ -309,8 +310,12 @@ def test_principals_file_comes_from_settings(env: Path, monkeypatch: pytest.Monk
 
 def test_serve_mcp_refuses_to_start_without_an_identity(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("MCP_IDENTITY", raising=False)
+    monkeypatch.setattr(cli, "get_settings", lambda: Settings(_env_file=None))
+    started: list[object] = []
+    monkeypatch.setattr(cli.uvicorn, "run", lambda *a, **kw: started.append(a))
     result = runner.invoke(cli.app, ["serve-mcp"])
     assert result.exit_code == 2
+    assert started == []
     assert "MCP_IDENTITY" in result.output
 
 
@@ -326,3 +331,38 @@ def test_serve_mcp_hands_the_built_app_to_uvicorn(monkeypatch: pytest.MonkeyPatc
     (app, host, port) = seen[0]
     assert callable(app) and host == "0.0.0.0" and port == 9001
     assert "static" in result.output and "analyst_dnd" in result.output
+
+
+def test_serve_refuses_to_start_without_an_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("API_IDENTITY", raising=False)
+    monkeypatch.setattr(cli, "get_settings", lambda: Settings(_env_file=None))
+    started: list[object] = []
+    monkeypatch.setattr(cli.uvicorn, "run", lambda *a, **kw: started.append(a))
+    result = runner.invoke(cli.app, ["serve"])
+    assert result.exit_code == 2
+    assert started == []
+    assert "API_IDENTITY" in result.output
+
+
+def test_serve_hands_the_built_app_to_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_IDENTITY", "static")
+    monkeypatch.setenv("PRINCIPAL", "analyst_dnd")
+    seen: list[tuple[object, str, int]] = []
+    monkeypatch.setattr(
+        cli.uvicorn, "run", lambda app, host, port, **kw: seen.append((app, host, port))
+    )
+    result = runner.invoke(cli.app, ["serve", "--host", "0.0.0.0", "--port", "9000"])
+    assert result.exit_code == 0, result.output
+    (app, host, port) = seen[0]
+    assert callable(app) and host == "0.0.0.0" and port == 9000
+    assert "static" in result.output and "analyst_dnd" in result.output
+
+
+def test_serve_in_gateway_mode_reports_per_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_IDENTITY", "gateway")
+    monkeypatch.setenv("API_SHARED_SECRET", "s3cret-token-xyz")
+    monkeypatch.setattr(cli.uvicorn, "run", lambda app, host, port, **kw: None)
+    result = runner.invoke(cli.app, ["serve"])
+    assert result.exit_code == 0, result.output
+    assert "gateway" in result.output and "per request" in result.output
+    assert "s3cret-token-xyz" not in result.output  # the secret is never printed
