@@ -34,7 +34,7 @@ flowchart LR
   G -.-> LLM
 ```
 
-Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, grounded generation with citations and refusal, the MCP server, and the Mattermost demo profile exist. Three eval suites measure retrieval, generation and leak behaviour; the retrieval and leak suites gate CI. The HTTP API follows.
+Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, grounded generation with citations and refusal, the MCP server, and the Mattermost demo profile exist. Three eval suites measure retrieval, generation and leak behaviour; the retrieval and leak suites gate CI. The HTTP API serves the same answers over POST /query with the principal bound before routing.
 
 ## Data model
 
@@ -158,6 +158,10 @@ involved in those suites. See ADR 0014.
 
 `generate/answer.py` is the single entry point for answering. It retrieves with the chosen mode, builds a prompt that lists the chunks as numbered sources, and makes one chat completion call at temperature 0 with the model's thinking mode off, and a second one only when the first reply carried no citations. The model must cite with `[n]` or reply with a sentinel; code validates the markers, builds a `Citation` for each, and turns the sentinel into a fixed refusal. An answer with no citations is retried once with a firmer instruction, then refused. Every call appends one line to the JSONL audit log. See ADR 0008.
 
+## HTTP API
+
+`api/app.py` serves `POST /query` and `GET /healthz`. `API_IDENTITY` picks how the principal is bound, with no default: in static mode `PRINCIPAL` is resolved from the principals file when the app is built and a pure-ASGI binding puts it on every request; in gateway mode a gate in front of the app answers 401 to any request without `API_SHARED_SECRET` as a bearer and a known principal id in `X-Sovrag-Principal`, resolves the id against the principals loaded at startup, and binds it, so an unknown id never reaches a handler and is never downgraded. The bearer is compared as UTF-8 bytes in constant time, so a non-ASCII token is a 401, and an empty secret refuses to start. `GET /healthz` passes the gate unbound. The handler reads the principal from request state and from nowhere else, generates a request id, calls the same `answer()` the CLI uses, and returns its result unchanged with the id in `X-Request-ID`; a generator failure is 502 after `answer()` has written its audit line. The body cannot name a principal. See ADR 0015.
+
 ## MCP server
 
 `mcp/server.py` serves `search` and `answer` over Streamable HTTP for the Mattermost Agents plugin. Neither tool takes a principal. `MCP_IDENTITY` picks how it is bound, with no default: in static mode `PRINCIPAL` is resolved from the principals file when the server starts; in mattermost mode a gate in front of the MCP app answers 401 to any request without `MCP_SHARED_SECRET` as a bearer or a well-formed `X-Mattermost-UserID`, and the tool handler resolves that user's attributes once per tool call, writing a `resolve` audit event that shares a `request_id` with the `search` or `answer` event that follows. A resolution failure is a tool error and retrieves nothing. `search` runs hybrid retrieval with the bound principal and returns hits with their citation fields and the rendered filter; `answer` calls the same `answer()` the CLI uses and returns its result unchanged. See ADR 0009 and ADR 0010.
@@ -175,3 +179,4 @@ involved in those suites. See ADR 0014.
 - ADR 0012: the principal model has two axes, validates itself on construction, and loads from YAML strictly.
 - ADR 0013: the entitlement predicate is one bound WHERE clause inside every retrieval query; HNSW scans continue past the filter with `SET LOCAL hnsw.iterative_scan`.
 - ADR 0014: evaluation design: committed full-precision fixture, hand-written gold, an independent leak oracle, a judge from another model family, labelled results.
+- ADR 0015: the HTTP API binds its principal like the MCP server, static or from a verified gateway; one query endpoint; 401 never downgrades.
