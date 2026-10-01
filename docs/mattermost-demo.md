@@ -79,6 +79,11 @@ A refusal and an outage look different: an outage is a tool error and writes no 
 
 ## Checks
 
+- The leak suite's 20 questions also run through the MCP path in CI: `tests/test_mcp_leak.py`
+  loads the committed index, binds each named principal the way the plugin does (a user ID on
+  the connection, resolved per tool call) and asserts the `search` tool returns no chunk from a
+  document that principal may not see, judged by the eval suite's independent oracle. The
+  same file shows how to put the questions to the `answer` tool; the real-model run is local.
 - The `mattermost` role cannot open the sovrag database:
   `docker compose exec postgres psql -U mattermost -d sovrag -c 'select 1'` fails with
   "permission denied for database sovrag".
