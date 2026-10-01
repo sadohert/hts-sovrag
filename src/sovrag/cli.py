@@ -1,4 +1,4 @@
-"""sovrag CLI: ingest | query | ask | serve-mcp | serve."""
+"""sovrag CLI: ingest | query | ask | eval | serve-mcp | serve."""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from sovrag.config import Settings, get_settings
 from sovrag.corpus.fetch import browser_getter, fetch_document
 from sovrag.corpus.ingest import ingest_document
 from sovrag.corpus.manifest import load_manifest
+from sovrag.eval.cli import eval_app
 from sovrag.generate import MAX_K, GenerationError
 from sovrag.generate.answer import answer
 from sovrag.index.embed import Embedder
@@ -26,6 +27,7 @@ app = typer.Typer(
     help="Permissions-aware RAG over Canadian federal public documents.",
     no_args_is_help=True,
 )
+app.add_typer(eval_app, name="eval")
 
 
 def _bind(principal_id: str, settings: Settings) -> Principal:

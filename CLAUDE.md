@@ -46,4 +46,5 @@ every claim in the README against the code.
 - uv run sovrag serve-mcp   # MCP_IDENTITY=static|mattermost; see .env.example
 - docker compose --profile mattermost up -d && uv run python scripts/seed_mattermost.py   # demo
 - uv run pytest
-- Not implemented yet: sovrag serve, sovrag eval.
+- uv run sovrag eval load-fixture && uv run sovrag eval retrieval --check && uv run sovrag eval leak --check
+- Not implemented yet: sovrag serve.

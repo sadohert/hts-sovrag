@@ -34,7 +34,7 @@ flowchart LR
   G -.-> LLM
 ```
 
-Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, grounded generation with citations and refusal, the MCP server, and the Mattermost demo profile exist. The HTTP API follows.
+Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, grounded generation with citations and refusal, the MCP server, and the Mattermost demo profile exist. Three eval suites measure retrieval, generation and leak behaviour; the retrieval and leak suites gate CI. The HTTP API follows.
 
 ## Data model
 
@@ -96,6 +96,60 @@ The vector for each chunk is computed over the document title, the heading path 
 
 `vector` orders chunks by cosine distance over the HNSW index. `keyword` parses the question with `websearch_to_tsquery` and ranks full-text matches with `ts_rank_cd`; a question of stop words only returns nothing. Because every term must match, sentence-length questions often return nothing from keyword mode; on a ten-question set four did. Hybrid then falls back to the vector ranking. `hybrid` takes the top `max(4k, 20)` from each and fuses by reciprocal rank fusion (k = 60), so a chunk near the top of either list rises and one near the top of both rises furthest. Ties resolve by chunk id; see ADR 0007. All three return the same `Hit` with citations. See ADR 0007.
 
+## Evaluation
+
+`sovrag eval` measures the three things a unit test cannot: whether retrieval finds the right
+chunks, whether answers are faithful to what they cite, and whether a principal ever retrieves
+a chunk they are not entitled to. All three read from `eval/golden/`, hand-written truth files
+keyed by `(doc_id, ordinal)` rather than by anything retrieval itself produced, so the suites
+grade the system against an independent answer, not against themselves. `sovrag eval
+build-fixture` serialises the live index and every golden question's embedding, at full
+precision, into `eval/fixture/`; `sovrag eval load-fixture` loads that committed directory into
+any Postgres, so the retrieval and leak suites need no embedding model and CI measures the
+index users actually query.
+
+The **retrieval** suite searches as `auditor` in each mode with the precomputed question
+embeddings and scores hit@5, recall@10 and MRR at chunk level plus hit@5 at document level,
+averaged over 30 golden questions. It runs in CI against the committed fixture and is compared
+to `eval/thresholds.json`; because HNSW is an approximate index, thresholds sit a small margin
+below the measured baseline and may only be raised. Keyword mode is reported but not gated: it
+requires every query term to match, so full-sentence questions rarely hit, which is also why
+hybrid adds little over vector on this golden set. Planned-versus-actual spending tables read
+almost identically across reports and differ only in numbers, so retrieval ranks them poorly;
+the golden set favours narrative facts for that reason.
+
+The **leak** suite searches 20 leak-only questions as each of the five named principals in all
+three modes and asserts that no returned chunk belongs to a document that principal may not
+see, using a Python restatement of the visibility rule kept independent of the SQL predicate
+(ADR 0013) and tested to agree with it. This check is exact and gates CI; a positive control
+run as `auditor` guards against the suite passing because the questions retrieve nothing at
+all. Locally, with a model available, the same questions can also be put to `answer()` and the
+refusal rate reported, not gated, because the generator may legitimately answer from visible
+material that overlaps a protected fact.
+
+The **generation** suite calls `answer()` as `auditor` in hybrid mode for every retrieval
+question, then a judge model scores faithfulness to the cited chunks and correctness against
+the reference answer, and separately checks the refusal rate on ten unanswerable questions; one
+unanswerable question was answered with a negative statement rather than the refusal sentinel,
+which the harness counts as a non-refusal. It needs a live model and a judge from a different
+model family than the generator, so it runs locally rather than in CI. The judge is shown each
+source labelled by the answer's own `[n]` citation marker, not by its position in the source
+list, so a judge verdict is never confused by a renumbering the answer text does not use. Ten
+judged answers, chosen by a fixed seed, carry an empty `human_check` field in the result file
+for a person to fill; `sovrag eval agreement <result file>` reports the agreement rate between
+judge and human once it is.
+
+On the current baseline (`eval/results/generation-2026-09-22.json`, judge `ai/gemma4:12b-q4_K_M`
+against generator `ai/qwen3.5:9b-q4_K_M`), all 29 judged answers were faithful
+(`faithful_rate` 1.000), `correct_yes` 0.966 and `correct_no` 0.034, `false_refusal_rate` 0.033,
+and 9 of the 10 unanswerable questions refused (`unanswerable_refusal_rate` 0.900).
+
+Every suite writes one result file to `eval/results/<suite>-<date>.json`, carrying the embed,
+generator and judge model names, `engine` and `engine_backend`, the metrics and the per-item
+rows, so a run is never mistaken for one measured on a different backend or quantization.
+`judge_model` is an empty string in the retrieval and leak result files, since no judge is
+involved in those suites. See ADR 0014.
+
 ## Entitlement filter
 
 `retrieve/filters.py` turns a principal into an `Entitlement`: one fixed SQL fragment and two bound arrays, the classification labels at or below the clearance and the department memberships. A document is visible when its classification is at or below the clearance and it is unclassified, government-wide, or in one of the principal's departments. All three search functions require a principal and put the predicate in their `WHERE` clause; hybrid passes it to both arms and fuses only what they return. Vector search runs in a transaction with `SET LOCAL hnsw.iterative_scan = relaxed_order` so the HNSW scan continues past filtered-out rows until `k` visible ones are found, then re-sorts those `k` by score. The rendered predicate is reported as `applied_filter` on every answer and audit line. Against the indexed corpus `analyst_dnd` sees 16 of 27 documents. See ADR 0013.
@@ -120,3 +174,4 @@ The vector for each chunk is computed over the document title, the heading path 
 - ADR 0011: Mattermost runs in Compose as Mattermost Entry on the existing Postgres, with the Agents plugin pinned and Docker Model Runner as its model.
 - ADR 0012: the principal model has two axes, validates itself on construction, and loads from YAML strictly.
 - ADR 0013: the entitlement predicate is one bound WHERE clause inside every retrieval query; HNSW scans continue past the filter with `SET LOCAL hnsw.iterative_scan`.
+- ADR 0014: evaluation design: committed full-precision fixture, hand-written gold, an independent leak oracle, a judge from another model family, labelled results.

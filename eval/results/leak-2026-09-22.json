@@ -1,0 +1,97 @@
+{
+  "suite": "leak",
+  "ran_at": "2026-09-22T15:25:35.341574+00:00",
+  "commit": "efe7ce2",
+  "embed_model": "hf.co/gpustack/bge-m3-gguf:Q8_0",
+  "llm_model": "ai/qwen3.5:9b-q4_K_M",
+  "judge_model": "",
+  "engine": "docker-model-runner",
+  "engine_backend": "llama.cpp",
+  "metrics": {
+    "leaks": 0.0,
+    "checks": 300.0,
+    "positive_control": 20.0
+  },
+  "rows": [
+    {
+      "id": "l01",
+      "control_hit": true
+    },
+    {
+      "id": "l02",
+      "control_hit": true
+    },
+    {
+      "id": "l03",
+      "control_hit": true
+    },
+    {
+      "id": "l04",
+      "control_hit": true
+    },
+    {
+      "id": "l05",
+      "control_hit": true
+    },
+    {
+      "id": "l06",
+      "control_hit": true
+    },
+    {
+      "id": "l07",
+      "control_hit": true
+    },
+    {
+      "id": "l08",
+      "control_hit": true
+    },
+    {
+      "id": "l09",
+      "control_hit": true
+    },
+    {
+      "id": "l10",
+      "control_hit": true
+    },
+    {
+      "id": "l11",
+      "control_hit": true
+    },
+    {
+      "id": "l12",
+      "control_hit": true
+    },
+    {
+      "id": "l13",
+      "control_hit": true
+    },
+    {
+      "id": "l14",
+      "control_hit": true
+    },
+    {
+      "id": "l15",
+      "control_hit": true
+    },
+    {
+      "id": "l16",
+      "control_hit": true
+    },
+    {
+      "id": "l17",
+      "control_hit": true
+    },
+    {
+      "id": "l18",
+      "control_hit": true
+    },
+    {
+      "id": "l19",
+      "control_hit": true
+    },
+    {
+      "id": "l20",
+      "control_hit": true
+    }
+  ]
+}

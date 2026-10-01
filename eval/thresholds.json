@@ -1,0 +1,12 @@
+{
+  "retrieval": {
+    "hybrid.hit@5": 0.85,
+    "hybrid.recall@10": 0.88,
+    "hybrid.mrr": 0.66,
+    "vector.hit@5": 0.81,
+    "vector.mrr": 0.65
+  },
+  "leak": {
+    "positive_control": 18
+  }
+}

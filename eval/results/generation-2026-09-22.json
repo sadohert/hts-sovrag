@@ -1,0 +1,565 @@
+{
+  "suite": "generation",
+  "ran_at": "2026-09-22T16:07:20.254779+00:00",
+  "commit": "596db85",
+  "embed_model": "hf.co/gpustack/bge-m3-gguf:Q8_0",
+  "llm_model": "ai/qwen3.5:9b-q4_K_M",
+  "judge_model": "ai/gemma4:12b-q4_K_M",
+  "engine": "docker-model-runner",
+  "engine_backend": "llama.cpp",
+  "metrics": {
+    "faithful_rate": 1.0,
+    "correct_yes": 0.9655172413793104,
+    "correct_partial": 0.0,
+    "correct_no": 0.034482758620689655,
+    "false_refusal_rate": 0.03333333333333333,
+    "unanswerable_refusal_rate": 0.9,
+    "judge_parse_failures": 0.0,
+    "judged": 29.0,
+    "mean_latency_s": 4.121108903130517
+  },
+  "rows": [
+    {
+      "id": "r01",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "The government announced an investment of $38.6 billion in NORAD modernization over the next 20 years [1]. This investment was also confirmed as a commitment over 20 years in the 2024-25 Departmental Results Report [5] and the 2025-26 Departmental Plan [4]. Additionally, a separate investment of $1.28 billion was announced for research and development for NORAD modernization from fiscal year 2024-25 to 2027-28 [2].",
+      "citations": [
+        13643,
+        14313,
+        13851,
+        14366
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 6.068
+    },
+    {
+      "id": "r02",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "In 2025-26, National Defence planned to devote **$12,320,171,806** to Ready Forces and plan for **42,417** full-time equivalents [2][3][4].",
+      "citations": [
+        14015,
+        14017,
+        14020
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 6.292,
+      "human_check": null
+    },
+    {
+      "id": "r03",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "In FY 2023-24, National Procurement spending increased to approximately $4.1 billion [1]. This rise was driven by the program's efforts to address increased resource demands from aging fleets and life extensions, increased operational requirements, technological advances, and increased contract costs [1].",
+      "citations": [
+        14131
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.577
+    },
+    {
+      "id": "r04",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Most applicants, including permanent residents, were permitted to begin basic training after receiving Reliability Status while awaiting their security clearance [1]. This change was part of key policy changes introduced to widen access and accelerate enrolment [1].",
+      "citations": [
+        14329
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.307
+    },
+    {
+      "id": "r05",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "The Auditor General estimated the cost of the ArriveCAN application at approximately $59.5 million [2]. This estimate was based on available information, as the Canada Border Services Agency's documentation and financial records were so poor that the precise cost could not be determined [2]. The total estimated cost is detailed in Exhibit highlights, which lists individual contractors and a total of $59.5 million [4].",
+      "citations": [
+        14617,
+        14622
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.791
+    },
+    {
+      "id": "r06",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "GC Strategies accounted for the largest share of ArriveCAN's estimated costs with $19.1 million [1].",
+      "citations": [
+        14622
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.927
+    },
+    {
+      "id": "r07",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Between 2011 and 2023, 10 federal departments and agencies, and 10 Crown corporations awarded 97 contracts to McKinsey & Company. The total value of these contracts was $209 million, with $200 million spent [1].",
+      "citations": [
+        14639
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.922
+    },
+    {
+      "id": "r08",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "The estimated cost of buying Canada's new fighter jets grew from $19.0 billion in 2022 to $27.7 billion in 2024, an increase of $8.7 billion [1][2].",
+      "citations": [
+        14637,
+        14630
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.561
+    },
+    {
+      "id": "r09",
+      "kind": "answerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "citations": [],
+      "verdict": null,
+      "latency_s": 4.314
+    },
+    {
+      "id": "r10",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "The chief security officer must report at least annually to the deputy head on progress in achieving the priorities defined in the department's security plan [1].",
+      "citations": [
+        13451
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.767,
+      "human_check": null
+    },
+    {
+      "id": "r11",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "A program manager can treat a trusted digital identity as an equivalent alternative to in-person interactions when they assess the following, in accordance with an approved trust framework [1][2]:\n\n1. **Identity and program-specific information:** Selecting sufficient and appropriate attributes to uniquely identify individuals and personal information required to administer a program or deliver a service [2][4.1.7.1].\n2. **Identity assurance and credential assurance:** Ensuring these meet the standards outlined in Appendix A [2][4.1.7.2].\n3. **Identity registration:** Associating identity and personal information with a credential issued to an individual [2][4.1.7.3].\n4. **Notice and consent:** Ensuring notices are clear, appropriate for the purpose, and accessible to obtain meaningful consent for the collection, use, and disclosure of personal information [2][4.1.7.4].",
+      "citations": [
+        13436,
+        13437
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 6.182,
+      "human_check": null
+    },
+    {
+      "id": "r12",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "A Top Secret clearance is valid for 5 years, whereas a Reliability status is valid for 10 years [3].",
+      "citations": [
+        13541
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.218
+    },
+    {
+      "id": "r13",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Based on the provided sources, an individual screened to the Reliability level can be granted access to:\n\n* Information, assets, or IT systems categorized as **Protected A or B** [3].\n* Positions requiring unsupervised access to Government of Canada information and assets; unescorted access to physical security zones in facilities where Government of Canada protected information is processed; or user-level access to IT systems categorized as Protected A or B [3].\n* As the minimum screening for all positions [3].",
+      "citations": [
+        13542
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 5.3
+    },
+    {
+      "id": "r14",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Public Safety Canada planned to spend $34,453,992 on national security in 2024-25 and expected to need 213 full-time equivalents [1][2].",
+      "citations": [
+        14709,
+        14763
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.291,
+      "human_check": null
+    },
+    {
+      "id": "r15",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "For 2025-26, Public Safety Canada planned the following legislative and engagement activities to address the evolving terrorism threat landscape:\n\n* Preparing a Counter-Terrorism Strategy [1].\n* Reviewing and updating the entities currently listed under the Criminal Code and Secure Air Travel Act [1].\n* Contributing to the development of a National Security Strategy [1].\n* Continuing to lead the administration of the Criminal Code Authorization Regime in coordination with other departments and agencies to facilitate international assistance activities in areas controlled by terrorist groups [1].",
+      "citations": [
+        14796
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 5.227,
+      "human_check": null
+    },
+    {
+      "id": "r16",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Based on Source [2], the transfer payment program that accounted for the largest share of Public Safety Canada's Community Safety spending in 2023-24 was the **First Nations and Inuit Policing Program**, with actual spending of $217.6 million [2].",
+      "citations": [
+        15019
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.957
+    },
+    {
+      "id": "r17",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Cybertip.ca processed 29,505 reports in 2024 [1][2].",
+      "citations": [
+        15133,
+        15132
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.549,
+      "human_check": null
+    },
+    {
+      "id": "r18",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "In its 2024-25 plan, PSPC was responsible for administering pay for more than 415,000 government pay accounts [1].",
+      "citations": [
+        15286
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.162,
+      "human_check": null
+    },
+    {
+      "id": "r19",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "PSPC intends to reduce the federal office portfolio by up to 50% over a period of 10 years [1]. This goal is also stated as reducing the portfolio by 50 percent by 2034 [2] and achieving an overall reduction of existing office space by 50% over the next 10 years [4].",
+      "citations": [
+        15456,
+        15607,
+        15300
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.527
+    },
+    {
+      "id": "r20",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Pomerleau Inc. was awarded the construction management services contract for Block 2 in December 2023 [1].",
+      "citations": [
+        15615
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.973
+    },
+    {
+      "id": "r21",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "In 2024-25, GCSurplus collected over $48 million in sales through over 29,500 transactions [1].",
+      "citations": [
+        15815
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.992
+    },
+    {
+      "id": "r22",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Shared Services Canada supports the communication systems for approximately 220 contact centres [1].",
+      "citations": [
+        15911
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.651
+    },
+    {
+      "id": "r23",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "SSC provides network infrastructure and connectivity services to more than 400,000 users [2].",
+      "citations": [
+        16002
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.435
+    },
+    {
+      "id": "r24",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "In 2023-24, departments procured over 200,000 hard tokens to be deployed to end users as an alternative MFA method [2].",
+      "citations": [
+        16104
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 4.01
+    },
+    {
+      "id": "r25",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "By the end of 2024-25, the total number of government buildings with upgraded Wi-Fi was over 1,535 [4][5].",
+      "citations": [
+        16224,
+        16225
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.708
+    },
+    {
+      "id": "r26",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Shared Services Canada expects the Federal Science Data Hub (FSDH) to save a total of between $334 million to $442 million in duplication costs [1][2].",
+      "citations": [
+        16235,
+        16234
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.354,
+      "human_check": null
+    },
+    {
+      "id": "r27",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Budget 2023 committed the government to refocus $14.1 billion over the next five years [2][3][4][5].",
+      "citations": [
+        16312,
+        15853,
+        14584,
+        16751
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.744
+    },
+    {
+      "id": "r28",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "The President of the Treasury Board set up the working group on public service productivity in December 2024 [1][2].",
+      "citations": [
+        16436,
+        16680
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.222
+    },
+    {
+      "id": "r29",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "In 2023-24, 87% of government programs had suitable measures for tracking performance and informing decision-making [1]. This result was below the 2024-25 target of at least 90% [1].",
+      "citations": [
+        16311
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "no"
+      },
+      "latency_s": 4.178,
+      "human_check": null
+    },
+    {
+      "id": "r30",
+      "kind": "answerable",
+      "refused": false,
+      "answer": "Yes, the Treasury Board Secretariat met its 2024–25 target for programs with suitable performance measures. The target was at least 90%, and the actual result achieved was 91% [2].",
+      "citations": [
+        16662
+      ],
+      "verdict": {
+        "faithful": true,
+        "unsupported_claims": [],
+        "correct": "yes"
+      },
+      "latency_s": 3.381,
+      "human_check": null
+    },
+    {
+      "id": "u01",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 3.855
+    },
+    {
+      "id": "u02",
+      "kind": "unanswerable",
+      "refused": false,
+      "answer": "Based on the provided sources, Shared Services Canada has not set any target dates after March 2026 for its departmental result indicators. All listed targets in the 2025-26 Departmental Plan are scheduled to be achieved by March 31, 2026 [2][4][5].",
+      "latency_s": 4.79
+    },
+    {
+      "id": "u03",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 2.988
+    },
+    {
+      "id": "u04",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 3.202
+    },
+    {
+      "id": "u05",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 2.765
+    },
+    {
+      "id": "u06",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 3.294
+    },
+    {
+      "id": "u07",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 4.629
+    },
+    {
+      "id": "u08",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 2.91
+    },
+    {
+      "id": "u09",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 2.904
+    },
+    {
+      "id": "u10",
+      "kind": "unanswerable",
+      "refused": true,
+      "answer": "The retrieved documents do not contain enough information to answer this question.",
+      "latency_s": 3.921
+    }
+  ]
+}

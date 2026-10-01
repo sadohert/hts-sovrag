@@ -1,0 +1,3306 @@
+{
+  "suite": "retrieval",
+  "ran_at": "2026-09-22T15:25:31.785157+00:00",
+  "commit": "efe7ce2",
+  "embed_model": "hf.co/gpustack/bge-m3-gguf:Q8_0",
+  "llm_model": "ai/qwen3.5:9b-q4_K_M",
+  "judge_model": "",
+  "engine": "docker-model-runner",
+  "engine_backend": "llama.cpp",
+  "metrics": {
+    "vector.hit@5": 0.8666666666666667,
+    "vector.recall@10": 0.9333333333333333,
+    "vector.mrr": 0.7048148148148149,
+    "vector.doc_hit@5": 0.9666666666666667,
+    "keyword.hit@5": 0.03333333333333333,
+    "keyword.recall@10": 0.03333333333333333,
+    "keyword.mrr": 0.03333333333333333,
+    "keyword.doc_hit@5": 0.06666666666666667,
+    "hybrid.hit@5": 0.9,
+    "hybrid.recall@10": 0.9333333333333333,
+    "hybrid.mrr": 0.715925925925926,
+    "hybrid.doc_hit@5": 0.9666666666666667
+  },
+  "rows": [
+    {
+      "id": "r01",
+      "mode": "vector",
+      "ranked": [
+        [
+          "dnd-dp-2024-25",
+          18
+        ],
+        [
+          "dnd-drr-2024-25",
+          1
+        ],
+        [
+          "dnd-drr-2024-25",
+          31
+        ],
+        [
+          "dnd-dp-2025-26",
+          19
+        ],
+        [
+          "dnd-drr-2024-25",
+          54
+        ],
+        [
+          "dnd-drr-2024-25",
+          2
+        ],
+        [
+          "dnd-dp-2025-26",
+          20
+        ],
+        [
+          "dnd-drr-2023-24",
+          37
+        ],
+        [
+          "dnd-dp-2024-25",
+          19
+        ],
+        [
+          "dnd-dp-2025-26",
+          1
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r01",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r01",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "dnd-dp-2024-25",
+          18
+        ],
+        [
+          "dnd-drr-2024-25",
+          1
+        ],
+        [
+          "dnd-drr-2024-25",
+          31
+        ],
+        [
+          "dnd-dp-2025-26",
+          19
+        ],
+        [
+          "dnd-drr-2024-25",
+          54
+        ],
+        [
+          "dnd-drr-2024-25",
+          2
+        ],
+        [
+          "dnd-dp-2025-26",
+          20
+        ],
+        [
+          "dnd-drr-2023-24",
+          37
+        ],
+        [
+          "dnd-dp-2024-25",
+          19
+        ],
+        [
+          "dnd-dp-2025-26",
+          1
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r02",
+      "mode": "vector",
+      "ranked": [
+        [
+          "dnd-dp-2025-26",
+          189
+        ],
+        [
+          "dnd-dp-2025-26",
+          183
+        ],
+        [
+          "dnd-dp-2025-26",
+          185
+        ],
+        [
+          "dnd-dp-2025-26",
+          188
+        ],
+        [
+          "dnd-drr-2024-25",
+          276
+        ],
+        [
+          "dnd-dp-2024-25",
+          187
+        ],
+        [
+          "dnd-drr-2024-25",
+          287
+        ],
+        [
+          "dnd-dp-2024-25",
+          59
+        ],
+        [
+          "dnd-drr-2024-25",
+          277
+        ],
+        [
+          "dnd-dp-2024-25",
+          89
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r02",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r02",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "dnd-dp-2025-26",
+          189
+        ],
+        [
+          "dnd-dp-2025-26",
+          183
+        ],
+        [
+          "dnd-dp-2025-26",
+          185
+        ],
+        [
+          "dnd-dp-2025-26",
+          188
+        ],
+        [
+          "dnd-drr-2024-25",
+          276
+        ],
+        [
+          "dnd-dp-2024-25",
+          187
+        ],
+        [
+          "dnd-drr-2024-25",
+          287
+        ],
+        [
+          "dnd-dp-2024-25",
+          59
+        ],
+        [
+          "dnd-drr-2024-25",
+          277
+        ],
+        [
+          "dnd-dp-2024-25",
+          89
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r03",
+      "mode": "vector",
+      "ranked": [
+        [
+          "dnd-drr-2023-24",
+          88
+        ],
+        [
+          "pspc-drr-2023-24",
+          136
+        ],
+        [
+          "dnd-dp-2024-25",
+          189
+        ],
+        [
+          "dnd-dp-2024-25",
+          190
+        ],
+        [
+          "pspc-drr-2024-25",
+          142
+        ],
+        [
+          "pspc-drr-2024-25",
+          141
+        ],
+        [
+          "dnd-drr-2024-25",
+          274
+        ],
+        [
+          "pspc-dp-2024-25",
+          129
+        ],
+        [
+          "dnd-drr-2023-24",
+          247
+        ],
+        [
+          "dnd-dp-2024-25",
+          185
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r03",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r03",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "dnd-drr-2023-24",
+          88
+        ],
+        [
+          "pspc-drr-2023-24",
+          136
+        ],
+        [
+          "dnd-dp-2024-25",
+          189
+        ],
+        [
+          "dnd-dp-2024-25",
+          190
+        ],
+        [
+          "pspc-drr-2024-25",
+          142
+        ],
+        [
+          "pspc-drr-2024-25",
+          141
+        ],
+        [
+          "dnd-drr-2024-25",
+          274
+        ],
+        [
+          "pspc-dp-2024-25",
+          129
+        ],
+        [
+          "dnd-drr-2023-24",
+          247
+        ],
+        [
+          "dnd-dp-2024-25",
+          185
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r04",
+      "mode": "vector",
+      "ranked": [
+        [
+          "dnd-drr-2024-25",
+          17
+        ],
+        [
+          "dnd-drr-2023-24",
+          106
+        ],
+        [
+          "dnd-drr-2023-24",
+          109
+        ],
+        [
+          "dnd-drr-2023-24",
+          107
+        ],
+        [
+          "ps-drr-2023-24",
+          18
+        ],
+        [
+          "dnd-drr-2024-25",
+          129
+        ],
+        [
+          "dnd-drr-2023-24",
+          133
+        ],
+        [
+          "dnd-drr-2023-24",
+          108
+        ],
+        [
+          "dnd-drr-2023-24",
+          40
+        ],
+        [
+          "dnd-drr-2024-25",
+          107
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r04",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r04",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "dnd-drr-2024-25",
+          17
+        ],
+        [
+          "dnd-drr-2023-24",
+          106
+        ],
+        [
+          "dnd-drr-2023-24",
+          109
+        ],
+        [
+          "dnd-drr-2023-24",
+          107
+        ],
+        [
+          "ps-drr-2023-24",
+          18
+        ],
+        [
+          "dnd-drr-2024-25",
+          129
+        ],
+        [
+          "dnd-drr-2023-24",
+          133
+        ],
+        [
+          "dnd-drr-2023-24",
+          108
+        ],
+        [
+          "dnd-drr-2023-24",
+          40
+        ],
+        [
+          "dnd-drr-2024-25",
+          107
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r05",
+      "mode": "vector",
+      "ranked": [
+        [
+          "oag-arrivecan-2024",
+          0
+        ],
+        [
+          "oag-arrivecan-2024",
+          2
+        ],
+        [
+          "oag-arrivecan-2024",
+          5
+        ],
+        [
+          "oag-arrivecan-2024",
+          1
+        ],
+        [
+          "oag-arrivecan-2024",
+          7
+        ],
+        [
+          "oag-arrivecan-2024",
+          6
+        ],
+        [
+          "oag-arrivecan-2024",
+          3
+        ],
+        [
+          "oag-arrivecan-2024",
+          9
+        ],
+        [
+          "oag-arrivecan-2024",
+          8
+        ],
+        [
+          "oag-arrivecan-2024",
+          4
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r05",
+      "mode": "keyword",
+      "ranked": [
+        [
+          "oag-arrivecan-2024",
+          3
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r05",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "oag-arrivecan-2024",
+          3
+        ],
+        [
+          "oag-arrivecan-2024",
+          0
+        ],
+        [
+          "oag-arrivecan-2024",
+          2
+        ],
+        [
+          "oag-arrivecan-2024",
+          5
+        ],
+        [
+          "oag-arrivecan-2024",
+          1
+        ],
+        [
+          "oag-arrivecan-2024",
+          7
+        ],
+        [
+          "oag-arrivecan-2024",
+          6
+        ],
+        [
+          "oag-arrivecan-2024",
+          9
+        ],
+        [
+          "oag-arrivecan-2024",
+          8
+        ],
+        [
+          "oag-arrivecan-2024",
+          4
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r06",
+      "mode": "vector",
+      "ranked": [
+        [
+          "oag-arrivecan-2024",
+          5
+        ],
+        [
+          "oag-arrivecan-2024",
+          2
+        ],
+        [
+          "oag-arrivecan-2024",
+          0
+        ],
+        [
+          "oag-arrivecan-2024",
+          1
+        ],
+        [
+          "oag-arrivecan-2024",
+          6
+        ],
+        [
+          "oag-arrivecan-2024",
+          8
+        ],
+        [
+          "oag-arrivecan-2024",
+          9
+        ],
+        [
+          "oag-arrivecan-2024",
+          7
+        ],
+        [
+          "oag-arrivecan-2024",
+          3
+        ],
+        [
+          "oag-arrivecan-2024",
+          4
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r06",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r06",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "oag-arrivecan-2024",
+          5
+        ],
+        [
+          "oag-arrivecan-2024",
+          2
+        ],
+        [
+          "oag-arrivecan-2024",
+          0
+        ],
+        [
+          "oag-arrivecan-2024",
+          1
+        ],
+        [
+          "oag-arrivecan-2024",
+          6
+        ],
+        [
+          "oag-arrivecan-2024",
+          8
+        ],
+        [
+          "oag-arrivecan-2024",
+          9
+        ],
+        [
+          "oag-arrivecan-2024",
+          7
+        ],
+        [
+          "oag-arrivecan-2024",
+          3
+        ],
+        [
+          "oag-arrivecan-2024",
+          4
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r07",
+      "mode": "vector",
+      "ranked": [
+        [
+          "oag-professional-services-contracts-2024",
+          0
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          10
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          11
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          12
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          2
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          7
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          9
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          1
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          3
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          8
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r07",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r07",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "oag-professional-services-contracts-2024",
+          0
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          10
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          11
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          12
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          2
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          7
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          9
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          1
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          3
+        ],
+        [
+          "oag-professional-services-contracts-2024",
+          8
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r08",
+      "mode": "vector",
+      "ranked": [
+        [
+          "oag-future-fighter-jet-2025",
+          8
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          1
+        ],
+        [
+          "ps-drr-2023-24",
+          157
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          0
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          5
+        ],
+        [
+          "dnd-drr-2024-25",
+          277
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          2
+        ],
+        [
+          "pspc-dp-2024-25",
+          129
+        ],
+        [
+          "ps-drr-2024-25",
+          160
+        ],
+        [
+          "ps-drr-2024-25",
+          179
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r08",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r08",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "oag-future-fighter-jet-2025",
+          8
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          1
+        ],
+        [
+          "ps-drr-2023-24",
+          157
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          0
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          5
+        ],
+        [
+          "dnd-drr-2024-25",
+          277
+        ],
+        [
+          "oag-future-fighter-jet-2025",
+          2
+        ],
+        [
+          "pspc-dp-2024-25",
+          129
+        ],
+        [
+          "ps-drr-2024-25",
+          160
+        ],
+        [
+          "ps-drr-2024-25",
+          179
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r09",
+      "mode": "vector",
+      "ranked": [
+        [
+          "directive-security-management",
+          8
+        ],
+        [
+          "directive-security-screening",
+          115
+        ],
+        [
+          "directive-security-management",
+          37
+        ],
+        [
+          "directive-security-screening",
+          59
+        ],
+        [
+          "pspc-dp-2025-26",
+          107
+        ],
+        [
+          "directive-security-screening",
+          114
+        ],
+        [
+          "directive-security-screening",
+          54
+        ],
+        [
+          "directive-security-management",
+          12
+        ],
+        [
+          "directive-security-management",
+          48
+        ],
+        [
+          "directive-security-management",
+          25
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r09",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r09",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "directive-security-management",
+          8
+        ],
+        [
+          "directive-security-screening",
+          115
+        ],
+        [
+          "directive-security-management",
+          37
+        ],
+        [
+          "directive-security-screening",
+          59
+        ],
+        [
+          "pspc-dp-2025-26",
+          107
+        ],
+        [
+          "directive-security-screening",
+          114
+        ],
+        [
+          "directive-security-screening",
+          54
+        ],
+        [
+          "directive-security-management",
+          12
+        ],
+        [
+          "directive-security-management",
+          48
+        ],
+        [
+          "directive-security-management",
+          25
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r10",
+      "mode": "vector",
+      "ranked": [
+        [
+          "directive-security-management",
+          7
+        ],
+        [
+          "directive-security-management",
+          8
+        ],
+        [
+          "policy-government-security",
+          8
+        ],
+        [
+          "directive-security-management",
+          9
+        ],
+        [
+          "directive-security-management",
+          11
+        ],
+        [
+          "directive-security-management",
+          48
+        ],
+        [
+          "directive-security-management",
+          12
+        ],
+        [
+          "directive-security-management",
+          10
+        ],
+        [
+          "directive-security-management",
+          53
+        ],
+        [
+          "directive-security-management",
+          40
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r10",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r10",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "directive-security-management",
+          7
+        ],
+        [
+          "directive-security-management",
+          8
+        ],
+        [
+          "policy-government-security",
+          8
+        ],
+        [
+          "directive-security-management",
+          9
+        ],
+        [
+          "directive-security-management",
+          11
+        ],
+        [
+          "directive-security-management",
+          48
+        ],
+        [
+          "directive-security-management",
+          12
+        ],
+        [
+          "directive-security-management",
+          10
+        ],
+        [
+          "directive-security-management",
+          53
+        ],
+        [
+          "directive-security-management",
+          40
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r11",
+      "mode": "vector",
+      "ranked": [
+        [
+          "directive-identity-management",
+          7
+        ],
+        [
+          "directive-identity-management",
+          8
+        ],
+        [
+          "directive-identity-management",
+          6
+        ],
+        [
+          "policy-government-security",
+          32
+        ],
+        [
+          "directive-identity-management",
+          3
+        ],
+        [
+          "directive-security-screening",
+          121
+        ],
+        [
+          "directive-identity-management",
+          14
+        ],
+        [
+          "directive-identity-management",
+          12
+        ],
+        [
+          "directive-identity-management",
+          10
+        ],
+        [
+          "directive-identity-management",
+          13
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r11",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r11",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "directive-identity-management",
+          7
+        ],
+        [
+          "directive-identity-management",
+          8
+        ],
+        [
+          "directive-identity-management",
+          6
+        ],
+        [
+          "policy-government-security",
+          32
+        ],
+        [
+          "directive-identity-management",
+          3
+        ],
+        [
+          "directive-security-screening",
+          121
+        ],
+        [
+          "directive-identity-management",
+          14
+        ],
+        [
+          "directive-identity-management",
+          12
+        ],
+        [
+          "directive-identity-management",
+          10
+        ],
+        [
+          "directive-identity-management",
+          13
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r12",
+      "mode": "vector",
+      "ranked": [
+        [
+          "directive-security-screening",
+          41
+        ],
+        [
+          "directive-security-screening",
+          4
+        ],
+        [
+          "directive-security-screening",
+          40
+        ],
+        [
+          "directive-security-screening",
+          115
+        ],
+        [
+          "policy-government-security",
+          31
+        ],
+        [
+          "directive-security-screening",
+          69
+        ],
+        [
+          "directive-security-screening",
+          61
+        ],
+        [
+          "directive-security-screening",
+          38
+        ],
+        [
+          "directive-security-screening",
+          37
+        ],
+        [
+          "directive-security-screening",
+          80
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.3333333333333333,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r12",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r12",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "directive-security-screening",
+          41
+        ],
+        [
+          "directive-security-screening",
+          4
+        ],
+        [
+          "directive-security-screening",
+          40
+        ],
+        [
+          "directive-security-screening",
+          115
+        ],
+        [
+          "policy-government-security",
+          31
+        ],
+        [
+          "directive-security-screening",
+          69
+        ],
+        [
+          "directive-security-screening",
+          61
+        ],
+        [
+          "directive-security-screening",
+          38
+        ],
+        [
+          "directive-security-screening",
+          37
+        ],
+        [
+          "directive-security-screening",
+          80
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.3333333333333333,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r13",
+      "mode": "vector",
+      "ranked": [
+        [
+          "directive-security-screening",
+          38
+        ],
+        [
+          "directive-security-screening",
+          35
+        ],
+        [
+          "directive-security-screening",
+          41
+        ],
+        [
+          "directive-security-screening",
+          42
+        ],
+        [
+          "policy-government-security",
+          31
+        ],
+        [
+          "directive-security-screening",
+          123
+        ],
+        [
+          "directive-security-screening",
+          120
+        ],
+        [
+          "directive-security-screening",
+          80
+        ],
+        [
+          "directive-security-screening",
+          121
+        ],
+        [
+          "directive-security-screening",
+          40
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.3333333333333333,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r13",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r13",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "directive-security-screening",
+          38
+        ],
+        [
+          "directive-security-screening",
+          35
+        ],
+        [
+          "directive-security-screening",
+          41
+        ],
+        [
+          "directive-security-screening",
+          42
+        ],
+        [
+          "policy-government-security",
+          31
+        ],
+        [
+          "directive-security-screening",
+          123
+        ],
+        [
+          "directive-security-screening",
+          120
+        ],
+        [
+          "directive-security-screening",
+          80
+        ],
+        [
+          "directive-security-screening",
+          121
+        ],
+        [
+          "directive-security-screening",
+          40
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.3333333333333333,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r14",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ps-dp-2024-25",
+          20
+        ],
+        [
+          "ps-dp-2024-25",
+          74
+        ],
+        [
+          "ps-drr-2024-25",
+          3
+        ],
+        [
+          "ps-drr-2024-25",
+          154
+        ],
+        [
+          "ps-drr-2024-25",
+          149
+        ],
+        [
+          "ps-dp-2025-26",
+          75
+        ],
+        [
+          "ps-dp-2024-25",
+          68
+        ],
+        [
+          "ps-drr-2023-24",
+          141
+        ],
+        [
+          "ps-drr-2023-24",
+          136
+        ],
+        [
+          "ps-drr-2024-25",
+          148
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r14",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r14",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ps-dp-2024-25",
+          20
+        ],
+        [
+          "ps-dp-2024-25",
+          74
+        ],
+        [
+          "ps-drr-2024-25",
+          3
+        ],
+        [
+          "ps-drr-2024-25",
+          154
+        ],
+        [
+          "ps-drr-2024-25",
+          149
+        ],
+        [
+          "ps-dp-2025-26",
+          75
+        ],
+        [
+          "ps-dp-2024-25",
+          68
+        ],
+        [
+          "ps-drr-2023-24",
+          141
+        ],
+        [
+          "ps-drr-2023-24",
+          136
+        ],
+        [
+          "ps-drr-2024-25",
+          148
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r15",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ps-dp-2025-26",
+          13
+        ],
+        [
+          "ps-drr-2024-25",
+          62
+        ],
+        [
+          "ps-dp-2025-26",
+          1
+        ],
+        [
+          "ps-dp-2024-25",
+          3
+        ],
+        [
+          "ps-dp-2024-25",
+          34
+        ],
+        [
+          "ps-drr-2024-25",
+          9
+        ],
+        [
+          "ps-dp-2024-25",
+          4
+        ],
+        [
+          "ps-dp-2025-26",
+          30
+        ],
+        [
+          "ps-dp-2025-26",
+          5
+        ],
+        [
+          "ps-drr-2024-25",
+          8
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r15",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r15",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ps-dp-2025-26",
+          13
+        ],
+        [
+          "ps-drr-2024-25",
+          62
+        ],
+        [
+          "ps-dp-2025-26",
+          1
+        ],
+        [
+          "ps-dp-2024-25",
+          3
+        ],
+        [
+          "ps-dp-2024-25",
+          34
+        ],
+        [
+          "ps-drr-2024-25",
+          9
+        ],
+        [
+          "ps-dp-2024-25",
+          4
+        ],
+        [
+          "ps-dp-2025-26",
+          30
+        ],
+        [
+          "ps-dp-2025-26",
+          5
+        ],
+        [
+          "ps-drr-2024-25",
+          8
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r16",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ps-drr-2024-25",
+          151
+        ],
+        [
+          "ps-drr-2023-24",
+          135
+        ],
+        [
+          "ps-drr-2024-25",
+          146
+        ],
+        [
+          "ps-dp-2025-26",
+          73
+        ],
+        [
+          "ps-drr-2023-24",
+          139
+        ],
+        [
+          "ps-drr-2023-24",
+          138
+        ],
+        [
+          "ps-drr-2024-25",
+          152
+        ],
+        [
+          "ps-drr-2023-24",
+          140
+        ],
+        [
+          "ps-drr-2024-25",
+          153
+        ],
+        [
+          "ps-drr-2024-25",
+          170
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r16",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r16",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ps-drr-2024-25",
+          151
+        ],
+        [
+          "ps-drr-2023-24",
+          135
+        ],
+        [
+          "ps-drr-2024-25",
+          146
+        ],
+        [
+          "ps-dp-2025-26",
+          73
+        ],
+        [
+          "ps-drr-2023-24",
+          139
+        ],
+        [
+          "ps-drr-2023-24",
+          138
+        ],
+        [
+          "ps-drr-2024-25",
+          152
+        ],
+        [
+          "ps-drr-2023-24",
+          140
+        ],
+        [
+          "ps-drr-2024-25",
+          153
+        ],
+        [
+          "ps-drr-2024-25",
+          170
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r17",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ps-drr-2024-25",
+          80
+        ],
+        [
+          "ps-drr-2024-25",
+          79
+        ],
+        [
+          "ps-drr-2023-24",
+          12
+        ],
+        [
+          "ps-drr-2023-24",
+          62
+        ],
+        [
+          "pspc-drr-2024-25",
+          97
+        ],
+        [
+          "ps-drr-2023-24",
+          46
+        ],
+        [
+          "ps-drr-2024-25",
+          33
+        ],
+        [
+          "ps-drr-2024-25",
+          74
+        ],
+        [
+          "ps-drr-2024-25",
+          73
+        ],
+        [
+          "ps-drr-2024-25",
+          66
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r17",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r17",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ps-drr-2024-25",
+          80
+        ],
+        [
+          "ps-drr-2024-25",
+          79
+        ],
+        [
+          "ps-drr-2023-24",
+          12
+        ],
+        [
+          "ps-drr-2023-24",
+          62
+        ],
+        [
+          "pspc-drr-2024-25",
+          97
+        ],
+        [
+          "ps-drr-2023-24",
+          46
+        ],
+        [
+          "ps-drr-2024-25",
+          33
+        ],
+        [
+          "ps-drr-2024-25",
+          74
+        ],
+        [
+          "ps-drr-2024-25",
+          73
+        ],
+        [
+          "ps-drr-2024-25",
+          66
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r18",
+      "mode": "vector",
+      "ranked": [
+        [
+          "pspc-dp-2024-25",
+          42
+        ],
+        [
+          "pspc-dp-2025-26",
+          39
+        ],
+        [
+          "pspc-drr-2024-25",
+          52
+        ],
+        [
+          "pspc-dp-2024-25",
+          39
+        ],
+        [
+          "pspc-dp-2024-25",
+          41
+        ],
+        [
+          "pspc-drr-2024-25",
+          57
+        ],
+        [
+          "pspc-drr-2024-25",
+          50
+        ],
+        [
+          "pspc-dp-2024-25",
+          45
+        ],
+        [
+          "pspc-dp-2024-25",
+          32
+        ],
+        [
+          "pspc-drr-2023-24",
+          41
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r18",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r18",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "pspc-dp-2024-25",
+          42
+        ],
+        [
+          "pspc-dp-2025-26",
+          39
+        ],
+        [
+          "pspc-drr-2024-25",
+          52
+        ],
+        [
+          "pspc-dp-2024-25",
+          39
+        ],
+        [
+          "pspc-dp-2024-25",
+          41
+        ],
+        [
+          "pspc-drr-2024-25",
+          57
+        ],
+        [
+          "pspc-drr-2024-25",
+          50
+        ],
+        [
+          "pspc-dp-2024-25",
+          45
+        ],
+        [
+          "pspc-dp-2024-25",
+          32
+        ],
+        [
+          "pspc-drr-2023-24",
+          41
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r19",
+      "mode": "vector",
+      "ranked": [
+        [
+          "pspc-dp-2025-26",
+          54
+        ],
+        [
+          "pspc-drr-2023-24",
+          56
+        ],
+        [
+          "pspc-drr-2024-25",
+          67
+        ],
+        [
+          "pspc-dp-2024-25",
+          56
+        ],
+        [
+          "pspc-drr-2023-24",
+          3
+        ],
+        [
+          "pspc-drr-2024-25",
+          137
+        ],
+        [
+          "pspc-dp-2024-25",
+          69
+        ],
+        [
+          "pspc-dp-2024-25",
+          60
+        ],
+        [
+          "pspc-drr-2023-24",
+          59
+        ],
+        [
+          "pspc-dp-2024-25",
+          70
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r19",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r19",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "pspc-dp-2025-26",
+          54
+        ],
+        [
+          "pspc-drr-2023-24",
+          56
+        ],
+        [
+          "pspc-drr-2024-25",
+          67
+        ],
+        [
+          "pspc-dp-2024-25",
+          56
+        ],
+        [
+          "pspc-drr-2023-24",
+          3
+        ],
+        [
+          "pspc-drr-2024-25",
+          137
+        ],
+        [
+          "pspc-dp-2024-25",
+          69
+        ],
+        [
+          "pspc-dp-2024-25",
+          60
+        ],
+        [
+          "pspc-drr-2023-24",
+          59
+        ],
+        [
+          "pspc-dp-2024-25",
+          70
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r20",
+      "mode": "vector",
+      "ranked": [
+        [
+          "pspc-dp-2024-25",
+          65
+        ],
+        [
+          "pspc-drr-2024-25",
+          72
+        ],
+        [
+          "pspc-dp-2024-25",
+          64
+        ],
+        [
+          "pspc-drr-2024-25",
+          73
+        ],
+        [
+          "pspc-drr-2023-24",
+          65
+        ],
+        [
+          "pspc-drr-2023-24",
+          64
+        ],
+        [
+          "pspc-dp-2024-25",
+          66
+        ],
+        [
+          "pspc-drr-2023-24",
+          63
+        ],
+        [
+          "pspc-dp-2025-26",
+          57
+        ],
+        [
+          "pspc-dp-2024-25",
+          74
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 1.0,
+      "mrr": 0.16666666666666666,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r20",
+      "mode": "keyword",
+      "ranked": [
+        [
+          "pspc-drr-2023-24",
+          64
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r20",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "pspc-drr-2023-24",
+          64
+        ],
+        [
+          "pspc-dp-2024-25",
+          65
+        ],
+        [
+          "pspc-drr-2024-25",
+          72
+        ],
+        [
+          "pspc-dp-2024-25",
+          64
+        ],
+        [
+          "pspc-drr-2024-25",
+          73
+        ],
+        [
+          "pspc-drr-2023-24",
+          65
+        ],
+        [
+          "pspc-dp-2024-25",
+          66
+        ],
+        [
+          "pspc-drr-2023-24",
+          63
+        ],
+        [
+          "pspc-dp-2025-26",
+          57
+        ],
+        [
+          "pspc-dp-2024-25",
+          74
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r21",
+      "mode": "vector",
+      "ranked": [
+        [
+          "pspc-drr-2024-25",
+          99
+        ],
+        [
+          "pspc-drr-2023-24",
+          93
+        ],
+        [
+          "ssc-drr-2024-25",
+          81
+        ],
+        [
+          "ssc-drr-2024-25",
+          80
+        ],
+        [
+          "ssc-dp-2024-25",
+          78
+        ],
+        [
+          "pspc-drr-2023-24",
+          27
+        ],
+        [
+          "pspc-drr-2024-25",
+          152
+        ],
+        [
+          "ssc-drr-2024-25",
+          82
+        ],
+        [
+          "ssc-dp-2024-25",
+          79
+        ],
+        [
+          "ssc-dp-2024-25",
+          77
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r21",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r21",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "pspc-drr-2024-25",
+          99
+        ],
+        [
+          "pspc-drr-2023-24",
+          93
+        ],
+        [
+          "ssc-drr-2024-25",
+          81
+        ],
+        [
+          "ssc-drr-2024-25",
+          80
+        ],
+        [
+          "ssc-dp-2024-25",
+          78
+        ],
+        [
+          "pspc-drr-2023-24",
+          27
+        ],
+        [
+          "pspc-drr-2024-25",
+          152
+        ],
+        [
+          "ssc-drr-2024-25",
+          82
+        ],
+        [
+          "ssc-dp-2024-25",
+          79
+        ],
+        [
+          "ssc-dp-2024-25",
+          77
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r22",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ssc-dp-2024-25",
+          25
+        ],
+        [
+          "ssc-drr-2024-25",
+          26
+        ],
+        [
+          "ssc-drr-2023-24",
+          24
+        ],
+        [
+          "ssc-drr-2024-25",
+          25
+        ],
+        [
+          "ssc-drr-2024-25",
+          4
+        ],
+        [
+          "ssc-drr-2023-24",
+          25
+        ],
+        [
+          "ssc-drr-2023-24",
+          23
+        ],
+        [
+          "ssc-drr-2024-25",
+          6
+        ],
+        [
+          "ssc-dp-2025-26",
+          36
+        ],
+        [
+          "ssc-drr-2024-25",
+          11
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r22",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r22",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ssc-dp-2024-25",
+          25
+        ],
+        [
+          "ssc-drr-2024-25",
+          26
+        ],
+        [
+          "ssc-drr-2023-24",
+          24
+        ],
+        [
+          "ssc-drr-2024-25",
+          25
+        ],
+        [
+          "ssc-drr-2024-25",
+          4
+        ],
+        [
+          "ssc-drr-2023-24",
+          25
+        ],
+        [
+          "ssc-drr-2023-24",
+          23
+        ],
+        [
+          "ssc-drr-2024-25",
+          6
+        ],
+        [
+          "ssc-dp-2025-26",
+          36
+        ],
+        [
+          "ssc-drr-2024-25",
+          11
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r23",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ssc-drr-2023-24",
+          77
+        ],
+        [
+          "ssc-dp-2025-26",
+          13
+        ],
+        [
+          "ssc-dp-2025-26",
+          72
+        ],
+        [
+          "ssc-drr-2023-24",
+          71
+        ],
+        [
+          "ssc-drr-2024-25",
+          85
+        ],
+        [
+          "ssc-dp-2025-26",
+          16
+        ],
+        [
+          "ssc-drr-2024-25",
+          79
+        ],
+        [
+          "ssc-drr-2024-25",
+          3
+        ],
+        [
+          "ssc-dp-2025-26",
+          81
+        ],
+        [
+          "ssc-dp-2025-26",
+          67
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r23",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r23",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ssc-drr-2023-24",
+          77
+        ],
+        [
+          "ssc-dp-2025-26",
+          13
+        ],
+        [
+          "ssc-dp-2025-26",
+          72
+        ],
+        [
+          "ssc-drr-2023-24",
+          71
+        ],
+        [
+          "ssc-drr-2024-25",
+          85
+        ],
+        [
+          "ssc-dp-2025-26",
+          16
+        ],
+        [
+          "ssc-drr-2024-25",
+          79
+        ],
+        [
+          "ssc-drr-2024-25",
+          3
+        ],
+        [
+          "ssc-dp-2025-26",
+          81
+        ],
+        [
+          "ssc-dp-2025-26",
+          67
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r24",
+      "mode": "vector",
+      "ranked": [
+        [
+          "dnd-drr-2023-24",
+          239
+        ],
+        [
+          "ssc-drr-2023-24",
+          21
+        ],
+        [
+          "dnd-dp-2024-25",
+          139
+        ],
+        [
+          "dnd-drr-2024-25",
+          266
+        ],
+        [
+          "dnd-drr-2024-25",
+          225
+        ],
+        [
+          "dnd-drr-2023-24",
+          13
+        ],
+        [
+          "ps-drr-2023-24",
+          157
+        ],
+        [
+          "dnd-drr-2024-25",
+          186
+        ],
+        [
+          "dnd-drr-2024-25",
+          243
+        ],
+        [
+          "dnd-drr-2023-24",
+          180
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r24",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r24",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "dnd-drr-2023-24",
+          239
+        ],
+        [
+          "ssc-drr-2023-24",
+          21
+        ],
+        [
+          "dnd-dp-2024-25",
+          139
+        ],
+        [
+          "dnd-drr-2024-25",
+          266
+        ],
+        [
+          "dnd-drr-2024-25",
+          225
+        ],
+        [
+          "dnd-drr-2023-24",
+          13
+        ],
+        [
+          "ps-drr-2023-24",
+          157
+        ],
+        [
+          "dnd-drr-2024-25",
+          186
+        ],
+        [
+          "dnd-drr-2024-25",
+          243
+        ],
+        [
+          "dnd-drr-2023-24",
+          180
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r25",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ssc-dp-2025-26",
+          16
+        ],
+        [
+          "ssc-drr-2023-24",
+          17
+        ],
+        [
+          "ssc-dp-2024-25",
+          19
+        ],
+        [
+          "ssc-drr-2024-25",
+          36
+        ],
+        [
+          "ssc-drr-2024-25",
+          37
+        ],
+        [
+          "ssc-drr-2024-25",
+          6
+        ],
+        [
+          "dnd-drr-2024-25",
+          240
+        ],
+        [
+          "ssc-drr-2023-24",
+          16
+        ],
+        [
+          "dnd-drr-2024-25",
+          210
+        ],
+        [
+          "ssc-drr-2024-25",
+          53
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.2,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r25",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r25",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ssc-dp-2025-26",
+          16
+        ],
+        [
+          "ssc-drr-2023-24",
+          17
+        ],
+        [
+          "ssc-dp-2024-25",
+          19
+        ],
+        [
+          "ssc-drr-2024-25",
+          36
+        ],
+        [
+          "ssc-drr-2024-25",
+          37
+        ],
+        [
+          "ssc-drr-2024-25",
+          6
+        ],
+        [
+          "dnd-drr-2024-25",
+          240
+        ],
+        [
+          "ssc-drr-2023-24",
+          16
+        ],
+        [
+          "dnd-drr-2024-25",
+          210
+        ],
+        [
+          "ssc-drr-2024-25",
+          53
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.2,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r26",
+      "mode": "vector",
+      "ranked": [
+        [
+          "ssc-drr-2024-25",
+          47
+        ],
+        [
+          "ssc-drr-2024-25",
+          46
+        ],
+        [
+          "ssc-dp-2024-25",
+          46
+        ],
+        [
+          "ssc-dp-2025-26",
+          11
+        ],
+        [
+          "ssc-drr-2024-25",
+          23
+        ],
+        [
+          "ssc-dp-2025-26",
+          38
+        ],
+        [
+          "ssc-drr-2023-24",
+          43
+        ],
+        [
+          "ssc-drr-2024-25",
+          21
+        ],
+        [
+          "ssc-dp-2025-26",
+          68
+        ],
+        [
+          "ssc-drr-2024-25",
+          82
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r26",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r26",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "ssc-drr-2024-25",
+          47
+        ],
+        [
+          "ssc-drr-2024-25",
+          46
+        ],
+        [
+          "ssc-dp-2024-25",
+          46
+        ],
+        [
+          "ssc-dp-2025-26",
+          11
+        ],
+        [
+          "ssc-drr-2024-25",
+          23
+        ],
+        [
+          "ssc-dp-2025-26",
+          38
+        ],
+        [
+          "ssc-drr-2023-24",
+          43
+        ],
+        [
+          "ssc-drr-2024-25",
+          21
+        ],
+        [
+          "ssc-dp-2025-26",
+          68
+        ],
+        [
+          "ssc-drr-2024-25",
+          82
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r27",
+      "mode": "vector",
+      "ranked": [
+        [
+          "tbs-drr-2023-24",
+          10
+        ],
+        [
+          "tbs-dp-2024-25",
+          8
+        ],
+        [
+          "pspc-drr-2024-25",
+          137
+        ],
+        [
+          "dnd-drr-2024-25",
+          272
+        ],
+        [
+          "tbs-drr-2024-25",
+          105
+        ],
+        [
+          "tbs-dp-2024-25",
+          88
+        ],
+        [
+          "dnd-drr-2023-24",
+          3
+        ],
+        [
+          "ps-drr-2024-25",
+          148
+        ],
+        [
+          "pspc-drr-2023-24",
+          134
+        ],
+        [
+          "ssc-drr-2023-24",
+          76
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r27",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r27",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "tbs-drr-2023-24",
+          10
+        ],
+        [
+          "tbs-dp-2024-25",
+          8
+        ],
+        [
+          "pspc-drr-2024-25",
+          137
+        ],
+        [
+          "dnd-drr-2024-25",
+          272
+        ],
+        [
+          "tbs-drr-2024-25",
+          105
+        ],
+        [
+          "tbs-dp-2024-25",
+          88
+        ],
+        [
+          "dnd-drr-2023-24",
+          3
+        ],
+        [
+          "ps-drr-2024-25",
+          148
+        ],
+        [
+          "pspc-drr-2023-24",
+          134
+        ],
+        [
+          "ssc-drr-2023-24",
+          76
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r28",
+      "mode": "vector",
+      "ranked": [
+        [
+          "tbs-dp-2025-26",
+          19
+        ],
+        [
+          "tbs-drr-2024-25",
+          34
+        ],
+        [
+          "tbs-drr-2023-24",
+          55
+        ],
+        [
+          "tbs-drr-2023-24",
+          52
+        ],
+        [
+          "tbs-drr-2023-24",
+          56
+        ],
+        [
+          "tbs-drr-2023-24",
+          51
+        ],
+        [
+          "tbs-drr-2023-24",
+          54
+        ],
+        [
+          "tbs-drr-2023-24",
+          53
+        ],
+        [
+          "tbs-drr-2023-24",
+          58
+        ],
+        [
+          "tbs-drr-2023-24",
+          43
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r28",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r28",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "tbs-dp-2025-26",
+          19
+        ],
+        [
+          "tbs-drr-2024-25",
+          34
+        ],
+        [
+          "tbs-drr-2023-24",
+          55
+        ],
+        [
+          "tbs-drr-2023-24",
+          52
+        ],
+        [
+          "tbs-drr-2023-24",
+          56
+        ],
+        [
+          "tbs-drr-2023-24",
+          51
+        ],
+        [
+          "tbs-drr-2023-24",
+          54
+        ],
+        [
+          "tbs-drr-2023-24",
+          53
+        ],
+        [
+          "tbs-drr-2023-24",
+          58
+        ],
+        [
+          "tbs-drr-2023-24",
+          43
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 1.0,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r29",
+      "mode": "vector",
+      "ranked": [
+        [
+          "tbs-dp-2024-25",
+          7
+        ],
+        [
+          "dnd-dp-2025-26",
+          101
+        ],
+        [
+          "tbs-dp-2024-25",
+          16
+        ],
+        [
+          "tbs-drr-2023-24",
+          20
+        ],
+        [
+          "dnd-dp-2025-26",
+          147
+        ],
+        [
+          "tbs-drr-2024-25",
+          16
+        ],
+        [
+          "dnd-dp-2025-26",
+          130
+        ],
+        [
+          "pspc-drr-2023-24",
+          10
+        ],
+        [
+          "tbs-drr-2023-24",
+          6
+        ],
+        [
+          "dnd-dp-2025-26",
+          72
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 1.0,
+      "mrr": 0.1111111111111111,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r29",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r29",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "tbs-dp-2024-25",
+          7
+        ],
+        [
+          "dnd-dp-2025-26",
+          101
+        ],
+        [
+          "tbs-dp-2024-25",
+          16
+        ],
+        [
+          "tbs-drr-2023-24",
+          20
+        ],
+        [
+          "dnd-dp-2025-26",
+          147
+        ],
+        [
+          "tbs-drr-2024-25",
+          16
+        ],
+        [
+          "dnd-dp-2025-26",
+          130
+        ],
+        [
+          "pspc-drr-2023-24",
+          10
+        ],
+        [
+          "tbs-drr-2023-24",
+          6
+        ],
+        [
+          "dnd-dp-2025-26",
+          72
+        ]
+      ],
+      "hit@5": 0.0,
+      "recall@10": 1.0,
+      "mrr": 0.1111111111111111,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r30",
+      "mode": "vector",
+      "ranked": [
+        [
+          "tbs-dp-2024-25",
+          7
+        ],
+        [
+          "tbs-drr-2024-25",
+          16
+        ],
+        [
+          "tbs-dp-2024-25",
+          17
+        ],
+        [
+          "tbs-drr-2024-25",
+          31
+        ],
+        [
+          "tbs-drr-2024-25",
+          28
+        ],
+        [
+          "tbs-drr-2023-24",
+          6
+        ],
+        [
+          "tbs-drr-2024-25",
+          76
+        ],
+        [
+          "tbs-dp-2024-25",
+          16
+        ],
+        [
+          "tbs-drr-2024-25",
+          18
+        ],
+        [
+          "tbs-drr-2024-25",
+          23
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    },
+    {
+      "id": "r30",
+      "mode": "keyword",
+      "ranked": [],
+      "hit@5": 0.0,
+      "recall@10": 0.0,
+      "mrr": 0.0,
+      "doc_hit@5": 0.0
+    },
+    {
+      "id": "r30",
+      "mode": "hybrid",
+      "ranked": [
+        [
+          "tbs-dp-2024-25",
+          7
+        ],
+        [
+          "tbs-drr-2024-25",
+          16
+        ],
+        [
+          "tbs-dp-2024-25",
+          17
+        ],
+        [
+          "tbs-drr-2024-25",
+          31
+        ],
+        [
+          "tbs-drr-2024-25",
+          28
+        ],
+        [
+          "tbs-drr-2023-24",
+          6
+        ],
+        [
+          "tbs-drr-2024-25",
+          76
+        ],
+        [
+          "tbs-dp-2024-25",
+          16
+        ],
+        [
+          "tbs-drr-2024-25",
+          18
+        ],
+        [
+          "tbs-drr-2024-25",
+          23
+        ]
+      ],
+      "hit@5": 1.0,
+      "recall@10": 1.0,
+      "mrr": 0.5,
+      "doc_hit@5": 1.0
+    }
+  ]
+}

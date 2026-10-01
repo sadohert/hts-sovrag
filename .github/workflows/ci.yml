@@ -33,4 +33,6 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy src
       - run: uv run pytest -q
-      # Retrieval eval and leak tests against data/fixture (committed index) go here.
+      - run: uv run sovrag eval load-fixture
+      - run: uv run sovrag eval retrieval --check --out /tmp/retrieval.json
+      - run: uv run sovrag eval leak --check --out /tmp/leak.json

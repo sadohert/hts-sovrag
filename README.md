@@ -2,7 +2,7 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI, over MCP, and in Mattermost direct messages.
+Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI, over MCP, and in Mattermost direct messages; retrieval and leak suites gate CI, generation judged locally.
 
 ## What it will do
 
@@ -37,5 +37,32 @@ MCP_IDENTITY=static PRINCIPAL=auditor docker compose --profile mcp up -d mcp
 ```
 
 In Mattermost mode each direct message runs as the Mattermost user asking, with entitlement read from admin-managed user attributes. `docker compose --profile mattermost up -d` and `uv run python scripts/seed_mattermost.py` set it up; `docs/mattermost-demo.md` is the walkthrough. Prerequisites: Docker Desktop with Model Runner, and amd64 emulation on Apple silicon for the Mattermost image. Mattermost Entry needs no licence key (ADR 0011).
+
+## Measure it
+
+```
+uv run sovrag eval load-fixture       # the committed index; no model needed
+uv run sovrag eval retrieval --check  # hit@5, recall@10, MRR per mode, against eval/thresholds.json
+uv run sovrag eval leak --check       # zero forbidden chunks for every principal
+uv run sovrag eval generation         # needs JUDGE_MODEL; judged locally, results labelled by model
+```
+
+Measured baseline, `eval/results/retrieval-2026-09-22.json`:
+
+| Mode | hit@5 | recall@10 | MRR |
+|---|---|---|---|
+| hybrid | 0.900 | 0.933 | 0.716 |
+| vector | 0.867 | 0.933 | 0.705 |
+
+Measured baseline, `eval/results/generation-2026-09-22.json`, judge `ai/gemma4:12b-q4_K_M`:
+
+| faithful_rate | correct_yes | correct_partial | correct_no | false_refusal_rate | unanswerable_refusal_rate | mean_latency_s |
+|---|---|---|---|---|---|---|
+| 1.000 | 0.966 | 0.000 | 0.034 | 0.033 | 0.900 | 4.121 |
+
+Generator `ai/qwen3.5:9b-q4_K_M`, embedder `hf.co/gpustack/bge-m3-gguf:Q8_0`, on
+`docker-model-runner` with the `llama.cpp` backend. Results under `eval/results/` carry these
+model, quantization and backend labels, so a run on a different backend is compared against
+this baseline, never confused with it.
 
 See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.
