@@ -107,3 +107,31 @@ async def test_non_http_scopes_pass_through() -> None:
     await GatewayGate(inner, secret=SECRET, principals=PRINCIPALS)({"type": "lifespan"}, None, None)  # type: ignore[arg-type]
     await StaticBinding(inner, DND)({"type": "lifespan"}, None, None)  # type: ignore[arg-type]
     assert seen == ["lifespan", "lifespan"]
+
+
+def test_gateway_refuses_an_empty_secret() -> None:
+    with pytest.raises(ValueError, match="API_SHARED_SECRET"):
+        GatewayGate(echo, secret="", principals=PRINCIPALS)
+
+
+@pytest.mark.asyncio
+async def test_gateway_non_ascii_bearer_is_401_not_an_error() -> None:
+    sent: list[MutableMapping[str, Any]] = []
+
+    async def send(message: MutableMapping[str, Any]) -> None:
+        sent.append(message)
+
+    async def receive() -> MutableMapping[str, Any]:
+        return {"type": "http.request"}
+
+    scope = {
+        "type": "http",
+        "method": "POST",
+        "path": "/query",
+        "headers": [
+            (b"authorization", b"Bearer caf\xe9"),
+            (b"x-sovrag-principal", b"analyst_dnd"),
+        ],
+    }
+    await GatewayGate(echo, secret=SECRET, principals=PRINCIPALS)(scope, receive, send)
+    assert sent[0]["status"] == 401

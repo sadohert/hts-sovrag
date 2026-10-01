@@ -58,8 +58,10 @@ class GatewayGate:
     """Bearer plus X-Sovrag-Principal, resolved against the principals loaded at startup."""
 
     def __init__(self, app: ASGIApp, *, secret: str, principals: Mapping[str, Principal]) -> None:
+        if not secret:
+            raise ValueError("API_SHARED_SECRET is required in gateway mode")
         self._app = app
-        self._secret = secret
+        self._secret = secret.encode("utf-8")
         self._principals = principals
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
@@ -78,6 +80,8 @@ class GatewayGate:
 
     def _authorise(self, headers: Mapping[str, str]) -> Principal | None:
         scheme, _, token = headers.get("authorization", "").strip().partition(" ")
-        if scheme.lower() != "bearer" or not hmac.compare_digest(token.strip(), self._secret):
+        if scheme.lower() != "bearer" or not hmac.compare_digest(
+            token.strip().encode("utf-8"), self._secret
+        ):
             return None
         return self._principals.get(headers.get(PRINCIPAL_HEADER, "").strip())
