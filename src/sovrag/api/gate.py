@@ -3,8 +3,8 @@
 Two pure-ASGI middlewares put the principal on `scope["state"]["principal"]`, where the one
 handler reads it. StaticBinding uses the principal configured at startup. GatewayGate trusts
 an authenticating gateway: the request must carry the shared secret as a bearer and a known
-principal id in X-Sovrag-Principal; anything else is 401, never a downgrade. GET /healthz
-passes unbound so a load balancer can probe without the secret.
+principal id in X-Sovrag-Principal, each sent once; anything else is 401, never a downgrade.
+GET and HEAD /healthz pass unbound so a load balancer can probe without the secret.
 """
 
 from __future__ import annotations
@@ -37,8 +37,16 @@ def _bind(scope: Scope, principal: Principal) -> None:
     scope.setdefault("state", {})["principal"] = principal
 
 
-def _headers(scope: Scope) -> dict[str, str]:
-    return {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope.get("headers", [])}
+def _headers(scope: Scope) -> dict[str, str] | None:
+    """Header map, or None when a credential header is repeated (last-wins would let a second
+    header override the first)."""
+    out: dict[str, str] = {}
+    for k, v in scope.get("headers", []):
+        name = k.decode("latin-1").lower()
+        if name in out and name in (PRINCIPAL_HEADER, "authorization"):
+            return None
+        out[name] = v.decode("latin-1")
+    return out
 
 
 class StaticBinding:
@@ -68,10 +76,11 @@ class GatewayGate:
         if scope["type"] != "http":
             await self._app(scope, receive, send)
             return
-        if scope["method"] == "GET" and scope["path"] == HEALTH_PATH:
+        if scope["method"] in ("GET", "HEAD") and scope["path"] == HEALTH_PATH:
             await self._app(scope, receive, send)
             return
-        principal = self._authorise(_headers(scope))
+        headers = _headers(scope)
+        principal = self._authorise(headers) if headers is not None else None
         if principal is None:
             await JSONResponse(UNAUTHORISED, status_code=401)(scope, receive, send)
             return

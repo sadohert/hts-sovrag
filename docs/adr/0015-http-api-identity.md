@@ -4,11 +4,11 @@ Status: accepted (2026-10-01)
 
 ## Context
 
-The README promised an HTTP entry point for callers that are neither a person at a terminal
-nor an agent: a web application, a portal, a reporting job, a probe. The CLI and the MCP
-server already exist. ADR 0009 fixed the rule that the server binds the principal, from
-configuration or from a transport it verifies, and that identity never comes from a value a
-caller can set. Over MCP the Mattermost plugin vouches for the user. Over plain HTTP there is
+The architecture document promised an HTTP API for callers that are neither a person at a terminal
+nor an agent: a web application, a portal, a reporting job, a probe, and `sovrag serve` was
+a stub that said so. The CLI and the MCP server already exist. ADR 0009 fixed the rule that
+the server binds the principal, from configuration or from a transport it verifies, and that
+identity never comes from a value a caller can set. Over MCP the Mattermost plugin vouches for the user. Over plain HTTP there is
 no plugin, so the API needs its own answer to the same question.
 
 ## Decision
@@ -23,7 +23,9 @@ when it is unset or unknown, and never falls back from one mode to the other.
   user. A request must carry `Authorization: Bearer <API_SHARED_SECRET>` and an
   `X-Sovrag-Principal` header naming an entry in the principals file. The bearer is compared in
   constant time with `hmac.compare_digest`, after both sides are encoded as UTF-8 bytes, so a
-  non-ASCII token is a 401 and not a server error. An empty secret refuses to start, checked
+  non-ASCII token is a 401 and not a server error. The shared secret must be ASCII: a
+  non-ASCII token or secret is rejected rather than compared. A repeated `Authorization` or
+  `X-Sovrag-Principal` header is also a 401, so a second header cannot override the first. An empty secret refuses to start, checked
   both when the app is built and by the gate itself.
 
 **Resolved before routing, never downgraded.** The binding is a pure-ASGI layer in
@@ -31,7 +33,7 @@ when it is unset or unknown, and never falls back from one mode to the other.
 a future route. In gateway mode a missing or wrong bearer, a missing or empty header and an
 unknown principal id are all HTTP 401 with `{"detail": "unauthorised"}`, and the unknown id
 never reaches a handler. A rejected request is not mapped to `LEAST_PRIVILEGED`: it is
-rejected (ADR 0009's three outcomes). `GET /healthz` is exempt so a load balancer can probe
+rejected (ADR 0009's three outcomes). `GET` and `HEAD /healthz` are exempt so a load balancer can probe
 without the secret, and it is unbound.
 
 **One query endpoint.** `POST /query` returns the `Answer` the CLI prints, unchanged. There is

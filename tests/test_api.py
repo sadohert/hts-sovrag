@@ -21,8 +21,13 @@ PRINCIPALS = Path("data/principals.yaml").resolve()
 
 
 def _settings(**overrides: str) -> Settings:
-    base = {"principals_path": str(PRINCIPALS), "audit_log_path": "/dev/null"}
-    return Settings(**{**base, **overrides})  # type: ignore[arg-type]
+    base = {
+        "principals_path": str(PRINCIPALS),
+        "audit_log_path": "/dev/null",
+        "api_identity": "",
+        "api_shared_secret": "",
+    }
+    return Settings(_env_file=None, **{**base, **overrides})  # type: ignore[arg-type]
 
 
 def _answer(
@@ -173,6 +178,8 @@ async def test_k_is_clamped(monkeypatch: pytest.MonkeyPatch, k: int, expected: i
         {"question": "   "},
         {"question": "x" * 2001},
         {"question": "q", "k": "five"},
+        {"question": "q", "k": "7"},
+        {"question": "q", "k": True},
         {"question": "q", "mode": "bm25"},
         {},
     ],
@@ -213,6 +220,37 @@ async def test_generation_failure_is_502_with_the_request_id(
         "request_id": rec.calls[0]["request_id"],
     }
     assert r.headers["x-request-id"] == rec.calls[0]["request_id"]
+
+
+@pytest.mark.asyncio
+async def test_empty_generator_reply_gets_the_prefix_once(monkeypatch: pytest.MonkeyPatch) -> None:
+    def boom(*args: object, **kwargs: object) -> Answer:
+        raise GenerationError("empty reply from the generator")
+
+    monkeypatch.setattr(app_mod, "generate_answer", boom)
+    async with _client(_settings(api_identity="static", principal="auditor")) as c:
+        r = await c.post("/query", json={"question": "q"})
+    assert r.status_code == 502
+    body = r.json()
+    assert body["detail"] == "generation failed: empty reply from the generator"
+    assert body["request_id"] == r.headers["x-request-id"]
+
+
+@pytest.mark.asyncio
+async def test_trailing_slash_is_404_not_a_redirect(monkeypatch: pytest.MonkeyPatch) -> None:
+    rec = Recorder()
+    monkeypatch.setattr(app_mod, "generate_answer", rec)
+    async with _client(_settings(api_identity="static", principal="auditor")) as c:
+        r = await c.post("/query/", json={"question": "q"})
+    assert r.status_code == 404 and rec.calls == []
+
+
+@pytest.mark.asyncio
+async def test_head_healthz_is_200_without_a_bearer_in_both_modes() -> None:
+    async with _client(_settings(api_identity="gateway", api_shared_secret=SECRET)) as c:
+        assert (await c.head("/healthz")).status_code == 200
+    async with _client(_settings(api_identity="static", principal="analyst_dnd")) as c:
+        assert (await c.head("/healthz")).status_code == 200
 
 
 # health

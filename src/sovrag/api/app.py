@@ -1,4 +1,4 @@
-"""The HTTP API: POST /query and GET /healthz, with the principal bound before routing.
+"""The HTTP API: POST /query and GET/HEAD /healthz, with the principal bound before routing.
 
 The handler reads the principal from request state, which only the binding layer in gate.py
 writes. It generates the request id, so the audit line answer() writes can be joined to the
@@ -13,7 +13,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictInt, field_validator
 
 from sovrag.api.gate import HEALTH_PATH, GatewayGate, Identity, StaticBinding
 from sovrag.auth import Principal, load_principals, resolve_principal
@@ -33,7 +33,7 @@ class QueryRequest(BaseModel):
 
     question: str = Field(min_length=1, max_length=QUESTION_MAX_CHARS)
     mode: Mode = Mode.hybrid
-    k: int = 5
+    k: StrictInt = 5
 
     @field_validator("question", mode="before")
     @classmethod
@@ -54,7 +54,9 @@ def build_app(settings: Settings) -> FastAPI:
     """Build the app. Raises ValueError for any configuration that could bind the wrong
     principal, so `sovrag serve` refuses to start rather than run degraded."""
     identity = _identity(settings)
-    app = FastAPI(title="sovrag", docs_url=None, redoc_url=None, openapi_url=None)
+    app = FastAPI(
+        title="sovrag", docs_url=None, redoc_url=None, openapi_url=None, redirect_slashes=False
+    )
     app.state.identity = identity
     app.state.principal_id = None
     path = Path(settings.principals_path)
@@ -75,7 +77,7 @@ def build_app(settings: Settings) -> FastAPI:
             GatewayGate, secret=settings.api_shared_secret, principals=load_principals(path)
         )
 
-    @app.get(HEALTH_PATH)
+    @app.api_route(HEALTH_PATH, methods=["GET", "HEAD"])
     async def healthz() -> dict[str, object]:
         return {"status": "ok", "identity": identity.value, "principal": app.state.principal_id}
 
@@ -89,8 +91,14 @@ def build_app(settings: Settings) -> FastAPI:
                 body.question, principal=principal, mode=body.mode, k=k, request_id=request_id
             )
         except GenerationError as exc:
+            message = str(exc)
+            detail = (
+                message
+                if message.startswith("generation failed")
+                else f"generation failed: {message}"
+            )
             return JSONResponse(
-                {"detail": str(exc), "request_id": request_id},
+                {"detail": detail, "request_id": request_id},
                 status_code=502,
                 headers={"X-Request-ID": request_id},
             )

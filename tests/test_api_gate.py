@@ -98,6 +98,57 @@ async def test_healthz_get_passes_the_gate_unbound_but_post_does_not() -> None:
 
 
 @pytest.mark.asyncio
+async def test_healthz_head_passes_the_gate_unbound() -> None:
+    app = GatewayGate(echo, secret=SECRET, principals=PRINCIPALS)
+    assert (await _get(app, "/healthz", "HEAD")).status_code == 200
+
+
+async def _status(headers: list[tuple[bytes, bytes]]) -> int:
+    sent: list[MutableMapping[str, Any]] = []
+
+    async def send(message: MutableMapping[str, Any]) -> None:
+        sent.append(message)
+
+    async def receive() -> MutableMapping[str, Any]:
+        return {"type": "http.request"}
+
+    scope = {"type": "http", "method": "POST", "path": "/query", "headers": headers}
+    await GatewayGate(echo, secret=SECRET, principals=PRINCIPALS)(scope, receive, send)
+    return int(sent[0]["status"])
+
+
+@pytest.mark.asyncio
+async def test_duplicate_principal_header_is_401() -> None:
+    good = f"Bearer {SECRET}".encode()
+    assert await _status([(b"authorization", good), (b"x-sovrag-principal", b"analyst_dnd")]) == 200
+    assert (
+        await _status(
+            [
+                (b"authorization", good),
+                (b"x-sovrag-principal", b"analyst_dnd"),
+                (b"x-sovrag-principal", b"auditor"),
+            ]
+        )
+        == 401
+    )
+
+
+@pytest.mark.asyncio
+async def test_duplicate_authorization_header_is_401() -> None:
+    good = f"Bearer {SECRET}".encode()
+    assert (
+        await _status(
+            [
+                (b"authorization", b"Bearer wrong"),
+                (b"authorization", good),
+                (b"x-sovrag-principal", b"analyst_dnd"),
+            ]
+        )
+        == 401
+    )
+
+
+@pytest.mark.asyncio
 async def test_non_http_scopes_pass_through() -> None:
     seen: list[str] = []
 
