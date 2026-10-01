@@ -64,6 +64,9 @@ jobs:
             Use an inline comment for each specific finding, with a suggestion block when a
             small change fixes it entirely. If claude[bot] has already commented on this pull
             request, review only what changed since that comment and keep the summary to that.
+            To see earlier comments run `gh pr view --comments`; do not use gh api, which is
+            not allowed. Run `gh pr diff` on its own: do not redirect or pipe its output, since
+            a command with several parts is refused; for a long diff, Read the changed files.
 
             Always finish by posting exactly one top-level comment with `gh pr comment` whose
             first line is "## Code review", followed by the findings in brief, or by

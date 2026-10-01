@@ -137,6 +137,15 @@ def test_the_prompt_says_the_checkout_already_holds_the_pull_request() -> None:
     assert "read any file with Read and search with Grep" in prompt
 
 
+def test_the_prompt_names_the_allowed_way_to_find_earlier_comments_and_read_the_diff() -> None:
+    """Measured across six reviews: the denied calls were `gh api` to find the bot's own
+    earlier comment, `gh pr diff` redirected to a file, and python or pip. Each costs turns."""
+    prompt = " ".join(str(_with(REVIEW_STEP)["prompt"]).split())
+    assert "gh pr view --comments" in prompt
+    assert "do not use gh api" in prompt
+    assert "do not redirect" in prompt
+
+
 def test_the_prompt_makes_a_finished_review_always_post_a_summary_the_guard_can_find() -> None:
     prompt = str(_with(REVIEW_STEP)["prompt"])
     assert '"## Code review"' in prompt
