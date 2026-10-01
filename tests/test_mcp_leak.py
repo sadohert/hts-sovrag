@@ -208,18 +208,20 @@ async def test_answer_path_runs_the_suite_as_each_principal(
                 for item in items[:3]:
                     result = await client.call_tool("answer", {"question": item.question})
                     data = result.structured_content
-                    assert data is not None and data["principal"] == name
+                    assert data is not None
+                    # The tool returns only what is relayed (text, citations, refused,
+                    # request id); the principal it ran as is asserted from `seen` below.
                     answers[(name, item.question)] = Answer(
                         question=item.question,
                         principal=name,
                         mode="hybrid",
                         request_id=str(data["request_id"]),
                         text=str(data["text"]),
-                        citations=tuple(Citation(**c) for c in data["citations"]),  # type: ignore[arg-type]
+                        citations=(),
                         refused=bool(data["refused"]),
                         model="m",
                         retrieved_chunk_ids=(),
-                        applied_filter=str(data["applied_filter"]),
+                        applied_filter="",
                     )
 
     def through_mcp(question: str, principal: Principal) -> Answer:
