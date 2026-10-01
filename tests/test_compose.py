@@ -63,3 +63,36 @@ def test_mattermost_database_is_created_by_a_one_shot_service_with_the_revoke() 
     assert "REVOKE CONNECT, TEMPORARY ON DATABASE sovrag FROM PUBLIC" in sql
     assert "create role mattermost" in sql.lower() and "create database mattermost" in sql.lower()
     assert any("mattermost_db_init.sql" in v for v in init["volumes"])
+
+
+def test_observability_profile_pins_images_and_keeps_loki_private() -> None:
+    svc = COMPOSE["services"]
+    for name in ("loki", "alloy", "grafana"):
+        assert svc[name]["profiles"] == ["observability"], name
+    assert svc["loki"]["image"] == "grafana/loki:3.7.8"
+    assert svc["alloy"]["image"] == "grafana/alloy:v1.20.1"
+    assert svc["grafana"]["image"] == "grafana/grafana:13.2.3"
+    assert "ports" not in svc["loki"]
+    assert svc["grafana"]["ports"] == ["127.0.0.1:3000:3000"]  # admin/admin stays on this host
+    assert "ports" not in svc["alloy"]
+
+
+def test_alloy_reads_the_audit_volume_read_only_and_keeps_its_positions() -> None:
+    alloy = COMPOSE["services"]["alloy"]
+    assert "audit:/app/audit:ro" in alloy["volumes"]
+    assert any(v.startswith("alloy-data:") for v in alloy["volumes"])
+    assert "./observability/alloy.alloy:/etc/alloy/config.alloy:ro" in alloy["volumes"]
+    assert COMPOSE["services"]["app"]["environment"]["AUDIT_LOG_PATH"] == "/app/audit/audit.jsonl"
+
+
+def test_loki_and_grafana_mount_their_config_read_only() -> None:
+    loki = COMPOSE["services"]["loki"]
+    assert "./observability/loki.yaml:/etc/loki/config.yaml:ro" in loki["volumes"]
+    assert any(v.startswith("loki-data:") for v in loki["volumes"])
+    grafana = COMPOSE["services"]["grafana"]
+    assert "./observability/grafana/provisioning:/etc/grafana/provisioning:ro" in grafana["volumes"]
+    assert "./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro" in grafana["volumes"]
+    env = grafana["environment"]
+    assert env["GF_AUTH_ANONYMOUS_ENABLED"] == "true"
+    assert env["GF_AUTH_ANONYMOUS_ORG_ROLE"] == "Viewer"
+    assert set(COMPOSE["volumes"]) >= {"loki-data", "alloy-data"}

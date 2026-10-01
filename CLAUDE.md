@@ -47,4 +47,5 @@ every claim in the README against the code.
 - uv run sovrag serve   # API_IDENTITY=static|gateway; POST /query, GET /healthz
 - docker compose --profile mattermost up -d && uv run python scripts/seed_mattermost.py   # demo
 - uv run pytest
+- docker compose --profile observability up -d   # audit log in Grafana at localhost:3000/d/sovrag-audit
 - uv run sovrag eval load-fixture && uv run sovrag eval retrieval --check && uv run sovrag eval leak --check

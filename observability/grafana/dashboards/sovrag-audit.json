@@ -1,0 +1,107 @@
+{
+  "uid": "sovrag-audit",
+  "title": "sovrag audit",
+  "tags": [
+    "sovrag"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "refresh": "5s",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "principal",
+        "label": "Principal",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": "label_values(principal)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": false,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        },
+        "options": []
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "logs",
+      "title": "Audit stream",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"sovrag-audit\", principal=~\"$principal\"} | json applied_filter, reason, error, cited=\"cited_chunk_ids\" | line_format \"{{.event}} {{.principal}} refused={{.refused}} filter=[{{.applied_filter}}] cited={{.cited}} {{if .error}}error={{.error}}{{end}}\""
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "logs",
+      "title": "Refusals",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "prettifyLogMessage": false,
+        "enableLogDetails": true,
+        "dedupStrategy": "none",
+        "sortOrder": "Descending"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"sovrag-audit\", event=\"answer\", refused=\"true\", principal=~\"$principal\"} | json applied_filter, reason | line_format \"{{.principal}} reason={{.reason}} filter=[{{.applied_filter}}]\""
+        }
+      ]
+    }
+  ]
+}
