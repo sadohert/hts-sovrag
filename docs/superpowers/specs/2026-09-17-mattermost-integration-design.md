@@ -370,3 +370,13 @@ ordinary input; the MCP `answer` tool turns it into a tool error, not a refusal.
 Channel and group-message replies; per-user OAuth 2.1 to the MCP server; plugin-owned
 Mattermost access-control policies (would need a Go plugin); the HTTP API; caching of
 attributes; the eval harness; any Mattermost core change.
+
+## Amendment (2026-10-01): the `answer` tool returns what is relayed
+
+The Agents plugin renders every tool result as a card in the chat, so returning the full
+`Answer` showed the person their principal, the filter, the model and the retrieved chunk ids,
+and then the bot repeated the text below. The `answer` tool now returns the text, the citations
+(number, title, heading path, source URL), the refusal flag and the request id. The principal,
+the rendered filter, the model and the chunk ids are in the `answer` audit line under that
+request id, which is where they are traced. `search` is unchanged. The sentences above that
+describe the tool as returning the `Answer` unchanged are superseded by this amendment.
