@@ -326,3 +326,34 @@ def test_serve_mcp_hands_the_built_app_to_uvicorn(monkeypatch: pytest.MonkeyPatc
     (app, host, port) = seen[0]
     assert callable(app) and host == "0.0.0.0" and port == 9001
     assert "static" in result.output and "analyst_dnd" in result.output
+
+
+def test_serve_refuses_to_start_without_an_identity(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("API_IDENTITY", raising=False)
+    result = runner.invoke(cli.app, ["serve"])
+    assert result.exit_code == 2
+    assert "API_IDENTITY" in result.output
+
+
+def test_serve_hands_the_built_app_to_uvicorn(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_IDENTITY", "static")
+    monkeypatch.setenv("PRINCIPAL", "analyst_dnd")
+    seen: list[tuple[object, str, int]] = []
+    monkeypatch.setattr(
+        cli.uvicorn, "run", lambda app, host, port, **kw: seen.append((app, host, port))
+    )
+    result = runner.invoke(cli.app, ["serve", "--host", "0.0.0.0", "--port", "9000"])
+    assert result.exit_code == 0, result.output
+    (app, host, port) = seen[0]
+    assert callable(app) and host == "0.0.0.0" and port == 9000
+    assert "static" in result.output and "analyst_dnd" in result.output
+
+
+def test_serve_in_gateway_mode_reports_per_request(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("API_IDENTITY", "gateway")
+    monkeypatch.setenv("API_SHARED_SECRET", "s")
+    monkeypatch.setattr(cli.uvicorn, "run", lambda app, host, port, **kw: None)
+    result = runner.invoke(cli.app, ["serve"])
+    assert result.exit_code == 0, result.output
+    assert "gateway" in result.output and "per request" in result.output
+    assert "s\n" not in result.output  # the secret is never printed

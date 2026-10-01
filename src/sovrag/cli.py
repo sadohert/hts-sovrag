@@ -10,6 +10,7 @@ from typing import Annotated
 import typer
 import uvicorn
 
+from sovrag.api.app import build_app as build_api_app
 from sovrag.auth import Principal, resolve_principal
 from sovrag.config import Settings, get_settings
 from sovrag.corpus.fetch import browser_getter, fetch_document
@@ -149,9 +150,18 @@ def ask(
 
 @app.command()
 def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
-    """Run the FastAPI server."""
-    typer.echo("serve: not implemented yet", err=True)
-    raise typer.Exit(code=2)
+    """Run the HTTP API (POST /query, GET /healthz). API_IDENTITY chooses how the principal is
+    bound; the server refuses to start with a configuration that could bind the wrong one."""
+    settings = get_settings()
+    try:
+        api = build_api_app(settings)
+    except ValueError as exc:
+        typer.echo(f"serve: {exc}", err=True)
+        raise typer.Exit(code=2) from exc
+    identity = api.state.identity.value
+    who = api.state.principal_id if identity == "static" else "per request"
+    typer.echo(f"serve: identity={identity} principal={who} at http://{host}:{port}")
+    uvicorn.run(api, host=host, port=port, log_level="info")
 
 
 @app.command("serve-mcp")
