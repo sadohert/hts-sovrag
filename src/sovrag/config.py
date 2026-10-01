@@ -49,6 +49,14 @@ class Settings(BaseSettings):
     mattermost_url: str = ""
     mattermost_bot_token: str = ""
 
+    # HTTP API. API_IDENTITY is "static" or "gateway"; required, no default (ADR 0015). In
+    # static mode PRINCIPAL is resolved from PRINCIPALS_PATH at startup. In gateway mode every
+    # request except GET /healthz must carry API_SHARED_SECRET as a bearer and a known principal
+    # id in X-Sovrag-Principal, set by the authenticating gateway. Neither is ever read from the
+    # request body.
+    api_identity: str = ""
+    api_shared_secret: str = ""
+
 
 def get_settings() -> Settings:
     return Settings()
