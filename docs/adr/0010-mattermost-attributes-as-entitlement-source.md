@@ -46,3 +46,15 @@ The seed script creates both fields as admin-managed. In a real deployment they 
 - The bot token is a credential that can read user attributes. It is configured in the MCP service's environment and never logged.
 - Residual risk: the plugin's model relays the tool result to the user and could soften or embellish a refusal. The bot's instructions tell it to relay the answer and citations verbatim, and the audit log holds the tool's exact output. The retrieval guarantee does not depend on the model: a chunk the principal may not see never leaves the database.
 - If Mattermost changes the attribute API or the meaning of `attrs.managed`, the resolver's recorded-response tests fail closed: an unrecognised definition is treated as not admin-managed.
+
+## Amendment (2026-09-22): three calls, and the user call comes first
+
+The values endpoint does not check that the user exists. In the server source at 11.11.0, `listCPAValues` returns whatever values are stored for the ID, and for a bot with no view restrictions the access check passes for any ID, so an ID Mattermost does not know answers `200` with an empty map. With the two calls above, an unknown user would be indistinguishable from a known user with no attributes and would be bound to least privilege, which rule 4 forbids.
+
+The resolver therefore makes three calls, in this order, all with the bot token:
+
+1. `GET /api/v4/users/{id}`. A 404 means Mattermost does not know the user; a user with `delete_at` set is deactivated. Both are resolution failures. The reply's `username` becomes the principal's id, so the audit log names the person the way Mattermost does. A user whose username is the reserved id `anonymous`, in any letter case, is a resolution failure whatever their attributes: that id belongs to `LEAST_PRIVILEGED` (ADR 0012), and a real user carrying it would be indistinguishable from an unentitled caller in the audit log.
+2. `GET /api/v4/custom_profile_attributes/fields`.
+3. `GET /api/v4/users/{id}/custom_profile_attributes`.
+
+The rules are otherwise unchanged. Any transport error, timeout, non-200 status, or reply that is not the expected JSON shape on any of the three calls is a resolution failure. Three calls per question is still cheap beside an embedding call and a chat completion.

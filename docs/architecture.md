@@ -34,7 +34,7 @@ flowchart LR
   G -.-> LLM
 ```
 
-Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, and grounded generation with citations and refusal exist. Three eval suites measure retrieval, generation and leak behaviour; the retrieval and leak suites gate CI. The HTTP API and the MCP server follow.
+Status: the corpus pipeline, all three retrieval modes with entitlement filtering in SQL, grounded generation with citations and refusal, the MCP server, and the Mattermost demo profile exist. Three eval suites measure retrieval, generation and leak behaviour; the retrieval and leak suites gate CI. The HTTP API follows.
 
 ## Data model
 
@@ -72,13 +72,17 @@ A `Principal` validates itself on construction, so one that exists is valid what
 
 `data/principals.yaml` ships five named principals, one per row of the entitlement grid: `public`, `analyst_dnd`, `analyst_ps`, `cio_ssc` and `auditor`, which holds every membership. `load_principals` reads the file strictly. A repeated id, an id YAML does not read as a string, a missing clearance, an unknown clearance or department, or a malformed shape is a `ValueError` that names the principal; nothing downgrades quietly. `resolve_principal` raises `KeyError` only for an id that is not in the file. See ADR 0012.
 
-Like the classification labels, clearances are synthetic (ADR 0003). `sovrag ask` resolves `--principal` and rejects an unknown id as a usage error. Both `sovrag query` and `sovrag ask` resolve `--principal` against the file `PRINCIPALS_PATH` names and reject an unknown id as a usage error.
+Like the classification labels, clearances are synthetic (ADR 0003). Both `sovrag query` and `sovrag ask` resolve `--principal` against the file `PRINCIPALS_PATH` names and reject an unknown id as a usage error.
+
+For Mattermost users, `auth/mattermost.py` resolves a user ID to a principal with three REST calls made with the bot token: the user, which proves the ID exists and supplies the username that becomes the principal's id; the attribute field definitions; and the user's values. Only admin-managed `sovrag_clearance` and `sovrag_departments` fields count, option IDs are mapped to names through the definitions fetched in the same call, and a name outside the vocabulary is ignored. A known user with nothing recognised is bound to `LEAST_PRIVILEGED` with a note saying why. An unknown or deactivated user, a failed call, a timeout, or a reply of the wrong shape is a `ResolutionError`; a failed lookup says nothing about entitlement and is never least privilege. The audit log takes an exclusive lock around each append so the MCP server's concurrent handlers never tear a line. See ADR 0010.
 
 ## Deployment
 
 One Compose file. Postgres and the app are services; the two models are declared in the top-level `models:` block and Docker Model Runner serves them. Compose injects `LLM_BASE_URL`, `LLM_MODEL`, `EMBED_BASE_URL` and `EMBED_MODEL` into the app container. Outside Compose, the same variables point at Model Runner's host TCP endpoint on port 12434.
 
 Profiles add vLLM (GPU serving comparison) and the MCP server. See `docs/deployment.md` once it exists.
+
+The `mattermost` profile adds Mattermost Entry (the enterprise image with no licence key) on the same Postgres with its own role and database, and a one-shot service that creates them and revokes the default `PUBLIC` access to the sovrag database. `scripts/seed_mattermost.py` configures everything through REST: attributes, users, the Agents plugin at its pinned version, the plugin's provider and MCP server entry, the bot, and the bot token the resolver uses. See ADR 0011 and `docs/mattermost-demo.md`.
 
 ## Corpus
 
@@ -153,6 +157,10 @@ involved in those suites. See ADR 0014.
 ## Generation
 
 `generate/answer.py` is the single entry point for answering. It retrieves with the chosen mode, builds a prompt that lists the chunks as numbered sources, and makes one chat completion call at temperature 0 with the model's thinking mode off, and a second one only when the first reply carried no citations. The model must cite with `[n]` or reply with a sentinel; code validates the markers, builds a `Citation` for each, and turns the sentinel into a fixed refusal. An answer with no citations is retried once with a firmer instruction, then refused. Every call appends one line to the JSONL audit log. See ADR 0008.
+
+## MCP server
+
+`mcp/server.py` serves `search` and `answer` over Streamable HTTP for the Mattermost Agents plugin. Neither tool takes a principal. `MCP_IDENTITY` picks how it is bound, with no default: in static mode `PRINCIPAL` is resolved from the principals file when the server starts; in mattermost mode a gate in front of the MCP app answers 401 to any request without `MCP_SHARED_SECRET` as a bearer or a well-formed `X-Mattermost-UserID`, and the tool handler resolves that user's attributes once per tool call, writing a `resolve` audit event that shares a `request_id` with the `search` or `answer` event that follows. A resolution failure is a tool error and retrieves nothing. `search` runs hybrid retrieval with the bound principal and returns hits with their citation fields and the rendered filter; `answer` calls the same `answer()` the CLI uses and returns its result unchanged. See ADR 0009 and ADR 0010.
 
 ## Decisions
 

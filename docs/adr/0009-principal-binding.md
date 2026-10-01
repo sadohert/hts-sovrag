@@ -59,3 +59,9 @@ The other limits are the limits of the pattern. Anyone who holds the shared secr
 - The audit log becomes shared by concurrent writers: several users at once, and the `app` and `mcp` services on one volume. `sovrag.audit` appends without a lock, and its docstring says so. A single-writer or locking change lands before the MCP server writes to that file, so that lines cannot interleave.
 - Replies are restricted to direct messages. A bot mentioned in a channel answers in a thread every member can read, which would broadcast one user's entitled answer. The bot is configured with `channelAccessLevel: None`, and channel or group replies are out of scope.
 - The leak tests must hold on the MCP path as well as the CLI path, for each identity mode.
+
+## Amendment (2026-09-22): the bearer goes in the static header map, not the service-account map
+
+The first live run of the demo resolved every question to the bot itself. In plugin 2.7.0, turning on service-account authentication for an agent makes the plugin own one connection pool for the remote MCP server as the bot user, and that pool's `X-Mattermost-UserID` is the bot's own ID; the person asking is not transmitted to a remote server at all. With service-account authentication off, the plugin opens per-user connections whose `X-Mattermost-UserID` is the asking user's, and layers the administrator's static header map on top.
+
+So the shared secret lives in the static header map, service-account authentication is off, and the service-account map is empty. The risk described above is unchanged in kind: the static map still wins over the plugin's user-ID header, so a header named `X-Mattermost-UserID` placed there would replace every user's identity. The seed script writes exactly one static header, `Authorization`, leaves the service-account map empty, and a test asserts both. Verified on the live stack: after the change, each demo user's question resolved to that user's own attributes.

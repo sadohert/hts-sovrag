@@ -35,8 +35,19 @@ class Settings(BaseSettings):
     # Named principals for the CLI and the MCP server's static mode (ADR 0012).
     principals_path: str = "data/principals.yaml"
 
-    # MCP server only. Bound at startup; never read from tool arguments.
+    # MCP server. MCP_IDENTITY is "static" or "mattermost"; required, no default (ADR 0009).
+    # In static mode PRINCIPAL is resolved from PRINCIPALS_PATH at startup. In mattermost mode
+    # every request must carry the shared secret as a bearer. Neither value is ever read from a
+    # tool argument. MCP_ALLOWED_HOSTS lists the Host header values the server accepts, comma
+    # separated, "mcp:*" for the Compose service name; empty keeps the SDK's localhost default.
+    mcp_identity: str = ""
     principal: str = ""
+    mcp_shared_secret: str = ""
+    mcp_allowed_hosts: str = ""
+    # MCP server, mattermost mode only: where the resolver reads user attributes, and the
+    # bot token it reads them with. The token is a credential; it is never logged.
+    mattermost_url: str = ""
+    mattermost_bot_token: str = ""
 
 
 def get_settings() -> Settings:

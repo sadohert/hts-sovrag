@@ -58,10 +58,12 @@ a built-in plugin setting (`channelAccessLevel: None`).
 `MattermostResolver(base_url, bot_token)` with `resolve(user_id) -> Resolution`, where
 `Resolution` carries the `Principal`, the attribute snapshot (field name to value) and a
 `note` saying why a user was bound to least privilege. It raises `ResolutionError` when it
-cannot tell what the user is entitled to. It calls two REST endpoints with the bot token:
-`GET /api/v4/custom_profile_attributes/fields` for the field definitions and
-`GET /api/v4/users/{id}/custom_profile_attributes` for the values. The caller has already
-checked that `user_id` is shaped like a Mattermost ID, so it is safe in the URL path.
+cannot tell what the user is entitled to. It calls three REST endpoints with the bot token, in order: `GET /api/v4/users/{id}` to
+prove the user exists and read the username, `GET /api/v4/custom_profile_attributes/fields`
+for the field definitions, and `GET /api/v4/users/{id}/custom_profile_attributes` for the
+values. The values endpoint answers an unknown ID with an empty map, which is why the user
+call comes first (ADR 0010, amendment). The caller has already checked that `user_id` is
+shaped like a Mattermost ID; the resolver checks again because the ID goes into a URL path.
 
 Rules, in order:
 
@@ -75,11 +77,11 @@ Rules, in order:
    outside the vocabulary is ignored.
 3. A user with no attributes, or none recognised, is bound to `LEAST_PRIVILEGED`, with the
    reason in `Resolution.note`.
-4. If either call fails, times out, or reports an unknown user, `resolve` raises
+4. If any call fails, times out, or the user is unknown or deactivated, `resolve` raises
    `ResolutionError`. A failed lookup says nothing about entitlement, so it is never
    treated as least privilege.
 
-No cache. Two REST calls per resolution, one resolution per tool call, so an admin's change
+No cache. Three REST calls per resolution, one resolution per tool call, so an admin's change
 shows on the next question.
 
 ### `sovrag.retrieve.filters` (new)
@@ -202,7 +204,9 @@ is not created; the service builds the single `Dockerfile` and overrides the com
   chat completions with streaming. One bot, `channelAccessLevel: None` (direct messages
   only), `disableTools: false`, custom instructions telling it to relay the `answer`
   tool's text and citations verbatim and to add nothing. One remote MCP server, sovrag,
-  with service-account authentication carrying `Authorization: Bearer <MCP_SHARED_SECRET>`,
+  with `Authorization: Bearer <MCP_SHARED_SECRET>` in the static header map and
+  service-account authentication off, because the service-account pool is bot-owned and
+  names the bot rather than the user (ADR 0009, amendment),
   both tools set to `auto_run_in_dm`.
 
 ### `scripts/seed_mattermost.py` (new)
@@ -256,8 +260,8 @@ The CLI is unchanged in shape: `--principal <id>` resolves through `principals.y
   a refusal.
 - An administrator-configured plugin header named `X-Mattermost-UserID`, in the static or
   the service-account map, would override every user's ID, since those layers win over the
-  plugin's own header. The seed script leaves the static map empty and writes only
-  `Authorization` in the service-account map, and a test asserts both.
+  plugin's own header. The seed script writes only `Authorization` in the static map and
+  leaves the service-account map empty, and a test asserts both.
 - `MCP_IDENTITY` unset or invalid: the server refuses to start.
 - Static mode with an unknown `PRINCIPAL`: the server refuses to start.
 - Zero entitled hits: `answer` refuses with the fixed sentence and no citations; `search`
@@ -293,8 +297,8 @@ Each lands with its pull request. Database tests use the existing `db` fixture.
   audit lines for `resolve`, `search` and `answer` share a `request_id`; the server refuses
   to start with `MCP_IDENTITY` unset.
 - `tests/test_seed_mattermost.py`: dry run prints the expected sequence of calls; running
-  twice is a no-op; the MCP server's static header map is empty and its service-account
-  header map contains `Authorization` and nothing else.
+  twice is a no-op; the MCP server's static header map contains `Authorization` and
+  nothing else and its service-account header map is empty.
 - Manual, in the demo walkthrough: the full stack, the five beats, the `mattermost` role
   being refused a connection to the `sovrag` database, and the eval harness's leak
   questions through the MCP path (a later branch).

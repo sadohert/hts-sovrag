@@ -2,7 +2,7 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI; retrieval and leak suites gate CI, generation judged locally.
+Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI, over MCP, and in Mattermost direct messages; retrieval and leak suites gate CI, generation judged locally.
 
 ## What it will do
 
@@ -28,6 +28,15 @@ uv run sovrag query "What did the Auditor General find about ArriveCAN?" --princ
 ```
 
 The two queries differ: `analyst_dnd` is cleared to `PROTECTED_A` and never sees the Auditor General reports, which are labelled `PROTECTED_B`; `auditor` does. Each result prints the filter that was applied. `ingest` pulls the two models declared in `compose.yaml` on first use. Pages are cached under `data/raw/`; re-running is idempotent.
+
+To expose the same answers to an agent, run the MCP server. The principal is bound by the server, never by the agent (ADR 0009):
+
+```
+uv run sovrag serve-mcp                                          # MCP_IDENTITY=static PRINCIPAL=analyst_dnd from .env
+MCP_IDENTITY=static PRINCIPAL=auditor docker compose --profile mcp up -d mcp
+```
+
+In Mattermost mode each direct message runs as the Mattermost user asking, with entitlement read from admin-managed user attributes. `docker compose --profile mattermost up -d` and `uv run python scripts/seed_mattermost.py` set it up; `docs/mattermost-demo.md` is the walkthrough. Prerequisites: Docker Desktop with Model Runner, and amd64 emulation on Apple silicon for the Mattermost image. Mattermost Entry needs no licence key (ADR 0011).
 
 ## Measure it
 
