@@ -27,14 +27,18 @@ shipped from the file by a collector, not emitted from the application:
   Request ids, chunk ids and the filter string stay inside the line and are parsed at query
   time, because a high-cardinality label degrades Loki quickly.
 - **Loki** runs single-binary on a named volume, accepts samples of any age (the file predates
-  the profile, and the whole history should appear on first start), does not add its automatic
-  `service_name` label, and is not published to the host.
+  the profile, and the whole history should appear on first start), asks the ingester for every
+  query range and flushes chunks within minutes (with the defaults, backlog streams stayed
+  invisible to queries), does not add its automatic `service_name` label, and is not published to
+  the host. A query range wider than Loki's default 30 days is refused; raise `max_query_length`
+  for a longer history.
 - **Grafana** is provisioned from files in the repository: one Loki datasource with uid `loki`
   and one dashboard, uid `sovrag-audit`, with an "Audit stream" panel formatted as
-  `event principal refused filter cited`, a "Refusals" panel filtered on the parsed `refused`
-  field (resolution events carry none), and a `principal` variable. It opens anonymously in the
-  Viewer role on port 3000 because this stack is a one-machine demo; that setting is wrong
-  anywhere else and the README says so.
+  `event principal refused filter cited`, a "Refusals" panel selected by the `refused` label
+  (resolution events carry none), and a `principal` variable. Array fields such as
+  `cited_chunk_ids` are extracted by name, because Loki's bare `| json` skips arrays. It opens anonymously in the
+  Viewer role on port 3000, bound to this host only because the default administrator login is
+  left in place; both are demo settings, wrong anywhere else, and the README says so.
 
 No application code changes, no new Python dependency, no change to the audit line format.
 
@@ -47,6 +51,8 @@ No application code changes, no new Python dependency, no change to the audit li
   tracked as issue #29, and would share the profile.
 - Retention, authentication for Grafana, and shipping logs off the machine are deployment
   concerns outside this profile.
-- The collector reads a file owned by the application's unprivileged user; the file is created
-  world-readable, which the live check confirmed. A deployment that tightens that mode must
-  grant the collector read access another way.
+- The collector runs as root inside its container with a read-only mount, so it reads the file
+  whatever its mode; the file is created world-readable by the application's umask in any case.
+  A deployment that runs the collector unprivileged must grant it read access.
+- The stream carries three event types: `answer` from every entry point, and `resolve` and
+  `search` from the MCP server. The formatted line shows a resolution error when one is present.

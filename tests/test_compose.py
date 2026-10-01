@@ -73,7 +73,7 @@ def test_observability_profile_pins_images_and_keeps_loki_private() -> None:
     assert svc["alloy"]["image"] == "grafana/alloy:v1.20.1"
     assert svc["grafana"]["image"] == "grafana/grafana:13.2.3"
     assert "ports" not in svc["loki"]
-    assert svc["grafana"]["ports"] == ["3000:3000"]
+    assert svc["grafana"]["ports"] == ["127.0.0.1:3000:3000"]  # admin/admin stays on this host
     assert "ports" not in svc["alloy"]
 
 

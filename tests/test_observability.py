@@ -1,6 +1,7 @@
 """The observability files agree with each other and with the audit path the app writes."""
 
 import json
+import re
 from pathlib import Path
 
 import yaml
@@ -43,11 +44,19 @@ def test_dashboard_panels_query_the_audit_job_through_the_loki_uid() -> None:
     assert titles == {"Audit stream", "Refusals"}
 
 
-def test_refusals_panel_filters_on_the_parsed_field_not_only_the_label() -> None:
+def test_audit_stream_extracts_the_array_fields_by_name() -> None:
+    """Loki's bare `| json` skips arrays, so cited chunk ids must be named explicitly."""
+    (stream,) = [p for p in _dashboard()["panels"] if p["title"] == "Audit stream"]
+    expr = stream["targets"][0]["expr"]
+    assert '| json applied_filter, reason, error, cited="cited_chunk_ids"' in expr
+    assert "{{.cited}}" in expr and "{{.error}}" in expr
+
+
+def test_refusals_panel_selects_the_refused_label() -> None:
+    """`refused` is a stream label (absent on resolve events), so it belongs in the selector."""
     (refusals,) = [p for p in _dashboard()["panels"] if p["title"] == "Refusals"]
     expr = refusals["targets"][0]["expr"]
-    assert 'event="answer"' in expr
-    assert '| refused="true"' in expr  # resolve events carry no refused field
+    assert expr.startswith('{job="sovrag-audit", event="answer", refused="true"')
 
 
 def test_principal_variable_filters_both_panels() -> None:
@@ -81,7 +90,7 @@ def test_loki_accepts_the_existing_audit_history_and_adds_no_service_label() -> 
 
 def test_alloy_drops_the_automatic_filename_label() -> None:
     alloy = (OBS / "alloy.alloy").read_text()
-    assert 'stage.label_drop {\n    values = ["filename"]\n  }' in alloy
+    assert re.search(r'stage\.label_drop\s*\{\s*values\s*=\s*\["filename"\]\s*\}', alloy)
 
 
 def test_loki_queries_the_ingester_for_any_range() -> None:

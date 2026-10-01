@@ -30,15 +30,16 @@ schema_config:
         period: 24h
 
 ingester:
-  # Flush chunks quickly so backlog lines reach the store and its index within minutes;
-  # defaults (30m idle, 2h max age) would keep days-old history invisible that long.
+  # Flush chunks within minutes. The live check showed backlog streams still absent from
+  # queries with only the querier lookback at 0s; with these values every stream was queryable
+  # ninety seconds after a fresh start. Also bounds memory and moves history to the store.
   chunk_idle_period: 1m
   max_chunk_age: 5m
   flush_check_period: 10s
 
 querier:
-  # Backlog lines sit in ingester memory until a chunk flushes; ask the ingester for
-  # every range so days-old history is visible as soon as it is ingested.
+  # Ask the ingester for every range, not only the last 3h, so entries still in memory are
+  # not hidden from a query over older days.
   query_ingesters_within: 0s
 
 query_range:

@@ -40,16 +40,17 @@ observability/
 ```
 
 Loki's HTTP port is not published to the host; Alloy pushes to it over the Compose network.
-Grafana is published on 3000 with anonymous access in the Viewer role, because the stack is a
-local demo on one machine; the README says so and says to disable it anywhere else. No other
+Grafana is published on 127.0.0.1:3000 with anonymous access in the Viewer role and its default
+administrator login, because the stack is a local demo on one machine; the README says so and
+says both are wrong anywhere else. No other
 service changes. The `app` and `mcp` services keep their `audit` volume mount unchanged.
 
 ## The dashboard
 
 Datasource name `Loki`, uid `loki`, referenced by uid from the dashboard. Two panels:
 
-1. **Audit stream** (Logs panel): `{job="sovrag-audit"} | json | line_format "{{.event}} {{.principal}} refused={{.refused}} filter=[{{.applied_filter}}] cited={{.cited_chunk_ids}}"`, newest first, wrapped, time range last 15 minutes, refresh 5 s.
-2. **Refusals** (Logs panel): `{job="sovrag-audit", event="answer"} | json | refused="true" | line_format "{{.principal}} reason={{.reason}} filter=[{{.applied_filter}}]"`.
+1. **Audit stream** (Logs panel): `{job="sovrag-audit"} | json applied_filter, reason, error, cited="cited_chunk_ids" | line_format "{{.event}} {{.principal}} refused={{.refused}} filter=[{{.applied_filter}}] cited={{.cited}}"` (arrays must be extracted by name; bare `| json` skips them), newest first, wrapped, time range last 15 minutes, refresh 5 s.
+2. **Refusals** (Logs panel): `{job="sovrag-audit", event="answer", refused="true"} | json applied_filter, reason | line_format "{{.principal}} reason={{.reason}} filter=[{{.applied_filter}}]"`; `refused` is a stream label, absent on resolve events.
 
 A dashboard variable `principal` (Loki label values of `principal`) filters both panels; default All.
 
@@ -57,6 +58,10 @@ Labels are kept few on purpose. `event`, `principal` and `refused` are low cardi
 ids, request ids and the filter string stay in the line and are parsed at query time.
 
 ## Alloy pipeline
+
+Amended after the live check: Alloy also drops its automatic `filename` label; Loki accepts
+samples of any age, adds no `service_name` label, asks the ingester for every range and flushes
+chunks within minutes, or the existing history is rejected or invisible on first start.
 
 ```
 local.file_match "audit" {
