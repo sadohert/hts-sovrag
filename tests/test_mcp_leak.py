@@ -182,7 +182,7 @@ async def test_answer_path_runs_the_suite_as_each_principal(
     leak_env: tuple[psycopg.Connection, list[LeakItem]], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """run_leak_answers through the answer tool: the generator is faked, so this checks that
-    every question reaches generation as the user who asked, with the right filter. The
+    every question reaches generation as the user who asked. The
     real-model run is local only; see docs/mattermost-demo.md."""
     _, items = leak_env
     seen: list[tuple[str, str]] = []
