@@ -103,7 +103,14 @@ class _Gate:
         await self._app(scope, receive, send)
 
     def _authorised(self, scope: Scope) -> bool:
-        headers = {k.decode("latin-1").lower(): v.decode("latin-1") for k, v in scope["headers"]}
+        headers: dict[str, str] = {}
+        for raw_name, raw_value in scope["headers"]:
+            name = raw_name.decode("latin-1").lower()
+            # A repeated credential header is rejected: last-wins would let a second copy,
+            # added by a proxy or a misconfigured header map, replace the plugin's own.
+            if name in headers and name in ("authorization", USER_ID_HEADER):
+                return False
+            headers[name] = raw_value.decode("latin-1")
         scheme, _, token = headers.get("authorization", "").partition(" ")
         if scheme != "Bearer" or not hmac.compare_digest(token.encode(), self._secret):
             return False

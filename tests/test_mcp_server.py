@@ -502,3 +502,58 @@ async def test_the_secret_and_token_never_reach_a_tool_result_or_the_audit_log(
         result = await client.call_tool("search", {"question": "budget"})
     text = json.dumps([getattr(b, "text", "") for b in result.content]) + env.read_text()
     assert SECRET not in text and "bot-token" not in text
+
+
+# A repeated credential header is 401, never last-one-wins.
+
+
+async def _gate_status(headers: list[tuple[bytes, bytes]]) -> int:
+    """Drive the gate with a hand-built scope; the inner app records whether it ran."""
+    reached: list[bool] = []
+
+    async def inner(scope: object, receive: object, send: object) -> None:
+        reached.append(True)
+
+    sent: list[dict[str, object]] = []
+
+    async def send(message: dict[str, object]) -> None:
+        sent.append(message)
+
+    async def receive() -> dict[str, object]:
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    gate = server_mod._Gate(inner, SECRET)  # type: ignore[arg-type]
+    scope = {"type": "http", "method": "POST", "path": "/mcp", "headers": headers}
+    await gate(scope, receive, send)  # type: ignore[arg-type]
+    if reached:
+        return 200
+    return int(sent[0]["status"])  # type: ignore[call-overload]
+
+
+@pytest.mark.asyncio
+async def test_a_single_credential_header_pair_passes_the_gate() -> None:
+    headers = [
+        (b"authorization", f"Bearer {SECRET}".encode()),
+        (b"x-mattermost-userid", UID_DND.encode()),
+    ]
+    assert await _gate_status(headers) == 200
+
+
+@pytest.mark.asyncio
+async def test_a_repeated_user_id_header_is_401() -> None:
+    headers = [
+        (b"authorization", f"Bearer {SECRET}".encode()),
+        (b"x-mattermost-userid", UID_DND.encode()),
+        (b"x-mattermost-userid", UID_AUD.encode()),
+    ]
+    assert await _gate_status(headers) == 401
+
+
+@pytest.mark.asyncio
+async def test_a_repeated_authorization_header_is_401() -> None:
+    headers = [
+        (b"authorization", b"Bearer wrong"),
+        (b"authorization", f"Bearer {SECRET}".encode()),
+        (b"x-mattermost-userid", UID_DND.encode()),
+    ]
+    assert await _gate_status(headers) == 401
