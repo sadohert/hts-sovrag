@@ -1,0 +1,31 @@
+// Ship the audit log to Loki (ADR 0016). The file is written by the app and mcp services on
+// the shared audit volume, mounted here read-only. Only event, principal and refused become
+// labels; everything else stays in the line and is parsed at query time.
+local.file_match "audit" {
+  path_targets = [{__path__ = "/app/audit/audit.jsonl", job = "sovrag-audit"}]
+}
+
+loki.source.file "audit" {
+  targets    = local.file_match.audit.targets
+  forward_to = [loki.process.audit.receiver]
+}
+
+loki.process "audit" {
+  stage.json {
+    expressions = {ts = "ts", event = "event", principal = "principal", refused = "refused"}
+  }
+  stage.labels {
+    values = {event = "", principal = "", refused = ""}
+  }
+  stage.timestamp {
+    source = "ts"
+    format = "RFC3339Nano"
+  }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
