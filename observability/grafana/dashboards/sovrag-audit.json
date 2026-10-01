@@ -6,7 +6,7 @@
   ],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "editable": true,
   "refresh": "5s",
   "time": {
@@ -39,7 +39,151 @@
   "panels": [
     {
       "id": 1,
-      "type": "logs",
+      "type": "stat",
+      "title": "Answers",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "instant": true,
+          "range": false,
+          "queryType": "instant",
+          "expr": "sum(count_over_time({job=\"sovrag-audit\", event=\"answer\", refused=\"false\", principal=~\"$principal\"}[$__range]))"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Refusals",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "instant": true,
+          "range": false,
+          "queryType": "instant",
+          "expr": "sum(count_over_time({job=\"sovrag-audit\", event=\"answer\", refused=\"true\", principal=~\"$principal\"}[$__range]))"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Resolutions",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 0
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "instant": true,
+          "range": false,
+          "queryType": "instant",
+          "expr": "sum(count_over_time({job=\"sovrag-audit\", event=\"resolve\", principal=~\"$principal\"}[$__range]))"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "table",
       "title": "Audit stream",
       "datasource": {
         "type": "loki",
@@ -49,15 +193,82 @@
         "h": 14,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 4
       },
       "options": {
-        "showTime": true,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": false,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Refused"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Principal"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -66,31 +277,156 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{job=\"sovrag-audit\", principal=~\"$principal\"} | json applied_filter, reason, error, cited=\"cited_chunk_ids\" | line_format \"{{.event}} {{.principal}} refused={{.refused}} filter=[{{.applied_filter}}] cited={{.cited}} {{if .error}}error={{.error}}{{end}}\""
+          "maxLines": 500,
+          "expr": "{job=\"sovrag-audit\", principal=~\"$principal\"}"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "Line",
+            "format": "json",
+            "replace": true,
+            "keepTime": true
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "applied_filter",
+            "format": "regexp",
+            "regExp": "classification in \\((?<clearance>[^)]*)\\).*department in \\((?<departments>[^)]*)\\)",
+            "replace": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "includeByName": {
+              "Time": true,
+              "event": true,
+              "principal": true,
+              "refused": true,
+              "reason": true,
+              "clearance": true,
+              "departments": true,
+              "cited_chunk_ids": true,
+              "error": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "event": 1,
+              "principal": 2,
+              "refused": 3,
+              "reason": 4,
+              "clearance": 5,
+              "departments": 6,
+              "cited_chunk_ids": 7,
+              "error": 8
+            },
+            "renameByName": {
+              "event": "Event",
+              "principal": "Principal",
+              "refused": "Refused",
+              "reason": "Reason",
+              "clearance": "May see",
+              "departments": "Departments",
+              "cited_chunk_ids": "Cited chunks",
+              "error": "Error"
+            }
+          }
         }
       ]
     },
     {
-      "id": 2,
-      "type": "logs",
+      "id": 5,
+      "type": "table",
       "title": "Refusals",
       "datasource": {
         "type": "loki",
         "uid": "loki"
       },
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 18
       },
       "options": {
-        "showTime": true,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": false,
-        "enableLogDetails": true,
-        "dedupStrategy": "none",
-        "sortOrder": "Descending"
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              },
+              {
+                "id": "unit",
+                "value": "dateTimeAsIso"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Refused"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Event"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 90
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Principal"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 130
+              }
+            ]
+          }
+        ]
       },
       "targets": [
         {
@@ -99,7 +435,53 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "{job=\"sovrag-audit\", event=\"answer\", refused=\"true\", principal=~\"$principal\"} | json applied_filter, reason | line_format \"{{.principal}} reason={{.reason}} filter=[{{.applied_filter}}]\""
+          "maxLines": 500,
+          "expr": "{job=\"sovrag-audit\", event=\"answer\", refused=\"true\", principal=~\"$principal\"}"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "Line",
+            "format": "json",
+            "replace": true,
+            "keepTime": true
+          }
+        },
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "applied_filter",
+            "format": "regexp",
+            "regExp": "classification in \\((?<clearance>[^)]*)\\).*department in \\((?<departments>[^)]*)\\)",
+            "replace": false
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "includeByName": {
+              "Time": true,
+              "principal": true,
+              "reason": true,
+              "clearance": true,
+              "departments": true
+            },
+            "indexByName": {
+              "Time": 0,
+              "principal": 1,
+              "reason": 2,
+              "clearance": 3,
+              "departments": 4
+            },
+            "renameByName": {
+              "principal": "Principal",
+              "reason": "Reason",
+              "clearance": "May see",
+              "departments": "Departments"
+            }
+          }
         }
       ]
     }

@@ -33,10 +33,12 @@ shipped from the file by a collector, not emitted from the application:
   the host. A query range wider than Loki's default 30 days is refused; raise `max_query_length`
   for a longer history.
 - **Grafana** is provisioned from files in the repository: one Loki datasource with uid `loki`
-  and one dashboard, uid `sovrag-audit`, with an "Audit stream" panel formatted as
-  `event principal refused filter cited`, a "Refusals" panel selected by the `refused` label
-  (resolution events carry none), and a `principal` variable. Array fields such as
-  `cited_chunk_ids` are extracted by name, because Loki's bare `| json` skips arrays. It opens anonymously in the
+  and one dashboard, uid `sovrag-audit`: three stat panels (answers, refusals and resolutions
+  over the selected range), an "Audit stream" table and a "Refusals" table, with a `principal`
+  variable. The tables parse each JSON line in Grafana, so every field becomes a column
+  without a Loki pipeline, and split the entitlement filter into the classifications and
+  departments the principal may see. The Refusals table is selected by the `refused` label
+  (resolution events carry none). It opens anonymously in the
   Viewer role on port 3000, bound to this host only because the default administrator login is
   left in place; both are demo settings, wrong anywhere else, and the README says so.
 

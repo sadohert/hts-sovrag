@@ -84,7 +84,7 @@ Profiles add vLLM (GPU serving comparison) and the MCP server. See `docs/deploym
 
 The `mattermost` profile adds Mattermost Entry (the enterprise image with no licence key) on the same Postgres with its own role and database, and a one-shot service that creates them and revokes the default `PUBLIC` access to the sovrag database. `scripts/seed_mattermost.py` configures everything through REST: attributes, users, the Agents plugin at its pinned version, the plugin's provider and MCP server entry, the bot, and the bot token the resolver uses. See ADR 0011 and `docs/mattermost-demo.md`.
 
-The `observability` profile ships the audit file to Loki with Grafana Alloy, which tails the shared `audit` volume read-only, parses each line as JSON and promotes only `event`, `principal` and `refused` to labels, and provisions a Grafana dashboard (`/d/sovrag-audit`) with the formatted stream and a refusals panel. No application code is involved; any writer of the audit file appears in the stream. See ADR 0016.
+The `observability` profile ships the audit file to Loki with Grafana Alloy, which tails the shared `audit` volume read-only, parses each line as JSON and promotes only `event`, `principal` and `refused` to labels, and provisions a Grafana dashboard (`/d/sovrag-audit`) with counts, a table of every audit line parsed into columns, and a table of refusals. No application code is involved; any writer of the audit file appears in the stream. See ADR 0016.
 
 ## Corpus
 
