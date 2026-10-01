@@ -2,15 +2,16 @@
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
 
-Status: corpus indexed; vector, keyword and hybrid retrieval, each filtered by the principal's entitlement in SQL; grounded answers with citations and refusal from the CLI, over MCP, and in Mattermost direct messages; retrieval and leak suites gate CI, generation judged locally; the HTTP API serves the same answers with the principal bound by the server.
+Status: everything below exists on `main` and is exercised by the test suite and the CI evaluation gates; see `docs/architecture.md` for what comes next.
 
-## What it will do
+## What it does
 
-- Ingest Departmental Plans, Departmental Results Reports, Treasury Board security policy instruments, and Auditor General reports for six departments.
-- Index them in Postgres with pgvector (HNSW) and full-text search.
-- Enforce a two-axis entitlement model (classification level and department) as a SQL pre-filter, never as a Python post-filter.
-- Answer questions with citations and refuse when the entitled context does not contain the answer.
-- Ship a leak-test suite proving that a principal can never retrieve a chunk they are not entitled to.
+- Ingests Departmental Plans, Departmental Results Reports, Treasury Board security policy instruments, and Auditor General reports: 27 public documents from five departments (DND, PS, PSPC, SSC, TBS) plus the government-wide instruments and reports. CSE publishes neither plans nor results reports, so it has none.
+- Indexes them in Postgres with pgvector (HNSW) and full-text search, and retrieves by vector, keyword or hybrid ranking.
+- Enforces a two-axis entitlement model (classification level and department) as a SQL pre-filter inside every retrieval query, never as a Python post-filter.
+- Answers questions from the entitled chunks only, with `[n]` citations traceable to a public source, and refuses when they do not contain the answer.
+- Serves those answers four ways: the `sovrag ask` command, an HTTP API, an MCP server for agents, and Mattermost direct messages, with the principal bound by the server in every case.
+- Measures itself: a retrieval suite and a leak suite run in CI against a committed index and fail the build on a quality regression or a single forbidden chunk; a generation suite judged by a second model family runs locally, with results labelled by model, quantization and backend.
 
 ## Classification labels are synthetic
 
@@ -25,9 +26,11 @@ uv sync
 uv run sovrag ingest                              # fetch, parse, chunk, embed, index (~2 min)
 uv run sovrag query "What did the Auditor General find about ArriveCAN?" --principal analyst_dnd
 uv run sovrag query "What did the Auditor General find about ArriveCAN?" --principal auditor
+uv run sovrag ask "What did the Auditor General find about ArriveCAN?" --principal analyst_dnd
+uv run sovrag ask "What did the Auditor General find about ArriveCAN?" --principal auditor
 ```
 
-The two queries differ: `analyst_dnd` is cleared to `PROTECTED_A` and never sees the Auditor General reports, which are labelled `PROTECTED_B`; `auditor` does. Each result prints the filter that was applied. `ingest` pulls the two models declared in `compose.yaml` on first use. Pages are cached under `data/raw/`; re-running is idempotent.
+The two queries differ: `analyst_dnd` is cleared to `PROTECTED_A` and never sees the Auditor General reports, which are labelled `PROTECTED_B`; `auditor` does. Each result prints the filter that was applied. `ask` shows the consequence: `analyst_dnd` gets the refusal sentence, because the model is only ever shown entitled chunks, and `auditor` gets an answer with `[n]` citations. `ingest` pulls the two models declared in `compose.yaml` on first use. Pages are cached under `data/raw/`; re-running is idempotent.
 
 To expose the same answers to an agent, run the MCP server. The principal is bound by the server, never by the agent (ADR 0009):
 
