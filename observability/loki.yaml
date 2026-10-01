@@ -29,6 +29,18 @@ schema_config:
         prefix: index_
         period: 24h
 
+ingester:
+  # Flush chunks quickly so backlog lines reach the store and its index within minutes;
+  # defaults (30m idle, 2h max age) would keep days-old history invisible that long.
+  chunk_idle_period: 1m
+  max_chunk_age: 5m
+  flush_check_period: 10s
+
+querier:
+  # Backlog lines sit in ingester memory until a chunk flushes; ask the ingester for
+  # every range so days-old history is visible as soon as it is ingested.
+  query_ingesters_within: 0s
+
 query_range:
   results_cache:
     cache:
@@ -38,3 +50,7 @@ query_range:
 
 limits_config:
   allow_structured_metadata: true
+  # The audit file predates the profile; accept its whole history on first start.
+  reject_old_samples: false
+  # Keep the label set to job, event, principal, refused (ADR 0016).
+  discover_service_name: []

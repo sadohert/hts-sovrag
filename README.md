@@ -53,6 +53,8 @@ curl -s -X POST localhost:8000/query -H 'content-type: application/json' \
 
 The response is the same object `sovrag ask --json` prints: the answer with `[n]` citations or the refusal sentence, the citations, the rendered entitlement filter and a `request_id` that also appears in the audit log. As `analyst_dnd` is not cleared for the Auditor General reports, that question comes back as the refusal sentence. For many users, put an authenticating gateway in front and set `API_IDENTITY=gateway` and `API_SHARED_SECRET`; the gateway sends the secret as a bearer and names the user's principal in `X-Sovrag-Principal`. A request without both is 401. The body cannot name a principal. See ADR 0015.
 
+To watch the audit log while it runs, `docker compose --profile observability up -d` adds Loki, Alloy and Grafana; the dashboard is at `http://localhost:3000/d/sovrag-audit` and shows each answer as `event principal refused filter cited`, with a second panel of refusals. Grafana opens anonymously as a viewer because this is a local demo; disable that anywhere else. See ADR 0016.
+
 ## Measure it
 
 ```

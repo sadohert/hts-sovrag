@@ -68,3 +68,34 @@ def test_alloy_tails_the_path_the_app_writes_with_only_the_agreed_labels() -> No
     assert 'job = "sovrag-audit"' in alloy
     assert 'values = {event = "", principal = "", refused = ""}' in alloy
     assert 'url = "http://loki:3100/loki/api/v1/push"' in alloy
+
+
+def test_loki_accepts_the_existing_audit_history_and_adds_no_service_label() -> None:
+    """The audit file predates the profile by days; Loki's default rejects samples older
+    than a week, which drops the whole backlog on first start."""
+    loki = yaml.safe_load((OBS / "loki.yaml").read_text())
+    limits = loki["limits_config"]
+    assert limits["reject_old_samples"] is False
+    assert limits["discover_service_name"] == []
+
+
+def test_alloy_drops_the_automatic_filename_label() -> None:
+    alloy = (OBS / "alloy.alloy").read_text()
+    assert 'stage.label_drop {\n    values = ["filename"]\n  }' in alloy
+
+
+def test_loki_queries_the_ingester_for_any_range() -> None:
+    """Backlog lines sit in ingester memory until a chunk flushes; with the default 3h lookback
+    the querier never asks the ingester for them, so days of history stay invisible."""
+    loki = yaml.safe_load((OBS / "loki.yaml").read_text())
+    assert loki["querier"]["query_ingesters_within"] == "0s"
+
+
+def test_loki_flushes_chunks_within_minutes_so_history_reaches_the_index() -> None:
+    """With the defaults (30m idle, 2h max age) backlog streams stayed unqueryable for up to
+    two hours; the live check with these values showed all history queryable within 90 s."""
+    loki = yaml.safe_load((OBS / "loki.yaml").read_text())
+    ingester = loki["ingester"]
+    assert ingester["chunk_idle_period"] == "1m"
+    assert ingester["max_chunk_age"] == "5m"
+    assert ingester["flush_check_period"] == "10s"

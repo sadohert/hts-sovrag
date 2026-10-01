@@ -17,6 +17,9 @@ loki.process "audit" {
   stage.labels {
     values = {event = "", principal = "", refused = ""}
   }
+  stage.label_drop {
+    values = ["filename"]
+  }
   stage.timestamp {
     source = "ts"
     format = "RFC3339Nano"

@@ -84,6 +84,8 @@ Profiles add vLLM (GPU serving comparison) and the MCP server. See `docs/deploym
 
 The `mattermost` profile adds Mattermost Entry (the enterprise image with no licence key) on the same Postgres with its own role and database, and a one-shot service that creates them and revokes the default `PUBLIC` access to the sovrag database. `scripts/seed_mattermost.py` configures everything through REST: attributes, users, the Agents plugin at its pinned version, the plugin's provider and MCP server entry, the bot, and the bot token the resolver uses. See ADR 0011 and `docs/mattermost-demo.md`.
 
+The `observability` profile ships the audit file to Loki with Grafana Alloy, which tails the shared `audit` volume read-only, parses each line as JSON and promotes only `event`, `principal` and `refused` to labels, and provisions a Grafana dashboard (`/d/sovrag-audit`) with the formatted stream and a refusals panel. No application code is involved; any writer of the audit file appears in the stream. See ADR 0016.
+
 ## Corpus
 
 27 public documents from canada.ca, publicsafety.gc.ca and tbs-sct.canada.ca: Departmental Plans and Departmental Results Reports for five departments across two fiscal years each, four Treasury Board security policy instruments, and three Auditor General reports. After parsing and chunking: 3,357 chunks of at most 340 cl100k tokens each, so that title, heading path and text together stay under Model Runner's 512-token embedding limit (ADR 0005).
@@ -180,3 +182,4 @@ involved in those suites. See ADR 0014.
 - ADR 0013: the entitlement predicate is one bound WHERE clause inside every retrieval query; HNSW scans continue past the filter with `SET LOCAL hnsw.iterative_scan`.
 - ADR 0014: evaluation design: committed full-precision fixture, hand-written gold, an independent leak oracle, a judge from another model family, labelled results.
 - ADR 0015: the HTTP API binds its principal like the MCP server, static or from a verified gateway; one query endpoint; 401 never downgrades.
+- ADR 0016: logs are shipped from the audit file by a collector, not emitted by the application; three low-cardinality labels; Grafana anonymous only for the local demo.
