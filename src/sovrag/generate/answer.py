@@ -10,6 +10,7 @@ reports the predicate that was applied.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from sovrag.audit import write_event
@@ -33,6 +34,21 @@ class Citation:
     title: str
     heading_path: str
     source_url: str
+
+
+def _markdown_text(text: str) -> str:
+    """Escape what would end or alter a markdown link's text."""
+    return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
+
+
+def sources_markdown(citations: Sequence[Citation]) -> str:
+    """The citations as a markdown list a chat client renders with clickable titles: the
+    number in bold, the title linking to the source URL, then the heading path. Empty when
+    there are no citations. Produced here so every relay shows the same line."""
+    return "\n".join(
+        f"- **[{c.n}]** [{_markdown_text(c.title)}]({c.source_url}): {c.heading_path}"
+        for c in citations
+    )
 
 
 @dataclass(frozen=True)

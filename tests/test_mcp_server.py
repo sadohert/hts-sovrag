@@ -461,8 +461,9 @@ async def test_answer_calls_generation_with_the_bound_principal_and_returns_what
         result = await client.call_tool("answer", {"question": "Is there a budget?"})
     assert not result.is_error and result.structured_content is not None
     data = result.structured_content
-    assert set(data) == {"text", "citations", "refused", "request_id"}
+    assert set(data) == {"text", "citations", "sources", "refused", "request_id"}
     assert data["text"] == "Yes [1]." and data["refused"] is False
+    assert data["sources"] == "- **[1]** [Title of dnd](https://example.test/dnd.html): Budget"
     assert data["citations"] == [
         {
             "n": 1,
@@ -488,6 +489,7 @@ async def test_a_refusal_comes_back_as_a_result_not_an_error(
     assert not result.is_error
     assert result.structured_content is not None and result.structured_content["refused"] is True
     assert result.structured_content["citations"] == []
+    assert result.structured_content["sources"] == ""
 
 
 @pytest.mark.asyncio
