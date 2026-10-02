@@ -41,12 +41,19 @@ def _markdown_text(text: str) -> str:
     return text.replace("\\", "\\\\").replace("[", "\\[").replace("]", "\\]")
 
 
+def _markdown_target(url: str) -> str:
+    """Percent-encode what would end or break a markdown link's target."""
+    return url.replace("(", "%28").replace(")", "%29").replace(" ", "%20")
+
+
 def sources_markdown(citations: Sequence[Citation]) -> str:
     """The citations as a markdown list a chat client renders with clickable titles: the
     number in bold, the title linking to the source URL, then the heading path. Empty when
-    there are no citations. Produced here so every relay shows the same line."""
+    there are no citations. Rendered here, not by the agent, so the list is the same for every
+    answer and the agent only has to copy it."""
     return "\n".join(
-        f"- **[{c.n}]** [{_markdown_text(c.title)}]({c.source_url}): {c.heading_path}"
+        f"- **[{c.n}]** [{_markdown_text(c.title)}]({_markdown_target(c.source_url)}):"
+        f" {c.heading_path}"
         for c in citations
     )
 

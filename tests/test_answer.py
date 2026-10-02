@@ -264,3 +264,9 @@ def test_sources_markdown_escapes_brackets_in_titles() -> None:
 
 def test_sources_markdown_is_empty_without_citations() -> None:
     assert sources_markdown(()) == ""
+
+
+def test_sources_markdown_escapes_parentheses_and_spaces_in_urls() -> None:
+    """A ')' or a space inside the link target would end or break the markdown link."""
+    sources = sources_markdown((_citation(1, "T", "T", "https://x.test/a_(b) c"),))
+    assert sources == "- **[1]** [T](https://x.test/a_%28b%29%20c): T"

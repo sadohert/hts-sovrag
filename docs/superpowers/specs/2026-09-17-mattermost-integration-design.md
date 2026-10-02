@@ -388,4 +388,5 @@ text, which Mattermost showed as wrapped, unclickable URLs. The `answer` tool no
 `sources`: the citations rendered once, in `sovrag.generate.answer.sources_markdown`, as a
 markdown list whose items are the number in bold, the title linking to the source URL, and the
 heading path. The bot instruction tells the agent to print `Sources:` and that field exactly as
-given. The `citations` list stays for clients that want the fields.
+given. The `citations` list stays for clients that want the fields. The sentence above that
+has the bot relay "the tool's text and citations verbatim" is superseded by this amendment.
