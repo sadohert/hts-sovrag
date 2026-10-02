@@ -21,7 +21,7 @@ import re
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable, MutableMapping
 from contextlib import asynccontextmanager
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Protocol
@@ -260,7 +260,22 @@ def build_app(settings: Settings, *, resolver: Resolver | None = None) -> Sovrag
             )
         except GenerationError as exc:
             raise ToolError(f"generation failed: {exc}") from None
-        return asdict(result)
+        # What the agent relays to the person. The principal, the filter, the model and the
+        # chunk ids are in the audit line under the same request id, not in the chat.
+        return {
+            "text": result.text,
+            "citations": [
+                {
+                    "n": c.n,
+                    "title": c.title,
+                    "heading_path": c.heading_path,
+                    "source_url": c.source_url,
+                }
+                for c in result.citations
+            ],
+            "refused": result.refused,
+            "request_id": result.request_id,
+        }
 
     mcp_app = mcp.streamable_http_app(json_response=True, transport_security=_security(settings))
 

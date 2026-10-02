@@ -30,43 +30,84 @@ def test_dashboard_provider_points_at_the_mounted_dashboards_dir() -> None:
     assert p["options"]["path"] == "/var/lib/grafana/dashboards"
 
 
+def _panels(kind: str) -> list[dict]:
+    return [p for p in _dashboard()["panels"] if p["type"] == kind]
+
+
 def test_dashboard_panels_query_the_audit_job_through_the_loki_uid() -> None:
     dash = _dashboard()
     assert dash["uid"] == "sovrag-audit"
-    assert len(dash["panels"]) == 2
+    assert {p["type"] for p in dash["panels"]} == {"stat", "table"}
+    assert len(_panels("stat")) == 3 and len(_panels("table")) == 2
     for panel in dash["panels"]:
-        assert panel["type"] == "logs"
         assert panel["datasource"] == {"type": "loki", "uid": "loki"}
         for target in panel["targets"]:
-            assert target["expr"].startswith('{job="sovrag-audit"')
-            assert "| json" in target["expr"]
-    titles = {p["title"] for p in dash["panels"]}
-    assert titles == {"Audit stream", "Refusals"}
+            assert target["datasource"] == {"type": "loki", "uid": "loki"}
+            assert '{job="sovrag-audit"' in target["expr"]  # stats wrap it in count_over_time
+            assert 'principal=~"$principal"' in target["expr"]
+    assert {p["title"] for p in _panels("table")} == {"Audit stream", "Refusals"}
+    assert {p["title"] for p in _panels("stat")} == {"Answers", "Refusals", "Resolutions"}
 
 
-def test_audit_stream_extracts_the_array_fields_by_name() -> None:
-    """Loki's bare `| json` skips arrays, so cited chunk ids must be named explicitly."""
-    (stream,) = [p for p in _dashboard()["panels"] if p["title"] == "Audit stream"]
-    expr = stream["targets"][0]["expr"]
-    assert '| json applied_filter, reason, error, cited="cited_chunk_ids"' in expr
-    assert "{{.cited}}" in expr and "{{.error}}" in expr
+def test_stat_panels_count_events_over_the_selected_range() -> None:
+    for panel in _panels("stat"):
+        (target,) = panel["targets"]
+        assert target.get("instant") is True
+        assert target["expr"].startswith("sum(count_over_time(")
+        assert "[$__range]" in target["expr"]
+    exprs = {p["title"]: p["targets"][0]["expr"] for p in _panels("stat")}
+    assert 'event="answer", refused="false"' in exprs["Answers"]
+    assert 'event="answer", refused="true"' in exprs["Refusals"]
+    assert 'event="resolve"' in exprs["Resolutions"]
 
 
-def test_refusals_panel_selects_the_refused_label() -> None:
+def test_audit_stream_is_a_table_of_parsed_fields_with_the_filter_split() -> None:
+    """Columns come from the JSON line itself; the entitlement filter is split into the
+    classifications and departments the principal may see."""
+    (stream,) = [p for p in _panels("table") if p["title"] == "Audit stream"]
+    kinds = [t["id"] for t in stream["transformations"]]
+    assert kinds == ["extractFields", "extractFields", "organize"]
+    parse, split, organize = stream["transformations"]
+    assert parse["options"] == {
+        "source": "Line",
+        "format": "json",
+        "replace": True,
+        "keepTime": True,
+    }
+    assert split["options"]["source"] == "applied_filter"
+    assert split["options"]["format"] == "regexp"
+    assert "(?<clearance>" in split["options"]["regExp"]
+    assert "(?<departments>" in split["options"]["regExp"]
+    shown = organize["options"]["includeByName"]
+    assert {k for k, v in shown.items() if v} == {
+        "Time",
+        "event",
+        "principal",
+        "refused",
+        "reason",
+        "clearance",
+        "departments",
+        "cited_chunk_ids",
+        "error",
+    }
+    assert stream["options"]["sortBy"] == [{"displayName": "Time", "desc": True}]
+
+
+def test_refusals_table_selects_the_refused_label() -> None:
     """`refused` is a stream label (absent on resolve events), so it belongs in the selector."""
-    (refusals,) = [p for p in _dashboard()["panels"] if p["title"] == "Refusals"]
+    (refusals,) = [p for p in _panels("table") if p["title"] == "Refusals"]
     expr = refusals["targets"][0]["expr"]
     assert expr.startswith('{job="sovrag-audit", event="answer", refused="true"')
+    kinds = [t["id"] for t in refusals["transformations"]]
+    assert kinds == ["extractFields", "extractFields", "organize"]
 
 
-def test_principal_variable_filters_both_panels() -> None:
+def test_principal_variable_filters_every_panel() -> None:
     dash = _dashboard()
     (var,) = dash["templating"]["list"]
     assert var["name"] == "principal" and var["type"] == "query"
     assert var["query"] == "label_values(principal)"
     assert var["includeAll"] is True
-    for panel in dash["panels"]:
-        assert 'principal=~"$principal"' in panel["targets"][0]["expr"]
 
 
 def test_alloy_tails_the_path_the_app_writes_with_only_the_agreed_labels() -> None:

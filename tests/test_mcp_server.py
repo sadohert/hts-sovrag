@@ -14,7 +14,7 @@ from mcp import Client
 from mcp.client.streamable_http import streamable_http_client
 
 from sovrag.auth import LEAST_PRIVILEGED, Clearance, Principal, Resolution, ResolutionError
-from sovrag.config import get_settings
+from sovrag.config import Settings, get_settings
 from sovrag.corpus.chunk import Chunk
 from sovrag.corpus.manifest import DocumentMeta
 from sovrag.generate.answer import Answer, Citation
@@ -191,8 +191,9 @@ def _events(audit: Path) -> list[dict]:
 
 
 def test_identity_is_required(env: Path) -> None:
+    # Settings(_env_file=None): a developer .env with MCP_IDENTITY set must not leak in.
     with pytest.raises(ValueError, match="MCP_IDENTITY"):
-        build_app(get_settings())
+        build_app(Settings(_env_file=None, mcp_identity=""))
 
 
 def test_an_unknown_identity_is_refused(env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -214,9 +215,11 @@ def test_static_mode_refuses_a_missing_or_unknown_principal(
 def test_mattermost_mode_refuses_without_a_shared_secret(
     env: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setenv("MCP_IDENTITY", "mattermost")
     with pytest.raises(ValueError, match="MCP_SHARED_SECRET"):
-        build_app(get_settings(), resolver=FakeResolver())
+        build_app(
+            Settings(_env_file=None, mcp_identity="mattermost", mcp_shared_secret=""),
+            resolver=FakeResolver(),
+        )
 
 
 def test_static_mode_never_builds_a_resolver(env: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -446,9 +449,11 @@ def _fake_answer(seen: list[dict[str, object]], refused: bool = False) -> object
 
 
 @pytest.mark.asyncio
-async def test_answer_calls_generation_with_the_bound_principal_and_returns_it_unchanged(
+async def test_answer_calls_generation_with_the_bound_principal_and_returns_what_is_relayed(
     env: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """The tool result is what the agent relays to the person: text, citations, the refusal
+    flag and the request id. Principal, filter, model and chunk ids stay in the audit line."""
     seen: list[dict[str, object]] = []
     monkeypatch.setattr(server_mod, "generate_answer", _fake_answer(seen))
     built = _mattermost(monkeypatch)
@@ -456,9 +461,16 @@ async def test_answer_calls_generation_with_the_bound_principal_and_returns_it_u
         result = await client.call_tool("answer", {"question": "Is there a budget?"})
     assert not result.is_error and result.structured_content is not None
     data = result.structured_content
+    assert set(data) == {"text", "citations", "refused", "request_id"}
     assert data["text"] == "Yes [1]." and data["refused"] is False
-    assert data["citations"][0]["source_url"] == "https://example.test/dnd.html"
-    assert data["applied_filter"] == "filter" and data["principal"] == "analyst_dnd"
+    assert data["citations"] == [
+        {
+            "n": 1,
+            "title": "Title of dnd",
+            "heading_path": "Budget",
+            "source_url": "https://example.test/dnd.html",
+        }
+    ]
     (call,) = seen
     assert call["principal"] == PRINCIPALS[UID_DND] and call["k"] == 5
     resolve = _events(env)[0]

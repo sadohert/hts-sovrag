@@ -47,6 +47,12 @@ service changes. The `app` and `mcp` services keep their `audit` volume mount un
 
 ## The dashboard
 
+Amended after first use: the Logs panels read poorly (a level badge, wrapped lines, fields buried
+in text), so the dashboard is three stat panels (answers, refusals, resolutions over the selected
+range) and two tables whose columns are parsed from the JSON line in Grafana, with the entitlement
+filter split into the classifications and departments the principal may see. The queries below
+are the original Logs-panel expressions, kept for the record.
+
 Datasource name `Loki`, uid `loki`, referenced by uid from the dashboard. Two panels:
 
 1. **Audit stream** (Logs panel): `{job="sovrag-audit"} | json applied_filter, reason, error, cited="cited_chunk_ids" | line_format "{{.event}} {{.principal}} refused={{.refused}} filter=[{{.applied_filter}}] cited={{.cited}}"` (arrays must be extracted by name; bare `| json` skips them), newest first, wrapped, time range last 15 minutes, refresh 5 s.
