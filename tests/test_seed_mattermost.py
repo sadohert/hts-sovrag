@@ -127,6 +127,7 @@ def test_the_bot_is_direct_message_only_with_per_user_connections_and_both_tools
         {"server_origin": "http://mcp:8002/mcp", "tool_name": "answer"},
     ]
     assert "verbatim" in agent["customInstructions"]
+    assert "sources field exactly as given" in agent["customInstructions"]
 
 
 def test_attribute_fields_are_admin_managed_with_the_document_vocabulary(

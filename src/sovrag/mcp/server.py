@@ -45,6 +45,7 @@ from sovrag.auth import (
 from sovrag.config import Settings
 from sovrag.generate import MAX_K, GenerationError
 from sovrag.generate.answer import answer as generate_answer
+from sovrag.generate.answer import sources_markdown
 from sovrag.index.embed import Embedder
 from sovrag.index.store import connect
 from sovrag.retrieve import Mode, entitlement_for, search_hybrid
@@ -198,8 +199,8 @@ def build_app(settings: Settings, *, resolver: Resolver | None = None) -> Sovrag
         "sovrag",
         instructions=(
             "Permissions-aware retrieval over Canadian federal public documents. Every result"
-            " is already filtered to what the calling user may see; relay answers and their"
-            " citations verbatim." + _NO_PRINCIPAL_ARG
+            " is already filtered to what the calling user may see; relay answers verbatim,"
+            " followed by the sources field, which is ready-made markdown." + _NO_PRINCIPAL_ARG
         ),
     )
 
@@ -273,6 +274,7 @@ def build_app(settings: Settings, *, resolver: Resolver | None = None) -> Sovrag
                 }
                 for c in result.citations
             ],
+            "sources": sources_markdown(result.citations),
             "refused": result.refused,
             "request_id": result.request_id,
         }

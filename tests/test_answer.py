@@ -10,7 +10,7 @@ import pytest
 
 from sovrag.auth import Clearance, Principal
 from sovrag.generate import answer as answer_mod
-from sovrag.generate.answer import MAX_K, Answer, Citation, answer
+from sovrag.generate.answer import MAX_K, Answer, Citation, answer, sources_markdown
 from sovrag.generate.llm import GenerationError
 from sovrag.generate.prompts import REFUSAL_TEXT, SENTINEL
 from sovrag.retrieve import Hit, Mode
@@ -229,3 +229,44 @@ def test_refusal_still_reports_the_applied_filter(
     assert result.refused and result.applied_filter == WHO_FILTER
     (line,) = _audit_lines(audit_path)
     assert line["applied_filter"] == WHO_FILTER
+
+
+def _citation(n: int, title: str, heading_path: str, source_url: str) -> Citation:
+    return Citation(
+        n=n,
+        doc_id="d",
+        chunk_id=n,
+        title=title,
+        heading_path=heading_path,
+        source_url=source_url,
+    )
+
+
+def test_sources_markdown_is_a_list_of_links_the_chat_can_render() -> None:
+    """One list item per citation: the number, the title as the link text, the URL as the
+    target, then the heading path. A chat client renders it as clickable titles."""
+    sources = sources_markdown(
+        (
+            _citation(3, "Results Report", "Report > Details on results", "https://x.test/a"),
+            _citation(5, "Audit", "Audit > Findings", "https://x.test/b"),
+        )
+    )
+    assert sources == (
+        "- **[3]** [Results Report](https://x.test/a): Report > Details on results\n"
+        "- **[5]** [Audit](https://x.test/b): Audit > Findings"
+    )
+
+
+def test_sources_markdown_escapes_brackets_in_titles() -> None:
+    sources = sources_markdown((_citation(1, "Plan [draft]", "Plan", "https://x.test/p"),))
+    assert sources == "- **[1]** [Plan \\[draft\\]](https://x.test/p): Plan"
+
+
+def test_sources_markdown_is_empty_without_citations() -> None:
+    assert sources_markdown(()) == ""
+
+
+def test_sources_markdown_escapes_parentheses_and_spaces_in_urls() -> None:
+    """A ')' or a space inside the link target would end or break the markdown link."""
+    sources = sources_markdown((_citation(1, "T", "T", "https://x.test/a_(b) c"),))
+    assert sources == "- **[1]** [T](https://x.test/a_%28b%29%20c): T"

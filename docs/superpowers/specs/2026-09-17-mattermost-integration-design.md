@@ -380,3 +380,13 @@ and then the bot repeated the text below. The `answer` tool now returns the text
 the rendered filter, the model and the chunk ids are in the `answer` audit line under that
 request id, which is where they are traced. `search` is unchanged. The sentences above that
 describe the tool as returning the `Answer` unchanged are superseded by this amendment.
+
+## Amendment (2026-10-02): citations arrive as markdown
+
+Left to compose the citation lines itself, the agent wrote title, heading and URL as plain
+text, which Mattermost showed as wrapped, unclickable URLs. The `answer` tool now also returns
+`sources`: the citations rendered once, in `sovrag.generate.answer.sources_markdown`, as a
+markdown list whose items are the number in bold, the title linking to the source URL, and the
+heading path. The bot instruction tells the agent to print `Sources:` and that field exactly as
+given. The `citations` list stays for clients that want the fields. The sentence above that
+has the bot relay "the tool's text and citations verbatim" is superseded by this amendment.
