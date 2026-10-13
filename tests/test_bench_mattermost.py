@@ -10,6 +10,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
+import httpx2 as httpx
 import pytest
 
 
@@ -267,3 +268,230 @@ def test_load_questions_keeps_the_requested_order(tmp_path: Path) -> None:
     assert bench.load_questions(golden, ("r09", "r01")) == [("r09", "Q r09"), ("r01", "Q r01")]
     with pytest.raises(bench.BenchError):
         bench.load_questions(golden, ("r99",))
+
+
+class FakeMattermost:
+    """Enough of the REST API for one question: login, user lookup, the direct channel, the
+    post, and the channel's posts as the assistant's reply streams in over successive polls."""
+
+    def __init__(
+        self, *, reply_updates: list[int], reply_create_ms: int, stale_reply: bool = False
+    ) -> None:
+        self.reply_updates = reply_updates  # update_at seen on poll 1, 2, ...
+        self.reply_create_ms = reply_create_ms
+        self.stale_reply = stale_reply
+        self.polls = 0
+        self.posted: list[str] = []
+
+    def __call__(self, request: httpx.Request) -> httpx.Response:
+        path, method = request.url.path, request.method
+        if path == "/api/v4/users/login":
+            return httpx.Response(
+                200, json={"id": "u1", "username": "analyst_dnd"}, headers={"Token": "tok"}
+            )
+        if path == "/api/v4/users/username/sovrag":
+            return httpx.Response(200, json={"id": "bot1"})
+        if path == "/api/v4/channels/direct":
+            return httpx.Response(201, json={"id": "dm1"})
+        if path == "/api/v4/posts" and method == "POST":
+            self.posted.append(json.loads(request.content)["message"])
+            return httpx.Response(201, json={"id": "p1", "create_at": T0_MS, "user_id": "u1"})
+        if path == "/api/v4/channels/dm1/posts":
+            self.polls += 1
+            posts: dict[str, Any] = {}
+            if self.stale_reply:
+                posts["old"] = {
+                    "id": "old",
+                    "user_id": "bot1",
+                    "create_at": T0_MS - 60_000,
+                    "update_at": T0_MS - 50_000,
+                    "message": "stale",
+                }
+            if self.polls <= len(self.reply_updates):
+                posts["r1"] = {
+                    "id": "r1",
+                    "user_id": "bot1",
+                    "create_at": self.reply_create_ms,
+                    "update_at": self.reply_updates[self.polls - 1],
+                    "message": "x" * self.polls,
+                }
+            elif self.reply_updates:
+                posts["r1"] = {
+                    "id": "r1",
+                    "user_id": "bot1",
+                    "create_at": self.reply_create_ms,
+                    "update_at": self.reply_updates[-1],
+                    "message": "done",
+                }
+            return httpx.Response(200, json={"order": list(posts), "posts": posts})
+        return httpx.Response(500, json={"message": f"unexpected {method} {path}"})
+
+
+class FakeClock:
+    def __init__(self) -> None:
+        self.now = T0_S
+
+    def __call__(self) -> float:
+        return self.now
+
+    def sleep(self, seconds: float) -> None:
+        self.now += seconds
+
+
+def _client(server: FakeMattermost) -> Any:
+    mm = bench.Mattermost("http://mm.test", transport=httpx.MockTransport(server))
+    assert mm.login("analyst_dnd", "pw") == "u1"
+    return mm
+
+
+def _ask(server: FakeMattermost, clock: FakeClock, **overrides: Any) -> Any:
+    kwargs: dict[str, Any] = {
+        "channel_id": "dm1",
+        "bot_user_id": "bot1",
+        "question": "q",
+        "settle_s": 3.0,
+        "timeout_s": 120.0,
+        "poll_s": 1.0,
+        "clock": clock,
+        "sleep": clock.sleep,
+    }
+    kwargs.update(overrides)
+    return bench.ask(_client(server), **kwargs)
+
+
+def _run_one(server: FakeMattermost, clock: FakeClock, **overrides: Any) -> Any:
+    kwargs: dict[str, Any] = {
+        "channel_id": "dm1",
+        "bot_user_id": "bot1",
+        "user_id": "u1",
+        "question_id": "r01",
+        "question": "q",
+        "state": "warm",
+        "audit": _audit_lines,
+        "settle_s": 3.0,
+        "timeout_s": 120.0,
+        "poll_s": 1.0,
+        "clock": clock,
+        "sleep": clock.sleep,
+    }
+    kwargs.update(overrides)
+    return bench.run_one(_client(server), **kwargs)
+
+
+def test_ask_returns_the_post_time_and_the_reply_marks_once_settled() -> None:
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 30_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
+    marks = _ask(server, FakeClock(), question="How much for NORAD?")
+    assert marks == (T0_MS, T0_MS + 17_000, T0_MS + 40_000)
+    assert server.posted == ["How much for NORAD?"]
+
+
+def test_a_reply_older_than_the_question_is_ignored() -> None:
+    server = FakeMattermost(reply_updates=[], reply_create_ms=0, stale_reply=True)
+    with pytest.raises(bench.BenchError, match="timeout"):
+        _ask(server, FakeClock(), timeout_s=10.0)
+
+
+def test_run_one_joins_the_audit_and_computes_hops() -> None:
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
+    run = _run_one(server, FakeClock())
+    assert run.error is None and run.request_id == "a1" and run.refused is True
+    assert run.hops is not None and run.hops.hop1_s == pytest.approx(13.0)
+    assert run.hops.hop2_s == pytest.approx(3.5) and run.hops.hop3_s == pytest.approx(23.5)
+
+
+def test_a_timeout_is_a_failed_run_not_a_missing_one() -> None:
+    server = FakeMattermost(reply_updates=[], reply_create_ms=0)
+    run = _run_one(server, FakeClock(), timeout_s=5.0)
+    assert run.hops is None and run.error is not None and "timeout" in run.error
+    assert bench.summarise([run]) == {}
+
+
+def test_a_run_without_audit_lines_is_failed_with_a_reason() -> None:
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000], reply_create_ms=T0_MS + 17_000
+    )
+    run = _run_one(server, FakeClock(), user_id="u9")
+    assert run.hops is None
+    assert run.error == "no resolve/answer pair in the audit log for this run"
+
+
+def test_report_merges_earlier_runs_and_never_carries_a_key() -> None:
+    earlier = bench.report(
+        _labels(),
+        [_run("cold", 30.0, 10.0, 20.0)],
+        ran_at="2026-10-13T00:00:00+00:00",
+        commit="abc1234",
+    )
+    runs = bench.merge_runs(earlier, [_run("warm", 10.0, 4.0, 20.0)])
+    assert [r.state for r in runs] == ["cold", "warm"]
+    rep = bench.report(_labels(), runs, ran_at="2026-10-13T01:00:00+00:00", commit="abc1234")
+    assert rep["summary"]["cold"]["n"] == 1 and rep["summary"]["warm"]["n"] == 1
+    assert rep["labels"]["tier"] == "local" and rep["commit"] == "abc1234"
+    text = json.dumps(rep)
+    assert "api_key" not in text.lower() and "authorization" not in text.lower()
+    path = bench.result_path("A-local", bench.date(2026, 10, 13))
+    assert path.name == "bench-mattermost-A-local-2026-10-13.json"
+
+
+def test_main_cold_refuses_when_a_model_is_still_loaded(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def run_command(cmd: list[str]) -> str:
+        if cmd[:3] == ["docker", "model", "ps"]:
+            return "MODEL NAME  BACKEND\nai/qwen3.5:9b-q4_K_M  llama.cpp\n"
+        return ""
+
+    monkeypatch.setattr(bench, "run_command", run_command)
+    code = bench.main(["--configuration", "A-local", "--cold", "--url", "http://mm.test"])
+    assert code == 1
+    assert "docker model unload --all" in capsys.readouterr().err
+
+
+def test_main_writes_the_results_file_and_prints_the_row(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
+    clock = FakeClock()
+    golden = tmp_path / "retrieval.jsonl"
+    golden.write_text(
+        json.dumps({"id": "r01", "question": "q", "gold": [], "reference_answer": "", "notes": ""})
+        + "\n"
+    )
+
+    def run_command(cmd: list[str]) -> str:
+        return "\n".join(_audit_lines()) if cmd[:2] == ["docker", "compose"] else "x"
+
+    monkeypatch.setattr(bench, "GOLDEN", golden)
+    monkeypatch.setattr(bench, "RESULTS_DIR", tmp_path)
+    monkeypatch.setattr(bench, "QUESTION_IDS", ("r01",))
+    monkeypatch.setattr(bench, "run_command", run_command)
+    monkeypatch.setattr(bench, "_transport", lambda: httpx.MockTransport(server))
+    monkeypatch.setattr(bench, "_clock", lambda: clock)
+    code = bench.main(
+        [
+            "--configuration",
+            "A-local",
+            "--warm",
+            "--passes",
+            "2",
+            "--url",
+            "http://mm.test",
+            "--password",
+            "pw",
+        ]
+    )
+    assert code == 0
+    files = list(tmp_path.glob("bench-mattermost-A-local-*.json"))
+    assert len(files) == 1
+    data = json.loads(files[0].read_text())
+    assert data["summary"]["warm"]["n"] == 2 and data["labels"]["configuration"] == "A-local"
+    assert "| A-local |" in capsys.readouterr().out
