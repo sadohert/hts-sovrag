@@ -503,7 +503,7 @@ def test_a_run_without_audit_lines_is_failed_with_a_reason() -> None:
     )
     run = _run_one(server, FakeClock(), user_id="u9")
     assert run.hops is None
-    assert run.error == "no resolve/answer pair in the audit log for this run"
+    assert run.error is not None and run.error.startswith("no resolve/answer pair")
 
 
 def test_report_merges_earlier_runs_and_never_carries_a_key() -> None:
@@ -652,3 +652,32 @@ def test_main_labels_the_generator_from_the_container_unless_flags_say_otherwise
     assert "should-never-be-read" not in path.read_text()
     assert bench.main([*base, "--engine", "typed-by-hand"]) == 0
     assert json.loads(path.read_text())["labels"]["engine"] == "typed-by-hand"
+
+
+def test_a_reply_that_settled_before_the_answer_event_is_a_failed_run() -> None:
+    """A stream that pauses longer than the settle window looks finished. If the audit says the
+    answer arrived after the reply's last edit, hop 3 would be negative: count the run as failed
+    rather than publish an undercount."""
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 14_000, T0_MS + 15_000, T0_MS + 15_000],
+        reply_create_ms=T0_MS + 14_000,
+    )
+    run = _run_one(server, FakeClock())  # the answer event in _audit_lines is at +16.5 s
+    assert run.hops is None and run.error is not None
+    assert "before the answer event" in run.error
+
+
+def test_a_failed_join_names_the_unpaired_events() -> None:
+    """So a claim such as "the agent called search instead of answer" can be checked from the
+    results file alone."""
+    rows = [
+        {"ts": _iso(12.0), "event": "resolve", "request_id": "s1", "user_id": "u1"},
+        {"ts": _iso(12.5), "event": "search", "request_id": "s1"},
+    ]
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
+    run = _run_one(server, FakeClock(), audit=lambda: [json.dumps(r) for r in rows])
+    assert run.hops is None and run.error is not None
+    assert "resolve s1" in run.error and "search s1" in run.error

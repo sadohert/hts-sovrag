@@ -146,8 +146,10 @@ def test_answer_check_counts_refusals() -> None:
     assert result.metrics == {
         "dnd.asked": 1,
         "dnd.refused": 1,
+        "dnd.failed": 0,
         "auditor.asked": 1,
         "auditor.refused": 0,
+        "auditor.failed": 0,
     }
     by_principal = {r["principal"]: r for r in result.rows}
     assert by_principal["dnd"] == {
@@ -164,3 +166,37 @@ def test_answer_check_counts_refusals() -> None:
         "answer": "x",
         "citations": [7],
     }
+
+
+def test_answer_check_records_a_generation_error_and_continues() -> None:
+    """One hosted request timing out must not discard the other fifty-nine answers."""
+    from sovrag.generate.llm import GenerationError
+
+    def fake_answer(question: str, principal: Principal) -> Answer:
+        if question == "q2":
+            raise GenerationError("generation failed: Request timed out.")
+        return Answer(
+            question=question,
+            principal=principal.id,
+            mode="hybrid",
+            request_id=None,
+            text="x",
+            citations=(),
+            refused=True,
+            model="m",
+            retrieved_chunk_ids=(),
+            applied_filter=None,
+        )
+
+    items = [
+        LeakItem(i, q, (GoldChunk("oag", 0),), "n")
+        for i, q in (("l1", "q1"), ("l2", "q2"), ("l3", "q3"))
+    ]
+    fn: Callable[[str, Principal], Answer] = fake_answer
+    result = run_leak_answers(items, {"dnd": DND}, fn)
+    assert result.metrics["dnd.asked"] == 3.0
+    assert result.metrics["dnd.refused"] == 2.0
+    assert result.metrics["dnd.failed"] == 1.0
+    failed = [r for r in result.rows if r["id"] == "l2"]
+    assert failed and failed[0]["refused"] is None
+    assert "timed out" in str(failed[0]["error"])
