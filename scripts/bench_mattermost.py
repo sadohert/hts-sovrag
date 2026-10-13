@@ -257,6 +257,29 @@ def run_command(cmd: list[str]) -> str:
     return subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
 
 
+GENERATOR_LABEL_VARS = {
+    "LLM_MODEL": "generator_model",
+    "ENGINE": "engine",
+    "ENGINE_BACKEND": "engine_backend",
+}
+
+
+def generator_labels(run: Callable[[list[str]], str]) -> dict[str, str]:
+    """The generator's model and engine labels, read from the mcp container's environment,
+    which is where the generator actually runs. Only those three variables are read; the key
+    is never touched. Empty when the container cannot be reached."""
+    try:
+        out = run(["docker", "compose", "--profile", "mcp", "exec", "-T", "mcp", "env"])
+    except OSError, subprocess.CalledProcessError:
+        return {}
+    labels: dict[str, str] = {}
+    for line in out.splitlines():
+        name, sep, value = line.partition("=")
+        if sep and name in GENERATOR_LABEL_VARS and value:
+            labels[GENERATOR_LABEL_VARS[name]] = value
+    return labels
+
+
 # --- questions -----------------------------------------------------------------------------
 
 
@@ -540,14 +563,41 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--plugin-precision", default="Q4_K_M")
     parser.add_argument(
-        "--generator-model", default=os.environ.get("LLM_MODEL", "ai/qwen3.5:9b-q4_K_M")
+        "--generator-model",
+        default=None,
+        help="Defaults to LLM_MODEL in the mcp container, then the host's, then Model Runner's.",
     )
     parser.add_argument("--generator-precision", default="Q4_K_M")
     parser.add_argument("--tier", choices=TIERS, default="local")
     parser.add_argument("--billing", choices=BILLING, default="none")
-    parser.add_argument("--engine", default=os.environ.get("ENGINE", "docker-model-runner"))
-    parser.add_argument("--engine-backend", default=os.environ.get("ENGINE_BACKEND", "llama.cpp"))
+    parser.add_argument(
+        "--engine", default=None, help="Defaults to ENGINE in the mcp container, then the host's."
+    )
+    parser.add_argument(
+        "--engine-backend",
+        default=None,
+        help="Defaults to ENGINE_BACKEND in the mcp container, then the host's.",
+    )
     args = parser.parse_args(argv)
+
+    # The generator runs in the mcp container, so its labels come from there unless a flag
+    # says otherwise; a host-side default would label an override run as local.
+    container = generator_labels(run_command)
+    generator_model = (
+        args.generator_model
+        or container.get("generator_model")
+        or os.environ.get("LLM_MODEL")
+        or "ai/qwen3.5:9b-q4_K_M"
+    )
+    engine = (
+        args.engine or container.get("engine") or os.environ.get("ENGINE") or "docker-model-runner"
+    )
+    engine_backend = (
+        args.engine_backend
+        or container.get("engine_backend")
+        or os.environ.get("ENGINE_BACKEND")
+        or "llama.cpp"
+    )
 
     if args.cold:
         loaded = models_loaded(run_command(["docker", "model", "ps"]))
@@ -562,12 +612,12 @@ def main(argv: list[str] | None = None) -> int:
         configuration=args.configuration,
         plugin_model=args.plugin_model,
         plugin_precision=args.plugin_precision,
-        generator_model=args.generator_model,
+        generator_model=generator_model,
         generator_precision=args.generator_precision,
         tier=args.tier,
         billing=args.billing,
-        engine=args.engine,
-        engine_backend=args.engine_backend,
+        engine=engine,
+        engine_backend=engine_backend,
         hardware=hardware(run_command),
     )
     questions = load_questions(GOLDEN, QUESTION_IDS[:1] if args.cold else QUESTION_IDS)

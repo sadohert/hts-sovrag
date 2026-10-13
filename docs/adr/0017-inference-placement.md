@@ -41,7 +41,8 @@ to the plugin's loop on a laptop-sized model without ever being timed.
 - The benchmark runner lives in `scripts/`, outside the product, and reads the audit file; a
   change to the audit line's `ts`, `event`, `user_id` or `request_id` fields is a benchmark
   change.
-- Keys live in `.env` only. The seed script and the runner never print them, and results files
-  carry labels, not credentials.
+- Keys are read from `.env`. The plugin's key is written into the plugin's settings inside
+  Mattermost, where the plugin needs it to call the endpoint; sovrag's own key reaches only the
+  container environment. Neither is printed, committed, or written into a results file.
 - A hosted generator sees public documents with synthetic labels (ADR 0003). The sovereignty
   paragraph describes what would happen with real markings, not what happened here.

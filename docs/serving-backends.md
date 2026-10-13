@@ -25,8 +25,11 @@ passes, and a third pass where a run failed (A). Fewer than five warm runs is no
 
 ### Reproduce each row
 
-The seed script and the runner read the environment, not `.env`, so export it first. Keys stay
-in `.env`.
+The seed script and the runner read the environment, not `.env`, so export it first. The plugin's
+key is written into the plugin's settings in Mattermost; nothing prints or commits it. The runner
+reads the generator's model and engine labels from the `mcp` container, so a row cannot be
+labelled local while the override points the generator at Baseten; `--generator-model`,
+`--engine` and `--engine-backend` override that when given.
 
 ```
 set -a; . ./.env; set +a
@@ -50,9 +53,8 @@ uv run python scripts/bench_mattermost.py --configuration B-plugin-baseten --war
 # C-both-baseten: BASETEN_MODEL and BASETEN_API_KEY in .env; no cold state
 docker compose -f compose.yaml -f compose.baseten.yaml --profile mattermost --profile mcp up -d mcp
 uv run python scripts/bench_mattermost.py --configuration C-both-baseten --warm --passes 2 \
-  --plugin-model "$BASETEN_MODEL" --plugin-precision fp8 --generator-model "$BASETEN_MODEL" \
-  --generator-precision fp8 --tier model-apis --billing per-token \
-  --engine baseten-model-apis --engine-backend managed
+  --plugin-model "$BASETEN_MODEL" --plugin-precision fp8 --generator-precision fp8 \
+  --tier model-apis --billing per-token   # generator model and engine labels come from the container
 docker compose --profile mattermost --profile mcp up -d mcp     # generator back on Model Runner
 
 # D-dedicated: AGENT_LLM_URL at the deployment's .../environments/production/sync/v1

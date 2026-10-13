@@ -580,3 +580,75 @@ def test_main_writes_the_results_file_and_prints_the_row(
     data = json.loads(files[0].read_text())
     assert data["summary"]["warm"]["n"] == 2 and data["labels"]["configuration"] == "A-local"
     assert "| A-local |" in capsys.readouterr().out
+
+
+CONTAINER_ENV = (
+    "PATH=/usr/bin\nLLM_BASE_URL=https://inference.baseten.co/v1\nLLM_MODEL=zai-org/GLM-5.3-Flash\n"
+    "ENGINE=baseten-model-apis\nENGINE_BACKEND=managed\nLLM_API_KEY=should-never-be-read\n"
+)
+
+
+def test_generator_labels_come_from_the_mcp_container() -> None:
+    """The generator runs inside the mcp container, so its model and engine labels are read
+    from there; a run cannot be labelled local while the override points it at Baseten."""
+    labels = bench.generator_labels(lambda cmd: CONTAINER_ENV)
+    assert labels == {
+        "generator_model": "zai-org/GLM-5.3-Flash",
+        "engine": "baseten-model-apis",
+        "engine_backend": "managed",
+    }
+
+
+def test_generator_labels_are_empty_when_the_container_is_unreachable() -> None:
+    import subprocess
+
+    def down(cmd: list[str]) -> str:
+        raise subprocess.CalledProcessError(1, cmd)
+
+    assert bench.generator_labels(down) == {}
+
+
+def test_main_labels_the_generator_from_the_container_unless_flags_say_otherwise(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
+    clock = FakeClock()
+    golden = tmp_path / "retrieval.jsonl"
+    golden.write_text(
+        json.dumps({"id": "r01", "question": "q", "gold": [], "reference_answer": "", "notes": ""})
+        + "\n"
+    )
+
+    def run_command(cmd: list[str]) -> str:
+        if cmd[:2] == ["docker", "compose"] and cmd[-1] == "env":
+            return CONTAINER_ENV
+        return "\n".join(_audit_lines()) if cmd[:2] == ["docker", "compose"] else "x"
+
+    monkeypatch.setattr(bench, "GOLDEN", golden)
+    monkeypatch.setattr(bench, "RESULTS_DIR", tmp_path)
+    monkeypatch.setattr(bench, "QUESTION_IDS", ("r01",))
+    monkeypatch.setattr(bench, "run_command", run_command)
+    monkeypatch.setattr(bench, "_transport", lambda: httpx.MockTransport(server))
+    monkeypatch.setattr(bench, "_clock", lambda: clock)
+    monkeypatch.delenv("ENGINE", raising=False)
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+    base = [
+        "--configuration",
+        "C-both-baseten",
+        "--warm",
+        "--passes",
+        "1",
+        "--url",
+        "http://mm.test",
+    ]
+    assert bench.main(base) == 0
+    (path,) = tmp_path.glob("bench-mattermost-C-both-baseten-*.json")
+    labels = json.loads(path.read_text())["labels"]
+    assert labels["generator_model"] == "zai-org/GLM-5.3-Flash"
+    assert labels["engine"] == "baseten-model-apis" and labels["engine_backend"] == "managed"
+    assert "should-never-be-read" not in path.read_text()
+    assert bench.main([*base, "--engine", "typed-by-hand"]) == 0
+    assert json.loads(path.read_text())["labels"]["engine"] == "typed-by-hand"
