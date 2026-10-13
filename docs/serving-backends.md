@@ -82,6 +82,26 @@ entitlement filter did not move. The direct path's mean latency in the generatio
 4.12 s to 0.90 s. One hosted request timed out during the first leak run with
 retries off; the run was repeated with `LLM_MAX_RETRIES=2`, a documented setting, and completed.
 
+## What the numbers say
+
+All measured on 2026-10-13, warm medians unless stated.
+
+- **The hand-built pipeline is not the bottleneck.** In the all-local configuration hop 2, which
+  is everything sovrag does, is 4.6 s of a 16.8 s reply. The agent's two hops around it are
+  11.8 s. Cold, the reply is 40.2 s and sovrag's share is 6.7 s.
+- **The agent loop on a laptop-sized model is.** Moving only the plugin's model to Baseten (B)
+  takes hop 1 from 5.5 s to 1.0 s and hop 3 from 6.3 s to 2.0 s, and the reply from 16.8 s to
+  8.3 s, with sovrag untouched. The hosted model also called the right tool on every run; the
+  local one called `search` instead of `answer` twice in fifteen.
+- **The swap costs configuration, not code.** B is four environment variables and a re-seed; C
+  is an override file and three more. No Python changed between the rows, and the leak suite
+  stayed at zero in every configuration.
+- **Moving the generator too (C)** takes hop 2 from 4.2 s to 0.8 s and the reply to 3.8 s. What
+  remains in hop 2 is embedding and retrieval on the laptop. Quality held: faithfulness 1.000 in
+  both rows, correctness 1.000 against 0.966, one more false refusal.
+- **What the local row buys** is that no question and no entitled chunk leaves the machine. The
+  next section is about that.
+
 ## Configurations
 
 | Configuration | Plugin model (hops 1 and 3) | sovrag generator (hop 2) | How |
