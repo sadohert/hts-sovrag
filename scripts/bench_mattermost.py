@@ -333,15 +333,19 @@ def ask(
     reply: dict[str, Any] | None = None
     while clock() - started < timeout_s:
         sleep(poll_s)
+        # The plugin also creates empty status posts in the same second as the question and
+        # keeps editing them; the reply is the earliest bot post that carries text.
         replies = [
             p
             for p in mm.posts_since(channel_id, post_ms - 1)
-            if p.get("user_id") == bot_user_id and int(p.get("create_at", 0)) >= post_ms
+            if p.get("user_id") == bot_user_id
+            and int(p.get("create_at", 0)) >= post_ms
+            and str(p.get("message") or "").strip()
         ]
         if replies:
             reply = min(replies, key=lambda p: int(p["create_at"]))
             samples.append((clock(), int(reply["update_at"])))
-            if reply.get("message") and settled(samples, settle_s):
+            if settled(samples, settle_s):
                 return post_ms, int(reply["create_at"]), int(reply["update_at"])
     raise BenchError(f"timeout after {timeout_s:.0f}s waiting for the reply to settle")
 

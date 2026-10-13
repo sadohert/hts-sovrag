@@ -275,11 +275,17 @@ class FakeMattermost:
     post, and the channel's posts as the assistant's reply streams in over successive polls."""
 
     def __init__(
-        self, *, reply_updates: list[int], reply_create_ms: int, stale_reply: bool = False
+        self,
+        *,
+        reply_updates: list[int],
+        reply_create_ms: int,
+        stale_reply: bool = False,
+        placeholders: bool = False,
     ) -> None:
         self.reply_updates = reply_updates  # update_at seen on poll 1, 2, ...
         self.reply_create_ms = reply_create_ms
         self.stale_reply = stale_reply
+        self.placeholders = placeholders  # the plugin's empty status posts, edited every poll
         self.polls = 0
         self.posted: list[str] = []
 
@@ -307,6 +313,15 @@ class FakeMattermost:
                     "update_at": T0_MS - 50_000,
                     "message": "stale",
                 }
+            if self.placeholders:
+                for i in ("ph1", "ph2"):
+                    posts[i] = {
+                        "id": i,
+                        "user_id": "bot1",
+                        "create_at": T0_MS + 1,
+                        "update_at": T0_MS + 1000 * self.polls,
+                        "message": "",
+                    }
             if self.polls <= len(self.reply_updates):
                 posts["r1"] = {
                     "id": "r1",
@@ -386,6 +401,19 @@ def test_ask_returns_the_post_time_and_the_reply_marks_once_settled() -> None:
     marks = _ask(server, FakeClock(), question="How much for NORAD?")
     assert marks == (T0_MS, T0_MS + 17_000, T0_MS + 40_000)
     assert server.posted == ["How much for NORAD?"]
+
+
+def test_ask_ignores_the_plugins_empty_placeholder_posts() -> None:
+    """Seen live: the plugin creates two empty posts in the same second as the question and
+    keeps editing them; the earliest bot post is never the reply. The reply is the bot post
+    with text."""
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+        placeholders=True,
+    )
+    marks = _ask(server, FakeClock())
+    assert marks == (T0_MS, T0_MS + 17_000, T0_MS + 40_000)
 
 
 def test_a_reply_older_than_the_question_is_ignored() -> None:
