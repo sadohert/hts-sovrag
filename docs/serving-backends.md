@@ -10,7 +10,9 @@ measured, observed or estimated. Method and labels: ADR 0017.
 A question asked in Mattermost passes through three hops:
 
 1. **The agent decides.** The Agents plugin's model reads the conversation and decides to call
-   the `answer` tool. From the person's post to the `resolve` audit event.
+   the `answer` tool. From the person's post to the `resolve` audit event of the call that
+   produced the answer. When the agent calls `search` first, that round trip (sovrag's embed
+   and retrieve, then a second agent turn) is inside hop 1.
 2. **sovrag answers.** Embed, hybrid retrieval under the entitlement filter, generate. From the
    `resolve` event to the `answer` event.
 3. **The agent writes.** The plugin's model writes the reply from the tool result, token by

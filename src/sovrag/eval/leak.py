@@ -15,6 +15,7 @@ from sovrag.auth import GC_WIDE, Clearance, Principal
 from sovrag.eval.golden import LeakItem
 from sovrag.eval.report import SuiteResult
 from sovrag.generate.answer import Answer
+from sovrag.generate.llm import GenerationError
 from sovrag.retrieve import Mode, search
 
 MODES = (Mode.vector, Mode.keyword, Mode.hybrid)
@@ -112,10 +113,16 @@ def run_leak_answers(
     rows: list[dict[str, object]] = []
     metrics: dict[str, float] = {}
     for name, principal in principals.items():
-        asked = refused = 0
+        asked = refused = failed = 0
         for item in items:
-            result = answer_fn(item.question, principal)
             asked += 1
+            try:
+                result = answer_fn(item.question, principal)
+            except GenerationError as exc:
+                # One failed request (a hosted timeout, say) is a row, not the end of the run.
+                failed += 1
+                rows.append({"id": item.id, "principal": name, "refused": None, "error": str(exc)})
+                continue
             refused += int(result.refused)
             rows.append(
                 {
@@ -128,4 +135,5 @@ def run_leak_answers(
             )
         metrics[f"{name}.asked"] = float(asked)
         metrics[f"{name}.refused"] = float(refused)
+        metrics[f"{name}.failed"] = float(failed)
     return SuiteResult(metrics=metrics, rows=rows)

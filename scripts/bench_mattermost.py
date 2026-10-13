@@ -109,6 +109,25 @@ def settled(samples: Sequence[tuple[float, int]], settle_s: float) -> bool:
     return last_t - since >= settle_s
 
 
+def unpaired_events(
+    lines: Iterable[str], *, user_id: str, after_ms: int, before_ms: int
+) -> list[str]:
+    """`event request_id` for every event in the window that belongs to this user's tool calls:
+    the resolve events for the user, and any event sharing one of their request ids."""
+    events = [json.loads(line) for line in lines if line.strip()]
+    lo, hi = ms_to_s(after_ms), ms_to_s(before_ms)
+    mine = {
+        e.get("request_id")
+        for e in events
+        if e.get("event") == "resolve"
+        and e.get("user_id") == user_id
+        and lo <= iso_to_s(e["ts"]) <= hi
+    }
+    return [
+        f"{e.get('event')} {e.get('request_id')}" for e in events if e.get("request_id") in mine
+    ]
+
+
 def join_audit(
     lines: Iterable[str], *, user_id: str, after_ms: int, before_ms: int
 ) -> tuple[dict[str, Any], dict[str, Any]] | None:
@@ -437,16 +456,29 @@ def run_one(
     try:
         lines = audit()
         joined = join_audit(lines, user_id=user_id, after_ms=post_ms, before_ms=last_ms + 1000)
+        if joined is None:
+            seen = unpaired_events(
+                lines, user_id=user_id, after_ms=post_ms, before_ms=last_ms + 1000
+            )
+            run.error = (
+                "no resolve/answer pair in the audit log for this run; events in the window: "
+                + (", ".join(seen) or "none")
+            )
+            return run
     except RUN_ERRORS as exc:
         run.error = f"{type(exc).__name__}: {exc}"
-        return run
-    if joined is None:
-        run.error = "no resolve/answer pair in the audit log for this run"
         return run
     resolve, answer = joined
     run.request_id = str(resolve["request_id"])
     run.refused = bool(answer.get("refused"))
     run.resolve_ts, run.answer_ts = str(resolve["ts"]), str(answer["ts"])
+    if ms_to_s(last_ms) < iso_to_s(run.answer_ts):
+        # The reply settled before the answer event: a pause in the stream longer than the
+        # settle window was taken as the end. Hop 3 would be negative; do not publish it.
+        run.error = (
+            "the reply's last edit is before the answer event; the settle window was too short"
+        )
+        return run
     run.hops = hops(
         post_ms=post_ms,
         resolve_ts=run.resolve_ts,

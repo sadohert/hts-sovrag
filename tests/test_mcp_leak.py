@@ -231,7 +231,9 @@ async def test_answer_path_runs_the_suite_as_each_principal(
     assert result.metrics == {
         "public.asked": 3,
         "public.refused": 3,
+        "public.failed": 0,
         f"{POSITIVE_CONTROL}.asked": 3,
         f"{POSITIVE_CONTROL}.refused": 0,
+        f"{POSITIVE_CONTROL}.failed": 0,
     }
     assert sorted(seen) == sorted((n, i.question) for n in names for i in items[:3])
