@@ -46,6 +46,10 @@ class BenchError(Exception):
     pass
 
 
+# Errors that end one run, not the session: the transport, the audit read, a bad audit line.
+RUN_ERRORS = (httpx.HTTPError, subprocess.CalledProcessError, OSError, ValueError, KeyError)
+
+
 # --- timing ------------------------------------------------------------------------------
 
 
@@ -168,13 +172,17 @@ def summarise(runs: Sequence[Run]) -> dict[str, dict[str, float | int]]:
     the successful ones. A state with no successful run is absent."""
     out: dict[str, dict[str, float | int]] = {}
     for state in ("cold", "warm"):
-        ok = [r.hops for r in runs if r.state == state and r.hops is not None]
-        if not ok:
+        mine = [r for r in runs if r.state == state]
+        if not mine:
             continue
+        ok = [r.hops for r in mine if r.hops is not None]
         entry: dict[str, float | int] = {
             "n": len(ok),
-            "failed": sum(1 for r in runs if r.state == state and r.hops is None),
+            "failed": sum(1 for r in mine if r.hops is None),
         }
+        if not ok:
+            out[state] = entry  # every run failed: reported, not dropped
+            continue
         for name in HOP_NAMES:
             values = [getattr(h, name) for h in ok]
             entry[f"{name}_mean"] = round(statistics.fmean(values), 2)
@@ -192,7 +200,11 @@ def table_row(labels: Labels, summary: dict[str, dict[str, float | int]]) -> str
     cold = summary.get("cold")
 
     def cell(entry: dict[str, float | int] | None, key: str) -> str:
-        return f"{entry[key]:.1f}" if entry is not None and key in entry else "n/a"
+        if entry is not None and key in entry:
+            return f"{entry[key]:.1f}"
+        if entry is not None and entry.get("failed"):
+            return f"failed ({entry['failed']})"  # the state exists; its runs failed
+        return "n/a"  # the state does not exist for this tier
 
     return (
         f"| {labels.configuration}"
@@ -395,8 +407,16 @@ def run_one(
     except BenchError as exc:
         run.error = str(exc)
         return run
+    except RUN_ERRORS as exc:
+        run.error = f"{type(exc).__name__}: {exc}"
+        return run
     run.post_ms, run.reply_first_ms, run.reply_last_ms = post_ms, first_ms, last_ms
-    joined = join_audit(audit(), user_id=user_id, after_ms=post_ms, before_ms=last_ms + 1000)
+    try:
+        lines = audit()
+        joined = join_audit(lines, user_id=user_id, after_ms=post_ms, before_ms=last_ms + 1000)
+    except RUN_ERRORS as exc:
+        run.error = f"{type(exc).__name__}: {exc}"
+        return run
     if joined is None:
         run.error = "no resolve/answer pair in the audit log for this run"
         return run

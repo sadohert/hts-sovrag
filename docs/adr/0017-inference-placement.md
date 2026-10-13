@@ -30,9 +30,9 @@ to the plugin's loop on a laptop-sized model without ever being timed.
   and `answer` audit events, and the reply's last edit. Nothing is added to the measured path.
 - Baseten has two product shapes and the write-up covers both: Model APIs (shared, always
   warm, per-token, a curated list) and dedicated deployments (any model, scale-to-zero, a cold
-  start measured in minutes, per GPU-minute). Model APIs is the measured backend; the dedicated
-  tier is measured once if an evening allows, and otherwise characterised from documentation
-  and marked as such.
+  start measured in minutes, per GPU-minute). Model APIs is the measured backend for the rows
+  that move sovrag's generator; the dedicated tier was measured with the plugin's model only,
+  once warm and once as a scale-to-zero wake, and then deleted.
 
 ## Consequences
 

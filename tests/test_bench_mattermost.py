@@ -437,7 +437,64 @@ def test_a_timeout_is_a_failed_run_not_a_missing_one() -> None:
     server = FakeMattermost(reply_updates=[], reply_create_ms=0)
     run = _run_one(server, FakeClock(), timeout_s=5.0)
     assert run.hops is None and run.error is not None and "timeout" in run.error
-    assert bench.summarise([run]) == {}
+    # A state whose every run failed is still reported, not dropped.
+    assert bench.summarise([run]) == {"warm": {"n": 0, "failed": 1}}
+
+
+def test_table_row_shows_a_failed_cold_run_instead_of_na() -> None:
+    """n/a means the tier has no cold state; a cold run that failed must say so instead."""
+    s = bench.summarise([_run("warm", 1.0, 1.0, 1.0)] * 5 + [_run("cold", 0, 0, 0, failed=True)])
+    cells = [c.strip() for c in bench.table_row(_labels(), s).strip().strip("|").split("|")]
+    assert cells[-2] == "failed (1)" and cells[-1] == "5"
+
+
+class RaisingTransport(httpx.BaseTransport):
+    """Answers like the fake server until the nth request, then drops the connection."""
+
+    def __init__(self, server: FakeMattermost, fail_at: int) -> None:
+        self.server, self.fail_at, self.count = server, fail_at, 0
+
+    def handle_request(self, request: httpx.Request) -> httpx.Response:
+        self.count += 1
+        if self.count >= self.fail_at:
+            raise httpx.ConnectError("connection reset")
+        return self.server(request)
+
+
+def test_a_transport_error_mid_run_is_a_failed_run_not_an_abort() -> None:
+    server = FakeMattermost(reply_updates=[T0_MS + 17_000], reply_create_ms=T0_MS + 17_000)
+    mm = bench.Mattermost("http://mm.test", transport=RaisingTransport(server, fail_at=3))
+    assert mm.login("analyst_dnd", "pw") == "u1"
+    clock = FakeClock()
+    run = bench.run_one(
+        mm,
+        channel_id="dm1",
+        bot_user_id="bot1",
+        user_id="u1",
+        question_id="r01",
+        question="q",
+        state="warm",
+        audit=_audit_lines,
+        settle_s=3.0,
+        timeout_s=120.0,
+        poll_s=1.0,
+        clock=clock,
+        sleep=clock.sleep,
+    )
+    assert run.hops is None and run.error is not None and "ConnectError" in run.error
+
+
+def test_an_audit_read_failure_is_a_failed_run_not_an_abort() -> None:
+    import subprocess
+
+    def broken_audit() -> list[str]:
+        raise subprocess.CalledProcessError(1, ["docker", "compose", "exec"])
+
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000], reply_create_ms=T0_MS + 17_000
+    )
+    run = _run_one(server, FakeClock(), audit=broken_audit)
+    assert run.hops is None and run.error is not None and "CalledProcessError" in run.error
 
 
 def test_a_run_without_audit_lines_is_failed_with_a_reason() -> None:

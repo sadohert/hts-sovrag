@@ -420,3 +420,35 @@ def test_main_defaults_the_plugin_to_model_runner(monkeypatch: pytest.MonkeyPatc
     assert seen["llm_model"] == "ai/qwen3.5:9b-q4_K_M"
     assert seen["llm_api_key"] == "not-needed"
     assert seen["llm_service_name"] == "Docker Model Runner"
+
+
+def test_a_generated_secret_is_refused_on_a_server_that_already_has_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Re-seeding without MCP_SHARED_SECRET would write a fresh secret into the plugin that
+    the running MCP server does not know, and every tool call would get 401. Refuse."""
+    server = FakeMattermost()
+    _seed_against(server, monkeypatch)
+    with pytest.raises(seed.SeedError, match="MCP_SHARED_SECRET"):
+        _seed_against(server, monkeypatch, shared_secret="fresh", secret_generated=True)
+    # An explicit new secret is a deliberate rotation and goes through.
+    _seed_against(server, monkeypatch, shared_secret="rotated", secret_generated=False)
+
+
+def test_a_generated_secret_is_fine_on_a_fresh_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    _seed_against(FakeMattermost(), monkeypatch, shared_secret="fresh", secret_generated=True)
+
+
+def test_main_marks_the_secret_generated_only_when_neither_flag_nor_env_gives_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: dict[str, Any] = {}
+    monkeypatch.setattr(seed, "seed", _fake_seed(seen))
+    monkeypatch.delenv("MCP_SHARED_SECRET", raising=False)
+    assert seed.main(["--dry-run"]) == 0
+    assert seen["secret_generated"] is True and len(seen["shared_secret"]) > 20
+    monkeypatch.setenv("MCP_SHARED_SECRET", "from-env")
+    assert seed.main(["--dry-run"]) == 0
+    assert seen["secret_generated"] is False and seen["shared_secret"] == "from-env"
+    assert seed.main(["--dry-run", "--shared-secret", "flag"]) == 0
+    assert seen["secret_generated"] is False and seen["shared_secret"] == "flag"

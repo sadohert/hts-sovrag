@@ -20,19 +20,60 @@ The runner (`scripts/bench_mattermost.py`) posts a question as `analyst_dnd`, wa
 reply to settle, and joins the Mattermost timestamps with the audit events by user id and
 request id. Hop 1 includes Mattermost delivering the post to the plugin and hop 3 the final
 edit; both are milliseconds. Cold is the first run after `docker model unload --all`. Warm rows
-are ten runs: five questions from the retrieval golden set (`r01` to `r04`, `r09`), two passes.
-Fewer than five warm runs is not a row.
+are at least ten runs: five questions from the retrieval golden set (`r01` to `r04`, `r09`), two
+passes, and a third pass where a run failed (A). Fewer than five warm runs is not a row.
+
+### Reproduce each row
+
+The seed script and the runner read the environment, not `.env`, so export it first. Keys stay
+in `.env`.
 
 ```
+set -a; . ./.env; set +a
+docker compose --profile mattermost --profile mcp up -d --wait
+
+# A-local: plugin and generator on Docker Model Runner
+env -u AGENT_LLM_URL -u AGENT_LLM_MODEL -u AGENT_LLM_API_KEY -u AGENT_LLM_SERVICE_NAME \
+  uv run python scripts/seed_mattermost.py
+docker model unload --all
 uv run python scripts/bench_mattermost.py --configuration A-local --cold
 uv run python scripts/bench_mattermost.py --configuration A-local --warm --passes 2
+
+# B-plugin-baseten: AGENT_LLM_URL, AGENT_LLM_MODEL, AGENT_LLM_API_KEY, AGENT_LLM_SERVICE_NAME in .env
+uv run python scripts/seed_mattermost.py
+docker model unload --all
+uv run python scripts/bench_mattermost.py --configuration B-plugin-baseten --cold \
+  --plugin-model "$BASETEN_MODEL" --plugin-precision fp8 --tier model-apis --billing per-token
+uv run python scripts/bench_mattermost.py --configuration B-plugin-baseten --warm --passes 2 \
+  --plugin-model "$BASETEN_MODEL" --plugin-precision fp8 --tier model-apis --billing per-token
+
+# C-both-baseten: BASETEN_MODEL and BASETEN_API_KEY in .env; no cold state
+docker compose -f compose.yaml -f compose.baseten.yaml --profile mattermost --profile mcp up -d mcp
+uv run python scripts/bench_mattermost.py --configuration C-both-baseten --warm --passes 2 \
+  --plugin-model "$BASETEN_MODEL" --plugin-precision fp8 --generator-model "$BASETEN_MODEL" \
+  --generator-precision fp8 --tier model-apis --billing per-token \
+  --engine baseten-model-apis --engine-backend managed
+docker compose --profile mattermost --profile mcp up -d mcp     # generator back on Model Runner
+
+# D-dedicated: AGENT_LLM_URL at the deployment's .../environments/production/sync/v1
+uv run python scripts/seed_mattermost.py
+uv run python scripts/bench_mattermost.py --configuration D-dedicated --warm --passes 2 \
+  --plugin-model Qwen/Qwen3.5-9B --plugin-precision bf16 --tier dedicated --billing per-gpu-minute
+# wait for the deployment to report SCALED_TO_ZERO, then
+docker model unload --all
+uv run python scripts/bench_mattermost.py --configuration D-dedicated --cold --timeout-s 480 \
+  --plugin-model Qwen/Qwen3.5-9B --plugin-precision bf16 --tier dedicated --billing per-gpu-minute
 ```
+
+The seed script refuses to run without a shared secret on a server that already has one, because
+a fresh secret would leave the MCP server answering 401 to the plugin.
 
 ## Results
 
 Hardware for local rows is read at run time and recorded in each results file under
 `eval/results/bench-mattermost-*.json`. Values are warm medians in seconds; `cold` is the
-cold run's end-to-end time; `n` is warm runs.
+cold run's end-to-end time; `n` is warm runs. In those files the `engine` and `engine_backend`
+labels describe sovrag's generator; the plugin's engine is in each row's notes.
 
 | Configuration | Plugin model | sovrag generator | Tier | Billing | Hop 1 | Hop 2 | Hop 3 | End to end | Cold | n |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -103,8 +144,8 @@ All measured on 2026-10-13, warm medians unless stated.
   8.3 s, with sovrag untouched. The hosted model also called the right tool on every run; the
   local one called `search` instead of `answer` twice in fifteen.
 - **The swap costs configuration, not code.** B is four environment variables and a re-seed; C
-  is an override file and three more. No Python changed between the rows, and the leak suite
-  stayed at zero in every configuration.
+  is an override file and three more. No Python changed between the rows. The leak suite stayed
+  at zero where the generator moved (C); B and D change nothing the leak suite exercises.
 - **Moving the generator too (C)** takes hop 2 from 4.2 s to 0.8 s and the reply to 3.8 s. What
   remains in hop 2 is embedding and retrieval on the laptop. Quality held: faithfulness 1.000 in
   both rows, correctness 1.000 against 0.966, one more false refusal.
@@ -157,12 +198,13 @@ last Model APIs run (the compatibility probes, 21 cold or warm Mattermost runs i
 |---|---|---|
 | Total spend | $0.00 | $0.00 charged, $0.05 at list price (covered by the account's credit) |
 | Model APIs tokens | 504 input, 114 output | 274,483 uncached input, 1,792 cached input, 9,348 output |
-| Dedicated inference | $0.00, 0 billable minutes | $0.00, 0 billable minutes |
+| Dedicated inference | $0.00, 0 billable minutes | $0.22 for 2 billable minutes as the page stood when read, minutes still accruing (observed); the replica was up for about 25 minutes in all, so the settled figure should be about $2.70 at the quoted rate (estimated) |
 
 Quoted list prices for the chosen model, GLM-5.3-Flash: $0.15 per million input tokens and
 $0.50 per million output tokens (observed in the catalog on the same day). The benchmark is
 input-heavy: every tool call carries the retrieved chunks, and every reply carries the tool
-result back, so input is thirty times output here.
+result back, so input is thirty times output here. The dedicated H100 is quoted at $0.1083 per
+minute while a replica is up; the account carried a $20 monthly budget cap during the runs.
 
 ## What is not measured
 
