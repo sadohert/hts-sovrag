@@ -55,6 +55,8 @@ The response is the same object `sovrag ask --json` prints: the answer with `[n]
 
 To watch the audit log while it runs, `docker compose --profile observability up -d` adds Loki, Alloy and Grafana; the dashboard is at `http://localhost:3000/d/sovrag-audit`: counts of answers, refusals and resolutions, a table of every audit line with the principal, the outcome and what that principal may see, and a table of refusals. Grafana is bound to this host only and opens anonymously as a viewer, with its default administrator login left in place; both are local-demo settings, wrong anywhere else. See ADR 0016.
 
+Where the models run is configuration: `docs/serving-backends.md` measures the three hops of a Mattermost reply on this laptop and with the plugin's model, then sovrag's generator, moved to Baseten, and says what moving inference off the machine means for sovereignty. See ADR 0017.
+
 ## Measure it
 
 ```
