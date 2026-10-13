@@ -311,7 +311,9 @@ def test_join_ignores_other_users_and_events_outside_the_window() -> None:
         is None
     )
     assert (
-        bench.join_audit(_audit_lines(), user_id="u1", after_ms=T0_MS + 20_000, before_ms=T0_MS + 40_000)
+        bench.join_audit(
+            _audit_lines(), user_id="u1", after_ms=T0_MS + 20_000, before_ms=T0_MS + 40_000
+        )
         is None
     )
 ```
@@ -452,7 +454,10 @@ def test_table_row_names_every_label_and_the_medians() -> None:
 
 
 def test_table_row_says_na_without_a_cold_run() -> None:
-    row = bench.table_row(_labels(tier="model-apis", billing="per-token"), bench.summarise([_run("warm", 1.0, 1.0, 1.0)]))
+    row = bench.table_row(
+        _labels(tier="model-apis", billing="per-token"),
+        bench.summarise([_run("warm", 1.0, 1.0, 1.0)]),
+    )
     assert "| n/a |" in row
 
 
@@ -496,7 +501,9 @@ def test_load_questions_keeps_the_requested_order(tmp_path: Path) -> None:
     golden = tmp_path / "retrieval.jsonl"
     golden.write_text(
         "\n".join(
-            json.dumps({"id": i, "question": f"Q {i}", "gold": [], "reference_answer": "", "notes": ""})
+            json.dumps(
+                {"id": i, "question": f"Q {i}", "gold": [], "reference_answer": "", "notes": ""}
+            )
             for i in ("r01", "r02", "r09", "r03")
         )
         + "\n"
@@ -612,14 +619,16 @@ def hardware(run: Callable[[list[str]], str]) -> dict[str, str]:
     def q(cmd: list[str]) -> str:
         try:
             return run(cmd).strip()
-        except (OSError, subprocess.CalledProcessError):
+        except OSError, subprocess.CalledProcessError:
             return "unknown"
 
     memsize = q(["sysctl", "-n", "hw.memsize"])
     memory_gb = str(int(memsize) // 1024**3) if memsize.isdigit() else "unknown"
     model_runner = q(["docker", "model", "version"])
     if model_runner != "unknown":
-        versions = [w for line in model_runner.splitlines() if "Version" in line for w in line.split()]
+        versions = [
+            w for line in model_runner.splitlines() if "Version" in line for w in line.split()
+        ]
         model_runner = versions[-1] if versions else "unknown"
     return {
         "machine": q(["sysctl", "-n", "hw.model"]),
@@ -692,7 +701,9 @@ class FakeMattermost:
     """Enough of the REST API for one question: login, user lookup, the direct channel, the
     post, and the channel's posts as the assistant's reply streams in over successive polls."""
 
-    def __init__(self, *, reply_updates: list[int], reply_create_ms: int, stale_reply: bool = False) -> None:
+    def __init__(
+        self, *, reply_updates: list[int], reply_create_ms: int, stale_reply: bool = False
+    ) -> None:
         self.reply_updates = reply_updates  # update_at seen on poll 1, 2, ...
         self.reply_create_ms = reply_create_ms
         self.stale_reply = stale_reply
@@ -702,7 +713,9 @@ class FakeMattermost:
     def __call__(self, request: httpx.Request) -> httpx.Response:
         path, method = request.url.path, request.method
         if path == "/api/v4/users/login":
-            return httpx.Response(200, json={"id": "u1", "username": "analyst_dnd"}, headers={"Token": "tok"})
+            return httpx.Response(
+                200, json={"id": "u1", "username": "analyst_dnd"}, headers={"Token": "tok"}
+            )
         if path == "/api/v4/users/username/sovrag":
             return httpx.Response(200, json={"id": "bot1"})
         if path == "/api/v4/channels/direct":
@@ -714,11 +727,29 @@ class FakeMattermost:
             self.polls += 1
             posts: dict[str, Any] = {}
             if self.stale_reply:
-                posts["old"] = {"id": "old", "user_id": "bot1", "create_at": T0_MS - 60_000, "update_at": T0_MS - 50_000, "message": "stale"}
+                posts["old"] = {
+                    "id": "old",
+                    "user_id": "bot1",
+                    "create_at": T0_MS - 60_000,
+                    "update_at": T0_MS - 50_000,
+                    "message": "stale",
+                }
             if self.polls <= len(self.reply_updates):
-                posts["r1"] = {"id": "r1", "user_id": "bot1", "create_at": self.reply_create_ms, "update_at": self.reply_updates[self.polls - 1], "message": "x" * self.polls}
+                posts["r1"] = {
+                    "id": "r1",
+                    "user_id": "bot1",
+                    "create_at": self.reply_create_ms,
+                    "update_at": self.reply_updates[self.polls - 1],
+                    "message": "x" * self.polls,
+                }
             elif self.reply_updates:
-                posts["r1"] = {"id": "r1", "user_id": "bot1", "create_at": self.reply_create_ms, "update_at": self.reply_updates[-1], "message": "done"}
+                posts["r1"] = {
+                    "id": "r1",
+                    "user_id": "bot1",
+                    "create_at": self.reply_create_ms,
+                    "update_at": self.reply_updates[-1],
+                    "message": "done",
+                }
             return httpx.Response(200, json={"order": list(posts), "posts": posts})
         return httpx.Response(500, json={"message": f"unexpected {method} {path}"})
 
@@ -741,7 +772,10 @@ def _client(server: FakeMattermost) -> Any:
 
 
 def test_ask_returns_the_post_time_and_the_reply_marks_once_settled() -> None:
-    server = FakeMattermost(reply_updates=[T0_MS + 17_000, T0_MS + 30_000, T0_MS + 40_000], reply_create_ms=T0_MS + 17_000)
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 30_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
     clock = FakeClock()
     marks = bench.ask(
         _client(server),
@@ -776,7 +810,10 @@ def test_a_reply_older_than_the_question_is_ignored() -> None:
 
 
 def test_run_one_joins_the_audit_and_computes_hops() -> None:
-    server = FakeMattermost(reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000], reply_create_ms=T0_MS + 17_000)
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
     clock = FakeClock()
     run = bench.run_one(
         _client(server),
@@ -821,7 +858,9 @@ def test_a_timeout_is_a_failed_run_not_a_missing_one() -> None:
 
 
 def test_a_run_without_audit_lines_is_failed_with_a_reason() -> None:
-    server = FakeMattermost(reply_updates=[T0_MS + 17_000, T0_MS + 40_000], reply_create_ms=T0_MS + 17_000)
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000], reply_create_ms=T0_MS + 17_000
+    )
     clock = FakeClock()
     run = bench.run_one(
         _client(server),
@@ -842,7 +881,12 @@ def test_a_run_without_audit_lines_is_failed_with_a_reason() -> None:
 
 
 def test_report_merges_earlier_runs_and_never_carries_a_key(tmp_path: Path) -> None:
-    earlier = bench.report(_labels(), [_run("cold", 30.0, 10.0, 20.0)], ran_at="2026-10-13T00:00:00+00:00", commit="abc1234")
+    earlier = bench.report(
+        _labels(),
+        [_run("cold", 30.0, 10.0, 20.0)],
+        ran_at="2026-10-13T00:00:00+00:00",
+        commit="abc1234",
+    )
     runs = bench.merge_runs(earlier, [_run("warm", 10.0, 4.0, 20.0)])
     assert [r.state for r in runs] == ["cold", "warm"]
     rep = bench.report(_labels(), runs, ran_at="2026-10-13T01:00:00+00:00", commit="abc1234")
@@ -850,7 +894,10 @@ def test_report_merges_earlier_runs_and_never_carries_a_key(tmp_path: Path) -> N
     assert rep["labels"]["tier"] == "local" and rep["commit"] == "abc1234"
     text = json.dumps(rep)
     assert "api_key" not in text.lower() and "authorization" not in text.lower()
-    assert bench.result_path("A-local", bench.date(2026, 10, 13)).name == "bench-mattermost-A-local-2026-10-13.json"
+    assert (
+        bench.result_path("A-local", bench.date(2026, 10, 13)).name
+        == "bench-mattermost-A-local-2026-10-13.json"
+    )
 ```
 
 - [ ] **Step 2: Run the tests to verify they fail**
@@ -873,7 +920,9 @@ class Mattermost:
         self._client = httpx.Client(base_url=base_url.rstrip("/"), timeout=60, transport=transport)
         self.token: str | None = None
 
-    def call(self, method: str, path: str, *, json: Any = None, params: Any = None) -> httpx.Response:
+    def call(
+        self, method: str, path: str, *, json: Any = None, params: Any = None
+    ) -> httpx.Response:
         headers = {"X-Requested-With": "XMLHttpRequest"}
         if self.token:
             headers["Authorization"] = f"Bearer {self.token}"
@@ -883,7 +932,9 @@ class Mattermost:
         return response
 
     def login(self, username: str, password: str) -> str:
-        response = self.call("POST", "/api/v4/users/login", json={"login_id": username, "password": password})
+        response = self.call(
+            "POST", "/api/v4/users/login", json={"login_id": username, "password": password}
+        )
         self.token = response.headers.get("Token")
         return str(response.json()["id"])
 
@@ -894,11 +945,15 @@ class Mattermost:
         return str(self.call("POST", "/api/v4/channels/direct", json=[a, b]).json()["id"])
 
     def post(self, channel_id: str, message: str) -> dict[str, Any]:
-        body = self.call("POST", "/api/v4/posts", json={"channel_id": channel_id, "message": message}).json()
+        body = self.call(
+            "POST", "/api/v4/posts", json={"channel_id": channel_id, "message": message}
+        ).json()
         return dict(body)
 
     def posts_since(self, channel_id: str, since_ms: int) -> list[dict[str, Any]]:
-        body = self.call("GET", f"/api/v4/channels/{channel_id}/posts", params={"since": since_ms}).json()
+        body = self.call(
+            "GET", f"/api/v4/channels/{channel_id}/posts", params={"since": since_ms}
+        ).json()
         posts = body.get("posts", {})
         return [dict(posts[i]) for i in body.get("order", []) if i in posts]
 
@@ -1034,7 +1089,7 @@ def merge_runs(existing: dict[str, Any] | None, new: Sequence[Run]) -> list[Run]
 def git_commit() -> str:
     try:
         return run_command(["git", "rev-parse", "--short", "HEAD"]).strip() or "unknown"
-    except (OSError, subprocess.CalledProcessError):
+    except OSError, subprocess.CalledProcessError:
         return "unknown"
 ```
 
@@ -1048,25 +1103,59 @@ Expected: 22 passed.
 Append to `tests/test_bench_mattermost.py`:
 
 ```python
-def test_main_cold_refuses_when_a_model_is_still_loaded(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
-    monkeypatch.setattr(bench, "run_command", lambda cmd: "MODEL NAME  BACKEND\nai/qwen3.5:9b-q4_K_M  llama.cpp\n" if cmd[:3] == ["docker", "model", "ps"] else "")
+def test_main_cold_refuses_when_a_model_is_still_loaded(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr(
+        bench,
+        "run_command",
+        lambda cmd: (
+            "MODEL NAME  BACKEND\nai/qwen3.5:9b-q4_K_M  llama.cpp\n"
+            if cmd[:3] == ["docker", "model", "ps"]
+            else ""
+        ),
+    )
     code = bench.main(["--configuration", "A-local", "--cold", "--url", "http://mm.test"])
     assert code == 1
     assert "docker model unload --all" in capsys.readouterr().err
 
 
-def test_main_writes_the_results_file_and_prints_the_row(monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    server = FakeMattermost(reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000], reply_create_ms=T0_MS + 17_000)
+def test_main_writes_the_results_file_and_prints_the_row(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    server = FakeMattermost(
+        reply_updates=[T0_MS + 17_000, T0_MS + 40_000, T0_MS + 40_000],
+        reply_create_ms=T0_MS + 17_000,
+    )
     clock = FakeClock()
     golden = tmp_path / "retrieval.jsonl"
-    golden.write_text(json.dumps({"id": "r01", "question": "q", "gold": [], "reference_answer": "", "notes": ""}) + "\n")
+    golden.write_text(
+        json.dumps({"id": "r01", "question": "q", "gold": [], "reference_answer": "", "notes": ""})
+        + "\n"
+    )
     monkeypatch.setattr(bench, "GOLDEN", golden)
     monkeypatch.setattr(bench, "RESULTS_DIR", tmp_path)
     monkeypatch.setattr(bench, "QUESTION_IDS", ("r01",))
-    monkeypatch.setattr(bench, "run_command", lambda cmd: "\n".join(_audit_lines()) if cmd[:2] == ["docker", "compose"] else "x")
+    monkeypatch.setattr(
+        bench,
+        "run_command",
+        lambda cmd: "\n".join(_audit_lines()) if cmd[:2] == ["docker", "compose"] else "x",
+    )
     monkeypatch.setattr(bench, "_transport", lambda: httpx.MockTransport(server))
     monkeypatch.setattr(bench, "_clock", lambda: clock)
-    code = bench.main(["--configuration", "A-local", "--warm", "--passes", "2", "--url", "http://mm.test", "--password", "pw"])
+    code = bench.main(
+        [
+            "--configuration",
+            "A-local",
+            "--warm",
+            "--passes",
+            "2",
+            "--url",
+            "http://mm.test",
+            "--password",
+            "pw",
+        ]
+    )
     assert code == 0
     files = list(tmp_path.glob("bench-mattermost-A-local-*.json"))
     assert len(files) == 1
@@ -1104,27 +1193,61 @@ def _clock() -> Any:
 
 
 def _audit_from_container() -> list[str]:
-    out = run_command(["docker", "compose", "--profile", "mcp", "exec", "-T", "mcp", "cat", "/app/audit/audit.jsonl"])
+    out = run_command(
+        [
+            "docker",
+            "compose",
+            "--profile",
+            "mcp",
+            "exec",
+            "-T",
+            "mcp",
+            "cat",
+            "/app/audit/audit.jsonl",
+        ]
+    )
     return out.splitlines()
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--configuration", required=True, help="A-local, B-plugin-baseten, C-both-baseten, D-dedicated")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--configuration",
+        required=True,
+        help="A-local, B-plugin-baseten, C-both-baseten, D-dedicated",
+    )
     mode = parser.add_mutually_exclusive_group(required=True)
-    mode.add_argument("--cold", action="store_true", help="one run of the first question; refuses if a model is loaded")
+    mode.add_argument(
+        "--cold",
+        action="store_true",
+        help="one run of the first question; refuses if a model is loaded",
+    )
     mode.add_argument("--warm", action="store_true", help="every question, --passes times")
     parser.add_argument("--passes", type=int, default=2)
-    parser.add_argument("--url", default=os.environ.get("MATTERMOST_SITE_URL", "http://localhost:8065"))
+    parser.add_argument(
+        "--url", default=os.environ.get("MATTERMOST_SITE_URL", "http://localhost:8065")
+    )
     parser.add_argument("--username", default="analyst_dnd")
-    parser.add_argument("--password", default=os.environ.get("MATTERMOST_DEMO_PASSWORD", "Passw0rd!demo"))
-    parser.add_argument("--audit", type=Path, default=None, help="read this file instead of the mcp container")
+    parser.add_argument(
+        "--password", default=os.environ.get("MATTERMOST_DEMO_PASSWORD", "Passw0rd!demo")
+    )
+    parser.add_argument(
+        "--audit", type=Path, default=None, help="read this file instead of the mcp container"
+    )
     parser.add_argument("--settle-s", type=float, default=3.0)
     parser.add_argument("--timeout-s", type=float, default=240.0)
     parser.add_argument("--poll-s", type=float, default=1.0)
-    parser.add_argument("--plugin-model", default=os.environ.get("AGENT_LLM_MODEL") or os.environ.get("LLM_MODEL", "ai/qwen3.5:9b-q4_K_M"))
+    parser.add_argument(
+        "--plugin-model",
+        default=os.environ.get("AGENT_LLM_MODEL")
+        or os.environ.get("LLM_MODEL", "ai/qwen3.5:9b-q4_K_M"),
+    )
     parser.add_argument("--plugin-precision", default="Q4_K_M")
-    parser.add_argument("--generator-model", default=os.environ.get("LLM_MODEL", "ai/qwen3.5:9b-q4_K_M"))
+    parser.add_argument(
+        "--generator-model", default=os.environ.get("LLM_MODEL", "ai/qwen3.5:9b-q4_K_M")
+    )
     parser.add_argument("--generator-precision", default="Q4_K_M")
     parser.add_argument("--tier", choices=TIERS, default="local")
     parser.add_argument("--billing", choices=BILLING, default="none")
@@ -1135,7 +1258,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.cold:
         loaded = models_loaded(run_command(["docker", "model", "ps"]))
         if loaded:
-            print(f"bench: {', '.join(loaded)} still loaded; run `docker model unload --all` first", file=sys.stderr)
+            print(
+                f"bench: {', '.join(loaded)} still loaded; run `docker model unload --all` first",
+                file=sys.stderr,
+            )
             return 1
 
     labels = Labels(
@@ -1154,7 +1280,9 @@ def main(argv: list[str] | None = None) -> int:
     passes = 1 if args.cold else args.passes
     state = "cold" if args.cold else "warm"
     audit: Callable[[], list[str]] = (
-        (lambda: args.audit.read_text("utf-8").splitlines()) if args.audit else _audit_from_container
+        (lambda: args.audit.read_text("utf-8").splitlines())
+        if args.audit
+        else _audit_from_container
     )
     clock = _clock()
 
@@ -1238,8 +1366,12 @@ Append to `tests/test_seed_mattermost.py`:
 ```python
 def test_plugin_service_takes_the_key_and_name_it_is_given() -> None:
     cfg = seed._plugin_config(
-        "s3cret", "https://inference.baseten.co/v1", "Qwen/Qwen3.5-9B", "http://mcp:8002/mcp",
-        llm_api_key="bt-key", llm_service_name="Baseten Model APIs",
+        "s3cret",
+        "https://inference.baseten.co/v1",
+        "Qwen/Qwen3.5-9B",
+        "http://mcp:8002/mcp",
+        llm_api_key="bt-key",
+        llm_service_name="Baseten Model APIs",
     )
     (service,) = cfg["services"]
     assert service["id"] == seed.SERVICE_ID  # unchanged: the bot keeps pointing at it
@@ -1280,7 +1412,13 @@ def test_main_reads_the_agent_llm_env_and_never_prints_the_key(
 
 
 def test_main_defaults_the_plugin_to_model_runner(monkeypatch: pytest.MonkeyPatch) -> None:
-    for name in ("AGENT_LLM_URL", "AGENT_LLM_MODEL", "AGENT_LLM_API_KEY", "AGENT_LLM_SERVICE_NAME", "LLM_MODEL"):
+    for name in (
+        "AGENT_LLM_URL",
+        "AGENT_LLM_MODEL",
+        "AGENT_LLM_API_KEY",
+        "AGENT_LLM_SERVICE_NAME",
+        "LLM_MODEL",
+    ):
         monkeypatch.delenv(name, raising=False)
     seen: dict[str, Any] = {}
 
@@ -1333,8 +1471,8 @@ def _plugin_config(
 (the rest of the function unchanged). In `seed(...)`, add two keyword parameters after `llm_model: str,`:
 
 ```python
-    llm_api_key: str = "not-needed",
-    llm_service_name: str = "Docker Model Runner",
+llm_api_key: str = ("not-needed",)
+llm_service_name: str = ("Docker Model Runner",)
 ```
 
 and pass them through:
@@ -1356,26 +1494,28 @@ and pass them through:
 In `main`, replace the two `--llm-*` arguments with:
 
 ```python
-    parser.add_argument(
-        "--llm-url",
-        default=os.environ.get("AGENT_LLM_URL") or "http://model-runner.docker.internal/engines/v1",
-        help="The plugin's model endpoint (OpenAI-compatible). AGENT_LLM_URL.",
-    )
-    parser.add_argument(
-        "--llm-model",
-        default=os.environ.get("AGENT_LLM_MODEL") or os.environ.get("LLM_MODEL") or "ai/qwen3.5:9b-q4_K_M",
-        help="The plugin's model id. AGENT_LLM_MODEL, then LLM_MODEL.",
-    )
-    parser.add_argument(
-        "--llm-api-key",
-        default=os.environ.get("AGENT_LLM_API_KEY") or "not-needed",
-        help="The plugin's key for that endpoint. AGENT_LLM_API_KEY. Never printed.",
-    )
-    parser.add_argument(
-        "--llm-service-name",
-        default=os.environ.get("AGENT_LLM_SERVICE_NAME") or "Docker Model Runner",
-        help="How the service is named in the plugin's settings. AGENT_LLM_SERVICE_NAME.",
-    )
+parser.add_argument(
+    "--llm-url",
+    default=os.environ.get("AGENT_LLM_URL") or "http://model-runner.docker.internal/engines/v1",
+    help="The plugin's model endpoint (OpenAI-compatible). AGENT_LLM_URL.",
+)
+parser.add_argument(
+    "--llm-model",
+    default=os.environ.get("AGENT_LLM_MODEL")
+    or os.environ.get("LLM_MODEL")
+    or "ai/qwen3.5:9b-q4_K_M",
+    help="The plugin's model id. AGENT_LLM_MODEL, then LLM_MODEL.",
+)
+parser.add_argument(
+    "--llm-api-key",
+    default=os.environ.get("AGENT_LLM_API_KEY") or "not-needed",
+    help="The plugin's key for that endpoint. AGENT_LLM_API_KEY. Never printed.",
+)
+parser.add_argument(
+    "--llm-service-name",
+    default=os.environ.get("AGENT_LLM_SERVICE_NAME") or "Docker Model Runner",
+    help="How the service is named in the plugin's settings. AGENT_LLM_SERVICE_NAME.",
+)
 ```
 
 and in the `seed(` call add `llm_api_key=args.llm_api_key, llm_service_name=args.llm_service_name,` after `llm_model=args.llm_model,`.
@@ -1434,7 +1574,9 @@ class _ResetLoader(yaml.SafeLoader):
 
 _ResetLoader.add_constructor("!reset", lambda loader, node: loader.construct_mapping(node))
 
-OVERRIDE = yaml.load((Path(__file__).parents[1] / "compose.baseten.yaml").read_text(), Loader=_ResetLoader)
+OVERRIDE = yaml.load(
+    (Path(__file__).parents[1] / "compose.baseten.yaml").read_text(), Loader=_ResetLoader
+)
 
 
 def test_baseten_override_moves_only_the_generator_and_keeps_embeddings_local() -> None:
