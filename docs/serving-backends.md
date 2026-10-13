@@ -37,6 +37,7 @@ cold run's end-to-end time; `n` is warm runs.
 | Configuration | Plugin model | sovrag generator | Tier | Billing | Hop 1 | Hop 2 | Hop 3 | End to end | Cold | n |
 |---|---|---|---|---|---|---|---|---|---|---|
 | A-local | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | local | none | 5.5 | 4.6 | 6.3 | 16.8 | 40.2 | 13 |
+| B-plugin-baseten | zai-org/GLM-5.3-Flash (fp8) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | model-apis | per-token | 1.0 | 4.2 | 2.0 | 8.3 | 17.7 | 10 |
 
 Notes on A-local (measured, 2026-10-13, file `eval/results/bench-mattermost-A-local-2026-10-13.json`):
 
@@ -45,6 +46,14 @@ Notes on A-local (measured, 2026-10-13, file `eval/results/bench-mattermost-A-lo
 - Warm mean end to end is 20.3 s against the 16.8 s median: hop 3 is proportional to reply length, and two of the five questions (`r04`, `r09`) draw short replies or refusals.
 - 2 of 15 warm runs are counted as failed: on both, for the same question (`r03`), the agent called `search` instead of `answer`, so there is no `answer` event to time. The agent's model straying from its instruction is part of what hop 1 measures and is reported, not dropped.
 - No first-token mark: the plugin creates its reply post in the same second as the question, before the tool call, and fills it at the end.
+
+Notes on B-plugin-baseten (measured, 2026-10-13, file `eval/results/bench-mattermost-B-plugin-baseten-2026-10-13.json`):
+
+- Hops 1 and 3 are hosted (Baseten Model APIs, GLM-5.3-Flash, fp8, per token); hop 2 is the same local sovrag as in A. Same hardware for the local part.
+- Cold here is sovrag's own reload: hop 1 3.4 s, hop 2 10.8 s (the embedder and the generator both load inside sovrag's call, since the plugin no longer loads Qwen first), hop 3 3.6 s.
+- Warm mean end to end 8.9 s against the 8.3 s median. 0 failed runs: the hosted model called `answer` on every run.
+- Hop 2 is 4.2 s here against 4.6 s in A: the same pipeline on the same machine, within noise.
+- No Qwen 3.5 is offered on Model APIs, so this row compares backend and model together; the catalog's two cheapest tool-calling models were probed and the one that does not emit reasoning tokens by default was chosen (the other produced four times the completion tokens for the same tool call).
 
 Quality, where the generator changed (the generation eval, judged locally by Gemma 4 12B
 Q4_K_M, and the leak suite's answer run):
