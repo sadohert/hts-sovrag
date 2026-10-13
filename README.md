@@ -85,3 +85,8 @@ model, quantization and backend labels, so a run on a different backend is compa
 this baseline, never confused with it.
 
 See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.
+
+## Licence
+
+Code is MIT, see `LICENSE`. The corpus, and the fixtures and golden sets derived from it, contain
+Government of Canada works: contains information licensed under the Open Government Licence - Canada.
