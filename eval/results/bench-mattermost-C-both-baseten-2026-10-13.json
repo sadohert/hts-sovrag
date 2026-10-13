@@ -1,0 +1,240 @@
+{
+  "suite": "bench-mattermost",
+  "ran_at": "2026-10-13T14:25:49.739187+00:00",
+  "commit": "6a8547d",
+  "labels": {
+    "configuration": "C-both-baseten",
+    "plugin_model": "zai-org/GLM-5.3-Flash",
+    "plugin_precision": "fp8",
+    "generator_model": "zai-org/GLM-5.3-Flash",
+    "generator_precision": "fp8",
+    "tier": "model-apis",
+    "billing": "per-token",
+    "engine": "baseten-model-apis",
+    "engine_backend": "managed",
+    "hardware": {
+      "machine": "Mac15,9",
+      "chip": "Apple M3 Max",
+      "memory_gb": "48",
+      "os": "26.6.2",
+      "docker": "29.8.2",
+      "model_runner": "v1.2.8"
+    }
+  },
+  "runs": [
+    {
+      "question_id": "r01",
+      "question": "How much did the government announce it would invest in NORAD modernization, and over what period?",
+      "state": "warm",
+      "post_ms": 1791901462120,
+      "request_id": "e09a70c04b14499780d74f729f079a5f",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:24:23.382083+00:00",
+      "answer_ts": "2026-10-13T14:24:24.195672+00:00",
+      "reply_first_ms": 1791901462131,
+      "reply_last_ms": 1791901471590,
+      "hops": {
+        "hop1_s": 1.2620830535888672,
+        "hop2_s": 0.8135890960693359,
+        "hop3_s": 7.394327878952026,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 9.47000002861023
+      },
+      "error": null
+    },
+    {
+      "question_id": "r02",
+      "question": "How much money and how many full-time equivalents did National Defence plan to devote to keeping its forces ready in 2025-26?",
+      "state": "warm",
+      "post_ms": 1791901475442,
+      "request_id": "d70d268c48f04c459e86f3a787514a8a",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:24:36.538765+00:00",
+      "answer_ts": "2026-10-13T14:24:37.354560+00:00",
+      "reply_first_ms": 1791901475449,
+      "reply_last_ms": 1791901481668,
+      "hops": {
+        "hop1_s": 1.0967650413513184,
+        "hop2_s": 0.8157949447631836,
+        "hop3_s": 4.3134400844573975,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 6.226000070571899
+      },
+      "error": null
+    },
+    {
+      "question_id": "r03",
+      "question": "How much did National Procurement spending reach in 2023-24, and why did it rise?",
+      "state": "warm",
+      "post_ms": 1791901485742,
+      "request_id": "55f365149c644614862530391cabb17d",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:24:46.407349+00:00",
+      "answer_ts": "2026-10-13T14:24:47.204755+00:00",
+      "reply_first_ms": 1791901485749,
+      "reply_last_ms": 1791901488562,
+      "hops": {
+        "hop1_s": 0.665349006652832,
+        "hop2_s": 0.7974059581756592,
+        "hop3_s": 1.3572449684143066,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 2.819999933242798
+      },
+      "error": null
+    },
+    {
+      "question_id": "r04",
+      "question": "What change let most Canadian Armed Forces applicants start basic training before their security clearance was finished?",
+      "state": "warm",
+      "post_ms": 1791901491979,
+      "request_id": "e203f90f239c4d338e09dd097a1db94e",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:24:52.720271+00:00",
+      "answer_ts": "2026-10-13T14:24:53.472755+00:00",
+      "reply_first_ms": 1791901491986,
+      "reply_last_ms": 1791901495663,
+      "hops": {
+        "hop1_s": 0.7412710189819336,
+        "hop2_s": 0.7524838447570801,
+        "hop3_s": 2.1902451515197754,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 3.684000015258789
+      },
+      "error": null
+    },
+    {
+      "question_id": "r09",
+      "question": "How long a period must a departmental security plan cover, and how often does it have to be reviewed?",
+      "state": "warm",
+      "post_ms": 1791901499199,
+      "request_id": "397771abca384285a7934e288f9b8235",
+      "refused": true,
+      "resolve_ts": "2026-10-13T14:24:59.913344+00:00",
+      "answer_ts": "2026-10-13T14:25:01.093460+00:00",
+      "reply_first_ms": 1791901499205,
+      "reply_last_ms": 1791901503147,
+      "hops": {
+        "hop1_s": 0.7143440246582031,
+        "hop2_s": 1.1801161766052246,
+        "hop3_s": 2.053539991378784,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 3.948000192642212
+      },
+      "error": null
+    },
+    {
+      "question_id": "r01",
+      "question": "How much did the government announce it would invest in NORAD modernization, and over what period?",
+      "state": "warm",
+      "post_ms": 1791901506441,
+      "request_id": "c4ff2e42650742e0aecee83dd15fa478",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:25:07.051115+00:00",
+      "answer_ts": "2026-10-13T14:25:08.358584+00:00",
+      "reply_first_ms": 1791901506448,
+      "reply_last_ms": 1791901511523,
+      "hops": {
+        "hop1_s": 0.6101150512695312,
+        "hop2_s": 1.3074688911437988,
+        "hop3_s": 3.1644160747528076,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 5.082000017166138
+      },
+      "error": null
+    },
+    {
+      "question_id": "r02",
+      "question": "How much money and how many full-time equivalents did National Defence plan to devote to keeping its forces ready in 2025-26?",
+      "state": "warm",
+      "post_ms": 1791901515718,
+      "request_id": "c185a78bd60c438583d3520070fbdc8c",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:25:16.716966+00:00",
+      "answer_ts": "2026-10-13T14:25:20.641155+00:00",
+      "reply_first_ms": 1791901515725,
+      "reply_last_ms": 1791901524834,
+      "hops": {
+        "hop1_s": 0.9989659786224365,
+        "hop2_s": 3.9241890907287598,
+        "hop3_s": 4.192845106124878,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 9.116000175476074
+      },
+      "error": null
+    },
+    {
+      "question_id": "r03",
+      "question": "How much did National Procurement spending reach in 2023-24, and why did it rise?",
+      "state": "warm",
+      "post_ms": 1791901529015,
+      "request_id": "be98e6afecb74f6c861512ef306b2d51",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:25:30.275368+00:00",
+      "answer_ts": "2026-10-13T14:25:30.938395+00:00",
+      "reply_first_ms": 1791901529023,
+      "reply_last_ms": 1791901532149,
+      "hops": {
+        "hop1_s": 1.2603678703308105,
+        "hop2_s": 0.6630270481109619,
+        "hop3_s": 1.2106049060821533,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 3.133999824523926
+      },
+      "error": null
+    },
+    {
+      "question_id": "r04",
+      "question": "What change let most Canadian Armed Forces applicants start basic training before their security clearance was finished?",
+      "state": "warm",
+      "post_ms": 1791901536266,
+      "request_id": "86b1b3ee46774ff2b2151ef89b0853bb",
+      "refused": false,
+      "resolve_ts": "2026-10-13T14:25:37.003720+00:00",
+      "answer_ts": "2026-10-13T14:25:37.737439+00:00",
+      "reply_first_ms": 1791901536273,
+      "reply_last_ms": 1791901538892,
+      "hops": {
+        "hop1_s": 0.7377200126647949,
+        "hop2_s": 0.7337188720703125,
+        "hop3_s": 1.1545610427856445,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 2.625999927520752
+      },
+      "error": null
+    },
+    {
+      "question_id": "r09",
+      "question": "How long a period must a departmental security plan cover, and how often does it have to be reviewed?",
+      "state": "warm",
+      "post_ms": 1791901542502,
+      "request_id": "22f6b282c09a40428dc78ec00554d36d",
+      "refused": true,
+      "resolve_ts": "2026-10-13T14:25:43.327044+00:00",
+      "answer_ts": "2026-10-13T14:25:45.023267+00:00",
+      "reply_first_ms": 1791901542508,
+      "reply_last_ms": 1791901546102,
+      "hops": {
+        "hop1_s": 0.8250439167022705,
+        "hop2_s": 1.6962230205535889,
+        "hop3_s": 1.078732967376709,
+        "hop3_first_token_s": null,
+        "end_to_end_s": 3.5999999046325684
+      },
+      "error": null
+    }
+  ],
+  "summary": {
+    "warm": {
+      "n": 10,
+      "failed": 0,
+      "hop1_s_mean": 0.89,
+      "hop1_s_median": 0.78,
+      "hop2_s_mean": 1.27,
+      "hop2_s_median": 0.81,
+      "hop3_s_mean": 2.81,
+      "hop3_s_median": 2.12,
+      "end_to_end_s_mean": 4.97,
+      "end_to_end_s_median": 3.82
+    }
+  }
+}

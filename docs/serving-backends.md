@@ -38,6 +38,7 @@ cold run's end-to-end time; `n` is warm runs.
 |---|---|---|---|---|---|---|---|---|---|---|
 | A-local | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | local | none | 5.5 | 4.6 | 6.3 | 16.8 | 40.2 | 13 |
 | B-plugin-baseten | zai-org/GLM-5.3-Flash (fp8) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | model-apis | per-token | 1.0 | 4.2 | 2.0 | 8.3 | 17.7 | 10 |
+| C-both-baseten | zai-org/GLM-5.3-Flash (fp8) | zai-org/GLM-5.3-Flash (fp8) | model-apis | per-token | 0.8 | 0.8 | 2.1 | 3.8 | n/a | 10 |
 
 Notes on A-local (measured, 2026-10-13, file `eval/results/bench-mattermost-A-local-2026-10-13.json`):
 
@@ -54,6 +55,14 @@ Notes on B-plugin-baseten (measured, 2026-10-13, file `eval/results/bench-matter
 - Warm mean end to end 8.9 s against the 8.3 s median. 0 failed runs: the hosted model called `answer` on every run.
 - Hop 2 is 4.2 s here against 4.6 s in A: the same pipeline on the same machine, within noise.
 - No Qwen 3.5 is offered on Model APIs, so this row compares backend and model together; the catalog's two cheapest tool-calling models were probed and the one that does not emit reasoning tokens by default was chosen (the other produced four times the completion tokens for the same tool call).
+
+Notes on C-both-baseten (measured, 2026-10-13, file `eval/results/bench-mattermost-C-both-baseten-2026-10-13.json`):
+
+- Hops 1 and 3 and the generation inside hop 2 are hosted; embedding, retrieval, the entitlement filter and the audit line inside hop 2 are still local, via `compose.baseten.yaml`.
+- No cold row: Model APIs has no cold state, and the only local model left in the path is the embedder, which Model Runner keeps loaded for the run.
+- Warm mean end to end 5.0 s against the 3.8 s median. 0 failed runs.
+- Hop 2 fell from 4.2 s (B) to 0.8 s: the difference is the generation step moving off the laptop. Embedding and retrieval are what remains.
+- In every configuration the same question (`r09`) came back as a refusal from sovrag on every run, from both generators. That is a retrieval or golden-set question for the eval harness, not a serving-backend effect, and the runs are counted because the hops are real.
 
 Quality, where the generator changed (the generation eval, judged locally by Gemma 4 12B
 Q4_K_M, and the leak suite's answer run):
