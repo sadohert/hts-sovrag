@@ -96,3 +96,30 @@ def test_loki_and_grafana_mount_their_config_read_only() -> None:
     assert env["GF_AUTH_ANONYMOUS_ENABLED"] == "true"
     assert env["GF_AUTH_ANONYMOUS_ORG_ROLE"] == "Viewer"
     assert set(COMPOSE["volumes"]) >= {"loki-data", "alloy-data"}
+
+
+class _ResetLoader(yaml.SafeLoader):
+    """Compose's `!reset` merge tag, read as the plain value it wraps."""
+
+
+_ResetLoader.add_constructor("!reset", lambda loader, node: loader.construct_mapping(node))
+
+OVERRIDE = yaml.load(
+    (Path(__file__).parents[1] / "compose.baseten.yaml").read_text(), Loader=_ResetLoader
+)
+
+
+def test_baseten_override_moves_only_the_generator_and_keeps_embeddings_local() -> None:
+    for name in ("app", "mcp"):
+        svc = OVERRIDE["services"][name]
+        assert svc["models"] == {}  # the Model Runner bindings are reset; env below replaces them
+        env = svc["environment"]
+        assert env["LLM_BASE_URL"] == "${BASETEN_BASE_URL:-https://inference.baseten.co/v1}"
+        assert env["LLM_MODEL"].startswith("${BASETEN_MODEL:?")
+        assert env["LLM_API_KEY"].startswith("${BASETEN_API_KEY:?")
+        assert env["EMBED_BASE_URL"] == "http://model-runner.docker.internal/engines/v1"
+        assert env["EMBED_MODEL"] == COMPOSE["models"]["embed"]["model"]
+        assert env["ENGINE"] == "baseten-model-apis"  # fixed: .env may set ENGINE for local runs
+        assert env["ENGINE_BACKEND"] == "managed"
+    assert set(OVERRIDE["services"]) == {"app", "mcp"}
+    assert set(OVERRIDE) == {"services"}

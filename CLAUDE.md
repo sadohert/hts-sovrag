@@ -49,3 +49,4 @@ every claim in the README against the code.
 - uv run pytest
 - docker compose --profile observability up -d   # audit log in Grafana at localhost:3000/d/sovrag-audit
 - uv run sovrag eval load-fixture && uv run sovrag eval retrieval --check && uv run sovrag eval leak --check
+- uv run python scripts/bench_mattermost.py --configuration A-local --warm   # hop timings; see docs/serving-backends.md

@@ -352,3 +352,103 @@ def test_main_dry_run_prints_the_env_lines_with_placeholders(
     assert code == 0
     assert "MATTERMOST_BOT_TOKEN=" in out and "MCP_SHARED_SECRET=" in out
     assert "s3cret" not in out
+
+
+def test_plugin_service_takes_the_key_and_name_it_is_given() -> None:
+    cfg = seed._plugin_config(
+        "s3cret",
+        "https://inference.baseten.co/v1",
+        "Qwen/Qwen3.5-9B",
+        "http://mcp:8002/mcp",
+        llm_api_key="bt-key",
+        llm_service_name="Baseten Model APIs",
+    )
+    (service,) = cfg["services"]
+    assert service["id"] == seed.SERVICE_ID  # unchanged: the bot keeps pointing at it
+    assert service["name"] == "Baseten Model APIs"
+    assert service["apiURL"] == "https://inference.baseten.co/v1"
+    assert service["apiKey"] == "bt-key"
+    assert service["defaultModel"] == "Qwen/Qwen3.5-9B"
+
+
+def test_plugin_service_defaults_to_model_runner_without_a_key() -> None:
+    cfg = seed._plugin_config("s", "http://model-runner.docker.internal/engines/v1", "m", "u")
+    (service,) = cfg["services"]
+    assert service["name"] == "Docker Model Runner" and service["apiKey"] == "not-needed"
+
+
+def _fake_seed(seen: dict[str, Any]) -> Any:
+    def fake(mm: Any, **kw: Any) -> Any:
+        seen.update(kw)
+        return seed.Result(shared_secret="s", bot_user_id="b", bot_token=None, user_ids={})
+
+    return fake
+
+
+def test_main_reads_the_agent_llm_env_and_never_prints_the_key(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("AGENT_LLM_URL", "https://inference.baseten.co/v1")
+    monkeypatch.setenv("AGENT_LLM_MODEL", "Qwen/Qwen3.5-9B")
+    monkeypatch.setenv("AGENT_LLM_API_KEY", "bt-secret-key")
+    monkeypatch.setenv("AGENT_LLM_SERVICE_NAME", "Baseten Model APIs")
+    seen: dict[str, Any] = {}
+    monkeypatch.setattr(seed, "seed", _fake_seed(seen))
+    code = seed.main(["--dry-run", "--shared-secret", "s3cret"])
+    out = capsys.readouterr()
+    assert code == 0
+    assert seen["llm_url"] == "https://inference.baseten.co/v1"
+    assert seen["llm_model"] == "Qwen/Qwen3.5-9B"
+    assert seen["llm_api_key"] == "bt-secret-key"
+    assert seen["llm_service_name"] == "Baseten Model APIs"
+    assert "bt-secret-key" not in out.out and "bt-secret-key" not in out.err
+
+
+def test_main_defaults_the_plugin_to_model_runner(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in (
+        "AGENT_LLM_URL",
+        "AGENT_LLM_MODEL",
+        "AGENT_LLM_API_KEY",
+        "AGENT_LLM_SERVICE_NAME",
+        "LLM_MODEL",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    seen: dict[str, Any] = {}
+    monkeypatch.setattr(seed, "seed", _fake_seed(seen))
+    assert seed.main(["--dry-run", "--shared-secret", "s3cret"]) == 0
+    assert seen["llm_url"] == "http://model-runner.docker.internal/engines/v1"
+    assert seen["llm_model"] == "ai/qwen3.5:9b-q4_K_M"
+    assert seen["llm_api_key"] == "not-needed"
+    assert seen["llm_service_name"] == "Docker Model Runner"
+
+
+def test_a_generated_secret_is_refused_on_a_server_that_already_has_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Re-seeding without MCP_SHARED_SECRET would write a fresh secret into the plugin that
+    the running MCP server does not know, and every tool call would get 401. Refuse."""
+    server = FakeMattermost()
+    _seed_against(server, monkeypatch)
+    with pytest.raises(seed.SeedError, match="MCP_SHARED_SECRET"):
+        _seed_against(server, monkeypatch, shared_secret="fresh", secret_generated=True)
+    # An explicit new secret is a deliberate rotation and goes through.
+    _seed_against(server, monkeypatch, shared_secret="rotated", secret_generated=False)
+
+
+def test_a_generated_secret_is_fine_on_a_fresh_server(monkeypatch: pytest.MonkeyPatch) -> None:
+    _seed_against(FakeMattermost(), monkeypatch, shared_secret="fresh", secret_generated=True)
+
+
+def test_main_marks_the_secret_generated_only_when_neither_flag_nor_env_gives_one(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: dict[str, Any] = {}
+    monkeypatch.setattr(seed, "seed", _fake_seed(seen))
+    monkeypatch.delenv("MCP_SHARED_SECRET", raising=False)
+    assert seed.main(["--dry-run"]) == 0
+    assert seen["secret_generated"] is True and len(seen["shared_secret"]) > 20
+    monkeypatch.setenv("MCP_SHARED_SECRET", "from-env")
+    assert seed.main(["--dry-run"]) == 0
+    assert seen["secret_generated"] is False and seen["shared_secret"] == "from-env"
+    assert seed.main(["--dry-run", "--shared-secret", "flag"]) == 0
+    assert seen["secret_generated"] is False and seen["shared_secret"] == "flag"

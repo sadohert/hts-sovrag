@@ -86,6 +86,8 @@ The `mattermost` profile adds Mattermost Entry (the enterprise image with no lic
 
 The `observability` profile ships the audit file to Loki with Grafana Alloy, which tails the shared `audit` volume read-only, parses each line as JSON and promotes only `event`, `principal` and `refused` to labels, and provisions a Grafana dashboard (`/d/sovrag-audit`) with counts, a table of every audit line parsed into columns, and a table of refusals. No application code is involved; any writer of the audit file appears in the stream. See ADR 0016.
 
+`compose.baseten.yaml` is an override that moves sovrag's generator to Baseten Model APIs and pins embeddings back to Model Runner; the seed script's `AGENT_LLM_*` variables move the plugin's model the same way. See ADR 0017 and `docs/serving-backends.md`.
+
 ## Corpus
 
 27 public documents from canada.ca, publicsafety.gc.ca and tbs-sct.canada.ca: Departmental Plans and Departmental Results Reports for five departments across two fiscal years each, four Treasury Board security policy instruments, and three Auditor General reports. After parsing and chunking: 3,357 chunks of at most 340 cl100k tokens each, so that title, heading path and text together stay under Model Runner's 512-token embedding limit (ADR 0005).
@@ -183,3 +185,4 @@ involved in those suites. See ADR 0014.
 - ADR 0014: evaluation design: committed full-precision fixture, hand-written gold, an independent leak oracle, a judge from another model family, labelled results.
 - ADR 0015: the HTTP API binds its principal like the MCP server, static or from a verified gateway; one query endpoint; 401 never downgrades.
 - ADR 0016: logs are shipped from the audit file by a collector, not emitted by the application; three low-cardinality labels; Grafana anonymous only for the local demo.
+- ADR 0017: where inference runs is configuration and a data-classification decision; retrieval, entitlements, audit, embeddings and the judge stay local in every configuration; measurements are labelled and taken from existing timestamps.

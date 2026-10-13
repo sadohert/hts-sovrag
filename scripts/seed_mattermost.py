@@ -246,16 +246,22 @@ def _ensure_plugin(mm: Mattermost, download: Callable[[str], bytes] | None) -> N
 
 
 def _plugin_config(
-    shared_secret: str, llm_url: str, llm_model: str, mcp_url: str
+    shared_secret: str,
+    llm_url: str,
+    llm_model: str,
+    mcp_url: str,
+    *,
+    llm_api_key: str = "not-needed",
+    llm_service_name: str = "Docker Model Runner",
 ) -> dict[str, Any]:
     return {
         "services": [
             {
-                "id": SERVICE_ID,
-                "name": "Docker Model Runner",
+                "id": SERVICE_ID,  # fixed, so the bot keeps its service when the endpoint changes
+                "name": llm_service_name,
                 "type": "openaicompatible",
                 "apiURL": llm_url,
-                "apiKey": "not-needed",
+                "apiKey": llm_api_key,
                 "defaultModel": llm_model,
                 "useResponsesAPI": False,
                 "streamingTimeoutSeconds": 300,
@@ -303,8 +309,18 @@ def _matches(current: Any, wanted: Any) -> bool:
     return bool(current == wanted or (not current and not wanted))
 
 
-def _ensure_plugin_config(mm: Mattermost, wanted: dict[str, Any]) -> None:
+def _ensure_plugin_config(
+    mm: Mattermost, wanted: dict[str, Any], *, secret_generated: bool = False
+) -> None:
     current = mm.get(f"/plugins/{PLUGIN_ID}/admin/config")
+    already = any(s.get("name") == "sovrag" for s in (current.get("mcp") or {}).get("servers", []))
+    if secret_generated and already:
+        raise SeedError(
+            "the plugin already holds a shared secret for the sovrag MCP server, and none was"
+            " given, so this run would write a fresh one the running server does not know and"
+            " every tool call would get 401. Export MCP_SHARED_SECRET (set -a; . ./.env; set +a)"
+            " or pass --shared-secret."
+        )
     merged = {**current, **wanted, "mcp": {**current.get("mcp", {}), **wanted["mcp"]}}
     if _matches(current, wanted):
         _say("plugin config: already set")
@@ -389,6 +405,9 @@ def seed(
     mcp_url: str,
     rotate_token: bool,
     download: Callable[[str], bytes] | None,
+    llm_api_key: str = "not-needed",
+    llm_service_name: str = "Docker Model Runner",
+    secret_generated: bool = False,
 ) -> Result:
     _ensure_admin(mm, admin_password)
     clearance_field = _ensure_field(mm, CLEARANCE_FIELD, "select", CLEARANCES)
@@ -406,7 +425,18 @@ def seed(
             departments,
         )
     _ensure_plugin(mm, download)
-    _ensure_plugin_config(mm, _plugin_config(shared_secret, llm_url, llm_model, mcp_url))
+    _ensure_plugin_config(
+        mm,
+        _plugin_config(
+            shared_secret,
+            llm_url,
+            llm_model,
+            mcp_url,
+            llm_api_key=llm_api_key,
+            llm_service_name=llm_service_name,
+        ),
+        secret_generated=secret_generated,
+    )
     bot_user_id = _ensure_agent(mm, mcp_url)
     token = _ensure_bot_token(mm, bot_user_id, rotate_token)
     return Result(
@@ -498,10 +528,33 @@ def main(argv: list[str] | None = None) -> int:
         "--demo-password", default=os.environ.get("MATTERMOST_DEMO_PASSWORD", "Passw0rd!demo")
     )
     parser.add_argument(
-        "--shared-secret", default=os.environ.get("MCP_SHARED_SECRET") or secrets.token_urlsafe(32)
+        "--shared-secret",
+        default=None,
+        help="Bearer the plugin sends to the MCP server. Defaults to MCP_SHARED_SECRET; a new"
+        " one is generated only for a server that has none yet.",
     )
-    parser.add_argument("--llm-url", default="http://model-runner.docker.internal/engines/v1")
-    parser.add_argument("--llm-model", default=os.environ.get("LLM_MODEL", "ai/qwen3.5:9b-q4_K_M"))
+    parser.add_argument(
+        "--llm-url",
+        default=os.environ.get("AGENT_LLM_URL") or "http://model-runner.docker.internal/engines/v1",
+        help="The plugin's model endpoint (OpenAI-compatible). AGENT_LLM_URL.",
+    )
+    parser.add_argument(
+        "--llm-model",
+        default=os.environ.get("AGENT_LLM_MODEL")
+        or os.environ.get("LLM_MODEL")
+        or "ai/qwen3.5:9b-q4_K_M",
+        help="The plugin's model id. AGENT_LLM_MODEL, then LLM_MODEL.",
+    )
+    parser.add_argument(
+        "--llm-api-key",
+        default=os.environ.get("AGENT_LLM_API_KEY") or "not-needed",
+        help="The plugin's key for that endpoint. AGENT_LLM_API_KEY. Never printed.",
+    )
+    parser.add_argument(
+        "--llm-service-name",
+        default=os.environ.get("AGENT_LLM_SERVICE_NAME") or "Docker Model Runner",
+        help="How the service is named in the plugin's settings. AGENT_LLM_SERVICE_NAME.",
+    )
     parser.add_argument("--mcp-url", default="http://mcp:8002/mcp")
     parser.add_argument(
         "--rotate-token", action="store_true", help="Make a new bot token even if one exists"
@@ -510,6 +563,10 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="Print the calls for an empty server; send nothing"
     )
     args = parser.parse_args(argv)
+    shared_secret = args.shared_secret or os.environ.get("MCP_SHARED_SECRET") or ""
+    secret_generated = not shared_secret
+    if secret_generated:
+        shared_secret = secrets.token_urlsafe(32)
 
     transport = DryRunTransport() if args.dry_run else None
     mm = Mattermost(args.url, transport=transport)
@@ -518,9 +575,12 @@ def main(argv: list[str] | None = None) -> int:
             mm,
             admin_password=args.admin_password,
             demo_password=args.demo_password,
-            shared_secret=args.shared_secret,
+            shared_secret=shared_secret,
+            secret_generated=secret_generated,
             llm_url=args.llm_url,
             llm_model=args.llm_model,
+            llm_api_key=args.llm_api_key,
+            llm_service_name=args.llm_service_name,
             mcp_url=args.mcp_url,
             rotate_token=args.rotate_token,
             download=None if args.dry_run else _download,
