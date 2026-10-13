@@ -22,8 +22,8 @@ SOFTWARE.
 
 ---
 
-Corpus documents and the fixtures derived from them (data/manifest.yaml,
-tests/fixtures/real/, eval/fixture/) are the work of the Government of Canada
-and are not covered by the MIT licence above. Contains information licensed
+Corpus documents, and the fixtures and golden sets derived from them
+(data/manifest.yaml, tests/fixtures/real/, eval/fixture/, eval/golden/), contain
+Government of Canada works and are not covered by the MIT licence above. Contains information licensed
 under the Open Government Licence - Canada:
 https://open.canada.ca/en/open-government-licence-canada

@@ -88,5 +88,5 @@ See `docs/architecture.md` for the component and data model diagrams, `docs/adr/
 
 ## Licence
 
-Code is MIT, see `LICENSE`. The corpus and the fixtures derived from it are Government of
-Canada works: contains information licensed under the Open Government Licence - Canada.
+Code is MIT, see `LICENSE`. The corpus, and the fixtures and golden sets derived from it, contain
+Government of Canada works: contains information licensed under the Open Government Licence - Canada.
