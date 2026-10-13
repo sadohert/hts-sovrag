@@ -1,0 +1,27 @@
+# sovrag's generator on Baseten; everything else unchanged. Use it as an override:
+#   docker compose -f compose.yaml -f compose.baseten.yaml --profile mattermost --profile mcp up -d
+# The `!reset` drops the Model Runner bindings on app and mcp (Compose injects LLM_* and
+# EMBED_* from `models:`), then environment sets the generator from .env and pins embeddings
+# back to Model Runner, because the committed eval fixture is BGE-M3 (ADR 0017). Retrieval, the
+# entitlement predicate, identity binding and the audit log do not change.
+services:
+  app:
+    models: !reset {}
+    environment:
+      LLM_BASE_URL: ${BASETEN_BASE_URL:-https://inference.baseten.co/v1}
+      LLM_MODEL: ${BASETEN_MODEL:?set BASETEN_MODEL to a model id from the catalog}
+      LLM_API_KEY: ${BASETEN_API_KEY:?set BASETEN_API_KEY in .env}
+      EMBED_BASE_URL: http://model-runner.docker.internal/engines/v1
+      EMBED_MODEL: hf.co/gpustack/bge-m3-gguf:Q8_0
+      ENGINE: baseten-model-apis
+      ENGINE_BACKEND: managed
+  mcp:
+    models: !reset {}
+    environment:
+      LLM_BASE_URL: ${BASETEN_BASE_URL:-https://inference.baseten.co/v1}
+      LLM_MODEL: ${BASETEN_MODEL:?set BASETEN_MODEL to a model id from the catalog}
+      LLM_API_KEY: ${BASETEN_API_KEY:?set BASETEN_API_KEY in .env}
+      EMBED_BASE_URL: http://model-runner.docker.internal/engines/v1
+      EMBED_MODEL: hf.co/gpustack/bge-m3-gguf:Q8_0
+      ENGINE: baseten-model-apis
+      ENGINE_BACKEND: managed
