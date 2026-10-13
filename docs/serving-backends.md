@@ -36,6 +36,15 @@ cold run's end-to-end time; `n` is warm runs.
 
 | Configuration | Plugin model | sovrag generator | Tier | Billing | Hop 1 | Hop 2 | Hop 3 | End to end | Cold | n |
 |---|---|---|---|---|---|---|---|---|---|---|
+| A-local | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | local | none | 5.5 | 4.6 | 6.3 | 16.8 | 40.2 | 13 |
+
+Notes on A-local (measured, 2026-10-13, file `eval/results/bench-mattermost-A-local-2026-10-13.json`):
+
+- Hardware: Apple M3 Max, 48 GB, macOS 26.6.2, Docker 29.8.2, Model Runner v1.2.8, read at run time.
+- Cold: hop 1 9.5 s, hop 2 6.7 s, hop 3 23.9 s. The plugin and sovrag use the same Qwen model, so the plugin's first call loads it for both; the cold penalty lands in hop 1 and in the embedder's load inside hop 2.
+- Warm mean end to end is 20.3 s against the 16.8 s median: hop 3 is proportional to reply length, and two of the five questions (`r04`, `r09`) draw short replies or refusals.
+- 2 of 15 warm runs are counted as failed: on both, for the same question (`r03`), the agent called `search` instead of `answer`, so there is no `answer` event to time. The agent's model straying from its instruction is part of what hop 1 measures and is reported, not dropped.
+- No first-token mark: the plugin creates its reply post in the same second as the question, before the tool call, and fills it at the end.
 
 Quality, where the generator changed (the generation eval, judged locally by Gemma 4 12B
 Q4_K_M, and the leak suite's answer run):
