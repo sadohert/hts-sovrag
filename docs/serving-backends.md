@@ -200,9 +200,9 @@ last Model APIs run (the compatibility probes, 21 cold or warm Mattermost runs i
 
 | | Before | After |
 |---|---|---|
-| Total spend | $0.00 | $0.00 charged, $0.05 at list price (covered by the account's credit) |
+| Total spend | $0.00 | $1.41 invoiced, all of it dedicated inference; Model APIs usage was $0.04 at list price, covered by the account's credit (observed, invoice dated 2026-10-13) |
 | Model APIs tokens | 504 input, 114 output | 274,483 uncached input, 1,792 cached input, 9,348 output |
-| Dedicated inference | $0.00, 0 billable minutes | $0.22 for 2 billable minutes as the page stood when read, minutes still accruing (observed); the replica was up for about 25 minutes in all, so the settled figure should be about $2.70 at the quoted rate (estimated) |
+| Dedicated inference | $0.00, 0 billable minutes | $1.41 for 13 billable H100 minutes at $0.10833 (observed, from the invoice); the billing page showed 2 minutes while the replica was still up, and the replica was up for about 25 minutes of wall clock, so billable minutes are fewer than uptime |
 
 Quoted list prices for the chosen model, GLM-5.3-Flash: $0.15 per million input tokens and
 $0.50 per million output tokens (observed in the catalog on the same day). The benchmark is
