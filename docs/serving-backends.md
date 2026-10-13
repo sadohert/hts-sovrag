@@ -70,6 +70,17 @@ Q4_K_M, and the leak suite's answer run):
 | Configuration | Faithful | Correct | False refusals | Unanswerable refused | Leak answers refused |
 |---|---|---|---|---|---|
 | A-local (2026-09-22 baseline) | 1.000 (29 judged) | 0.966 | 1/30 | 9/10 | public 15/20, analyst_dnd 12/20, analyst_ps 13/20 |
+| C-both-baseten (2026-10-13, GLM-5.3-Flash fp8 on Model APIs) | 1.000 (28 judged) | 1.000 | 2/30 | 10/10 | public 16/20, analyst_dnd 14/20, analyst_ps 13/20 |
+
+Both rows are judged by the same local Gemma 4 12B Q4_K_M, so the only variable is the generator.
+Measured, files `eval/results/generation-2026-10-13.json` and `eval/results/leak-2026-10-13.json`:
+the hosted generator kept faithfulness at 1.000, answered every judged answerable question
+correctly, refused all ten unanswerable questions, and refused two answerable ones (`r09`, which
+the local generator also refuses, and `r29`). The leak suite found zero forbidden chunks in 300
+checks with the positive control at 20 of 20, which it must, because retrieval and the
+entitlement filter did not move. The direct path's mean latency in the generation eval fell from
+4.12 s to 0.90 s. One hosted request timed out during the first leak run with
+retries off; the run was repeated with `LLM_MAX_RETRIES=2`, a documented setting, and completed.
 
 ## Configurations
 
