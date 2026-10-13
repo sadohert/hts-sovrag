@@ -136,7 +136,20 @@ speed, and a reload whenever the model has been idle long enough to be unloaded.
 
 ## Cost observed
 
-(filled in by the measurement tasks: account balance before and after, tokens per run)
+Observed on the Baseten billing page on 2026-10-13, before the first benchmark run and after the
+last Model APIs run (the compatibility probes, 21 cold or warm Mattermost runs in B and C, the
+30-question generation eval, and the leak suite's answer run of 60 questions, run twice):
+
+| | Before | After |
+|---|---|---|
+| Total spend | $0.00 | $0.00 charged, $0.05 at list price (covered by the account's credit) |
+| Model APIs tokens | 504 input, 114 output | 274,483 uncached input, 1,792 cached input, 9,348 output |
+| Dedicated inference | $0.00, 0 billable minutes | $0.00, 0 billable minutes |
+
+Quoted list prices for the chosen model, GLM-5.3-Flash: $0.15 per million input tokens and
+$0.50 per million output tokens (observed in the catalog on the same day). The benchmark is
+input-heavy: every tool call carries the retrieved chunks, and every reply carries the tool
+result back, so input is thirty times output here.
 
 ## What is not measured
 
