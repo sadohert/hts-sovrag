@@ -39,6 +39,7 @@ cold run's end-to-end time; `n` is warm runs.
 | A-local | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | local | none | 5.5 | 4.6 | 6.3 | 16.8 | 40.2 | 13 |
 | B-plugin-baseten | zai-org/GLM-5.3-Flash (fp8) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | model-apis | per-token | 1.0 | 4.2 | 2.0 | 8.3 | 17.7 | 10 |
 | C-both-baseten | zai-org/GLM-5.3-Flash (fp8) | zai-org/GLM-5.3-Flash (fp8) | model-apis | per-token | 0.8 | 0.8 | 2.1 | 3.8 | n/a | 10 |
+| D-dedicated | Qwen/Qwen3.5-9B (bf16) | ai/qwen3.5:9b-q4_K_M (Q4_K_M) | dedicated | per-gpu-minute | 1.0 | 4.5 | 1.1 | 6.6 | 166.6 | 10 |
 
 Notes on A-local (measured, 2026-10-13, file `eval/results/bench-mattermost-A-local-2026-10-13.json`):
 
@@ -63,6 +64,14 @@ Notes on C-both-baseten (measured, 2026-10-13, file `eval/results/bench-mattermo
 - Warm mean end to end 5.0 s against the 3.8 s median. 0 failed runs.
 - Hop 2 fell from 4.2 s (B) to 0.8 s: the difference is the generation step moving off the laptop. Embedding and retrieval are what remains.
 - In every configuration the same question (`r09`) came back as a refusal from sovrag on every run, from both generators. That is a retrieval or golden-set question for the eval harness, not a serving-backend effect, and the runs are counted because the hops are real.
+
+Notes on D-dedicated (measured, 2026-10-13, file `eval/results/bench-mattermost-D-dedicated-2026-10-13.json`):
+
+- The plugin's model is a dedicated Baseten deployment of Qwen 3.5 9B from the model library: vLLM 0.22.0, bfloat16, one H100 with 80 GiB, $0.1083 per minute while a replica is up, minimum replicas 0. sovrag is local, as in B. This is the one row where the hosted model is the same family and size as the laptop's, so hops 1 and 3 here compare the backend alone: hop 1 5.5 s to 1.0 s, hop 3 6.3 s to 1.1 s.
+- Cold is a true scale-to-zero wake, taken after the deployment reported `SCALED_TO_ZERO`: hop 1 147.6 s, which is the replica starting (container, weights, engine), then hop 2 11.8 s for sovrag's own reload and hop 3 7.1 s. The Agents plugin's streaming timeout is 300 s; a slower wake would have been a failed reply, not a slow one.
+- Warm mean end to end 7.9 s against the 6.6 s median; 0 failed runs; the dedicated model called `answer` on every run.
+- Direct requests through sovrag's client while warm: 0.10 s for a one-word reply (3.3 s for the first, which includes connection setup). The deployment's vLLM has the Qwen reasoning parser on; sovrag sends `enable_thinking: false`, the plugin does not.
+- The scale-down delay was set to 120 s for the measurement instead of the golden configuration's 900 s, which changes only how soon idle billing stops. The deployment was deleted after the cold run.
 
 Quality, where the generator changed (the generation eval, judged locally by Gemma 4 12B
 Q4_K_M, and the leak suite's answer run):
@@ -99,6 +108,9 @@ All measured on 2026-10-13, warm medians unless stated.
 - **Moving the generator too (C)** takes hop 2 from 4.2 s to 0.8 s and the reply to 3.8 s. What
   remains in hop 2 is embedding and retrieval on the laptop. Quality held: faithfulness 1.000 in
   both rows, correctness 1.000 against 0.966, one more false refusal.
+- **The same model on a dedicated H100 (D)** isolates the backend: with Qwen 3.5 9B on both
+  sides, hop 1 goes from 5.5 s to 1.0 s and hop 3 from 6.3 s to 1.1 s. The price of scale-to-zero
+  is a 148 s wake on the first request after idle, against 40 s for the laptop's cold reply.
 - **What the local row buys** is that no question and no entitled chunk leaves the machine. The
   next section is about that.
 
@@ -109,7 +121,7 @@ All measured on 2026-10-13, warm medians unless stated.
 | A-local | Qwen 3.5 9B Q4_K_M on Docker Model Runner | the same | `docker compose --profile mattermost --profile mcp up -d`, seed with defaults |
 | B-plugin-baseten | a Baseten Model APIs model | Qwen 3.5 9B Q4_K_M on Docker Model Runner | set `AGENT_LLM_*`, re-seed |
 | C-both-baseten | a Baseten Model APIs model | the same Baseten model | B, then `docker compose -f compose.yaml -f compose.baseten.yaml ...` |
-| D-dedicated | a dedicated Baseten deployment, scale-to-zero | as stated in the row | optional |
+| D-dedicated | Qwen 3.5 9B bf16, dedicated Baseten deployment (vLLM, one H100), scale-to-zero | Qwen 3.5 9B Q4_K_M on Docker Model Runner | deployed from the model library, `AGENT_LLM_*` pointed at its endpoint, re-seed |
 
 Retrieval, the entitlement predicate, identity binding, the audit log, embeddings and the
 judge are local in every configuration.
@@ -128,8 +140,9 @@ Two product shapes on the hosted side:
   OpenAI-compatible URL, billed per million tokens, no deployment to manage and no cold start.
 - **Dedicated** (a Baseten deployment from the model library or your own weights): any model,
   your hardware choice, scale-to-zero when idle, a cold start measured in minutes while the
-  container pulls, loads weights and initialises the engine, billed per GPU-minute while a
-  replica is up.
+  container pulls, loads weights and initialises the engine (148 s measured here for a 9B
+  model in bfloat16 on an H100), billed per GPU-minute while a replica is up ($0.1083 per
+  minute for that H100, quoted).
 
 The all-local shape pays in a different currency: a laptop-sized model at a laptop's decode
 speed, and a reload whenever the model has been idle long enough to be unloaded.
@@ -155,5 +168,5 @@ result back, so input is thirty times output here.
 
 Prefill and decode inside hops 1 and 3 are not separated; a logging proxy between the plugin
 and its model would be the next instrument. Hop 2 is not split into embed, retrieve and
-generate here; the generation eval's latency figure covers the direct path. The dedicated tier,
-where it is not run, is characterised from Baseten's documentation and marked as such.
+generate here; the generation eval's latency figure covers the direct path. The dedicated tier
+was measured with the plugin's model only; sovrag's generator was not moved to it.
