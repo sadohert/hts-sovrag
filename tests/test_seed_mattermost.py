@@ -352,3 +352,71 @@ def test_main_dry_run_prints_the_env_lines_with_placeholders(
     assert code == 0
     assert "MATTERMOST_BOT_TOKEN=" in out and "MCP_SHARED_SECRET=" in out
     assert "s3cret" not in out
+
+
+def test_plugin_service_takes_the_key_and_name_it_is_given() -> None:
+    cfg = seed._plugin_config(
+        "s3cret",
+        "https://inference.baseten.co/v1",
+        "Qwen/Qwen3.5-9B",
+        "http://mcp:8002/mcp",
+        llm_api_key="bt-key",
+        llm_service_name="Baseten Model APIs",
+    )
+    (service,) = cfg["services"]
+    assert service["id"] == seed.SERVICE_ID  # unchanged: the bot keeps pointing at it
+    assert service["name"] == "Baseten Model APIs"
+    assert service["apiURL"] == "https://inference.baseten.co/v1"
+    assert service["apiKey"] == "bt-key"
+    assert service["defaultModel"] == "Qwen/Qwen3.5-9B"
+
+
+def test_plugin_service_defaults_to_model_runner_without_a_key() -> None:
+    cfg = seed._plugin_config("s", "http://model-runner.docker.internal/engines/v1", "m", "u")
+    (service,) = cfg["services"]
+    assert service["name"] == "Docker Model Runner" and service["apiKey"] == "not-needed"
+
+
+def _fake_seed(seen: dict[str, Any]) -> Any:
+    def fake(mm: Any, **kw: Any) -> Any:
+        seen.update(kw)
+        return seed.Result(shared_secret="s", bot_user_id="b", bot_token=None, user_ids={})
+
+    return fake
+
+
+def test_main_reads_the_agent_llm_env_and_never_prints_the_key(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setenv("AGENT_LLM_URL", "https://inference.baseten.co/v1")
+    monkeypatch.setenv("AGENT_LLM_MODEL", "Qwen/Qwen3.5-9B")
+    monkeypatch.setenv("AGENT_LLM_API_KEY", "bt-secret-key")
+    monkeypatch.setenv("AGENT_LLM_SERVICE_NAME", "Baseten Model APIs")
+    seen: dict[str, Any] = {}
+    monkeypatch.setattr(seed, "seed", _fake_seed(seen))
+    code = seed.main(["--dry-run", "--shared-secret", "s3cret"])
+    out = capsys.readouterr()
+    assert code == 0
+    assert seen["llm_url"] == "https://inference.baseten.co/v1"
+    assert seen["llm_model"] == "Qwen/Qwen3.5-9B"
+    assert seen["llm_api_key"] == "bt-secret-key"
+    assert seen["llm_service_name"] == "Baseten Model APIs"
+    assert "bt-secret-key" not in out.out and "bt-secret-key" not in out.err
+
+
+def test_main_defaults_the_plugin_to_model_runner(monkeypatch: pytest.MonkeyPatch) -> None:
+    for name in (
+        "AGENT_LLM_URL",
+        "AGENT_LLM_MODEL",
+        "AGENT_LLM_API_KEY",
+        "AGENT_LLM_SERVICE_NAME",
+        "LLM_MODEL",
+    ):
+        monkeypatch.delenv(name, raising=False)
+    seen: dict[str, Any] = {}
+    monkeypatch.setattr(seed, "seed", _fake_seed(seen))
+    assert seed.main(["--dry-run", "--shared-secret", "s3cret"]) == 0
+    assert seen["llm_url"] == "http://model-runner.docker.internal/engines/v1"
+    assert seen["llm_model"] == "ai/qwen3.5:9b-q4_K_M"
+    assert seen["llm_api_key"] == "not-needed"
+    assert seen["llm_service_name"] == "Docker Model Runner"

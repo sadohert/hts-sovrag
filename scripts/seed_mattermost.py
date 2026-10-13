@@ -246,16 +246,22 @@ def _ensure_plugin(mm: Mattermost, download: Callable[[str], bytes] | None) -> N
 
 
 def _plugin_config(
-    shared_secret: str, llm_url: str, llm_model: str, mcp_url: str
+    shared_secret: str,
+    llm_url: str,
+    llm_model: str,
+    mcp_url: str,
+    *,
+    llm_api_key: str = "not-needed",
+    llm_service_name: str = "Docker Model Runner",
 ) -> dict[str, Any]:
     return {
         "services": [
             {
-                "id": SERVICE_ID,
-                "name": "Docker Model Runner",
+                "id": SERVICE_ID,  # fixed, so the bot keeps its service when the endpoint changes
+                "name": llm_service_name,
                 "type": "openaicompatible",
                 "apiURL": llm_url,
-                "apiKey": "not-needed",
+                "apiKey": llm_api_key,
                 "defaultModel": llm_model,
                 "useResponsesAPI": False,
                 "streamingTimeoutSeconds": 300,
@@ -389,6 +395,8 @@ def seed(
     mcp_url: str,
     rotate_token: bool,
     download: Callable[[str], bytes] | None,
+    llm_api_key: str = "not-needed",
+    llm_service_name: str = "Docker Model Runner",
 ) -> Result:
     _ensure_admin(mm, admin_password)
     clearance_field = _ensure_field(mm, CLEARANCE_FIELD, "select", CLEARANCES)
@@ -406,7 +414,17 @@ def seed(
             departments,
         )
     _ensure_plugin(mm, download)
-    _ensure_plugin_config(mm, _plugin_config(shared_secret, llm_url, llm_model, mcp_url))
+    _ensure_plugin_config(
+        mm,
+        _plugin_config(
+            shared_secret,
+            llm_url,
+            llm_model,
+            mcp_url,
+            llm_api_key=llm_api_key,
+            llm_service_name=llm_service_name,
+        ),
+    )
     bot_user_id = _ensure_agent(mm, mcp_url)
     token = _ensure_bot_token(mm, bot_user_id, rotate_token)
     return Result(
@@ -500,8 +518,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--shared-secret", default=os.environ.get("MCP_SHARED_SECRET") or secrets.token_urlsafe(32)
     )
-    parser.add_argument("--llm-url", default="http://model-runner.docker.internal/engines/v1")
-    parser.add_argument("--llm-model", default=os.environ.get("LLM_MODEL", "ai/qwen3.5:9b-q4_K_M"))
+    parser.add_argument(
+        "--llm-url",
+        default=os.environ.get("AGENT_LLM_URL") or "http://model-runner.docker.internal/engines/v1",
+        help="The plugin's model endpoint (OpenAI-compatible). AGENT_LLM_URL.",
+    )
+    parser.add_argument(
+        "--llm-model",
+        default=os.environ.get("AGENT_LLM_MODEL")
+        or os.environ.get("LLM_MODEL")
+        or "ai/qwen3.5:9b-q4_K_M",
+        help="The plugin's model id. AGENT_LLM_MODEL, then LLM_MODEL.",
+    )
+    parser.add_argument(
+        "--llm-api-key",
+        default=os.environ.get("AGENT_LLM_API_KEY") or "not-needed",
+        help="The plugin's key for that endpoint. AGENT_LLM_API_KEY. Never printed.",
+    )
+    parser.add_argument(
+        "--llm-service-name",
+        default=os.environ.get("AGENT_LLM_SERVICE_NAME") or "Docker Model Runner",
+        help="How the service is named in the plugin's settings. AGENT_LLM_SERVICE_NAME.",
+    )
     parser.add_argument("--mcp-url", default="http://mcp:8002/mcp")
     parser.add_argument(
         "--rotate-token", action="store_true", help="Make a new bot token even if one exists"
@@ -521,6 +559,8 @@ def main(argv: list[str] | None = None) -> int:
             shared_secret=args.shared_secret,
             llm_url=args.llm_url,
             llm_model=args.llm_model,
+            llm_api_key=args.llm_api_key,
+            llm_service_name=args.llm_service_name,
             mcp_url=args.mcp_url,
             rotate_token=args.rotate_token,
             download=None if args.dry_run else _download,
