@@ -19,11 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Corpus documents, and the fixtures and golden sets derived from them
-(data/manifest.yaml, tests/fixtures/real/, eval/fixture/, eval/golden/), contain
-Government of Canada works and are not covered by the MIT licence above. Contains information licensed
-under the Open Government Licence - Canada:
-https://open.canada.ca/en/open-government-licence-canada
