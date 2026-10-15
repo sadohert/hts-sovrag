@@ -1,0 +1,5 @@
+Corpus documents, and the fixtures and golden sets derived from them
+(data/manifest.yaml, tests/fixtures/real/, eval/fixture/, eval/golden/), contain
+Government of Canada works and are not covered by the MIT licence in LICENSE.
+Contains information licensed under the Open Government Licence - Canada:
+https://open.canada.ca/en/open-government-licence-canada

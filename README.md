@@ -90,3 +90,4 @@ See `docs/architecture.md` for the component and data model diagrams, `docs/adr/
 
 Code is MIT, see `LICENSE`. The corpus, and the fixtures and golden sets derived from it, contain
 Government of Canada works: contains information licensed under the Open Government Licence - Canada.
+See `LICENSE-CORPUS`.
