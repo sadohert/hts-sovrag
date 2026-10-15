@@ -1,4 +1,4 @@
-# Serving backends: where the time goes, and what moving inference costs
+# Serving backends: Docker Model Runner on a laptop beside Baseten Model APIs and a dedicated H100
 
 Every model call in sovrag goes through an OpenAI-compatible client configured from the
 environment, so the serving backend is a configuration choice. This page records what that
