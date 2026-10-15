@@ -1,7 +1,8 @@
 # sovrag
 
 A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story. Inference moves off the laptop to Baseten by
-environment variable alone, and `docs/serving-backends.md` measures what that swap buys and costs.
+configuration, not code: environment variables and a Compose override file. `docs/serving-backends.md`
+measures what that swap buys and costs.
 
 Status: everything below exists on `main` and is exercised by the test suite and the CI evaluation gates.
 
