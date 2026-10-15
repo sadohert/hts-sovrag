@@ -1,4 +1,4 @@
-# ADR 0017: Inference placement is a configuration and data-classification decision
+# ADR 0017: Inference placement, Docker Model Runner on the box or Baseten hosted, is a configuration and data-classification decision
 
 Status: accepted (2026-10-13)
 

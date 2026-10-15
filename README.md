@@ -1,6 +1,7 @@
 # sovrag
 
-A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story.
+A reference implementation of permissions-aware retrieval-augmented generation over public Government of Canada documents, running entirely on Docker: Postgres with pgvector for storage, Docker Model Runner for inference and embeddings, and Compose as the whole deployment story. Inference moves off the laptop to Baseten by
+environment variable alone, and `docs/serving-backends.md` measures what that swap buys and costs.
 
 Status: everything below exists on `main` and is exercised by the test suite and the CI evaluation gates.
 
@@ -83,6 +84,26 @@ Generator `ai/qwen3.5:9b-q4_K_M`, embedder `hf.co/gpustack/bge-m3-gguf:Q8_0`, on
 `docker-model-runner` with the `llama.cpp` backend. Results under `eval/results/` carry these
 model, quantization and backend labels, so a run on a different backend is compared against
 this baseline, never confused with it.
+
+### Serving backends
+
+Where the models run is configuration, so the same stack was timed on a laptop and on Baseten.
+Warm medians in seconds for one Mattermost reply, measured 2026-10-13, files
+`eval/results/bench-mattermost-*.json`:
+
+| Configuration | Plugin model | sovrag generator | End to end | Cold |
+|---|---|---|---|---|
+| A-local, Docker Model Runner for both | ai/qwen3.5:9b-q4_K_M | ai/qwen3.5:9b-q4_K_M | 16.8 | 40.2 |
+| B, plugin on Baseten Model APIs | zai-org/GLM-5.3-Flash | ai/qwen3.5:9b-q4_K_M | 8.3 | 17.7 |
+| C, both on Baseten Model APIs | zai-org/GLM-5.3-Flash | zai-org/GLM-5.3-Flash | 3.8 | n/a |
+| D, plugin on a dedicated Baseten H100 | Qwen/Qwen3.5-9B | ai/qwen3.5:9b-q4_K_M | 6.6 | 166.6 |
+
+No Python changed between rows: B is four environment variables and a re-seed, C adds
+`compose.baseten.yaml` and three more. Quality held where the generator moved: faithfulness 1.000
+in A and C, leak suite at zero in both. Retrieval, the entitlement predicate, identity binding and
+the audit log stay local in every row. `docs/serving-backends.md` has the per-hop breakdown, the
+observed cost ($1.41 invoiced, all of it the dedicated H100), and what the local row buys; ADR 0017 is the
+placement decision.
 
 See `docs/architecture.md` for the component and data model diagrams, `docs/adr/` for decisions.
 
